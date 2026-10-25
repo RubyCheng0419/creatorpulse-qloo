@@ -135,7 +135,7 @@ Regenerate it with `node scripts/save-demo-snapshot.mjs` while the dev server ru
 - **Creator taste comes from what the videos name.** Topics that are not Qloo entities (an air fryer, a cheesecake) cannot be matched, so a cooking channel may score low on Food & Travel. CreatorPulse uses no audience personal data.
 - **No location signal yet**, so place and destination proxies can skew toward particular regions.
 - **Brand names must be in English**; Qloo’s matching of non-English brand names is unreliable.
-- **Gemini output varies between calls** (Gemini is never cached). Qloo’s exact-match check absorbs most of it: two demo runs where Gemini proposed 13 and 12 names both confirmed the same 7 Qloo entities and scored 75. When the confirmed set does differ, the score can move by a point or two.
+- **Gemini output varies between calls** (Gemini is never cached). Qloo’s exact-match check absorbs most of it: two demo runs where Gemini proposed 13 and 12 names both confirmed the same 7 Qloo entities and scored 75. When the confirmed set does differ, the score moves: the same five videos scored Samsung 77 on one run and 71 on another.
 - **History is stored in the browser** (localStorage), so `/match/[id]` links only open on the device that ran the match.
 
 ## Tech stack
