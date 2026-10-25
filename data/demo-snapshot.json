@@ -1,0 +1,1515 @@
+{
+  "id": "match_fd95e79c9adc",
+  "createdAt": "2026-10-25T05:33:40.307Z",
+  "creator": {
+    "channelName": "Marques Brownlee",
+    "youtubeHandle": "@mkbhd",
+    "videoUrls": [
+      "https://www.youtube.com/watch?v=_4ELeWAgMwo",
+      "https://www.youtube.com/watch?v=ESABTN4VtrA",
+      "https://www.youtube.com/watch?v=scwlR0QHGOk",
+      "https://www.youtube.com/watch?v=QVv3mQzlrN0",
+      "https://www.youtube.com/watch?v=_0G4OG39XjI"
+    ],
+    "videos": [
+      {
+        "videoId": "_4ELeWAgMwo",
+        "title": "ASMR iPhone Duo Unboxing",
+        "channelId": "UCBJycsmduvYEL83R_U4JriQ",
+        "channelTitle": "Marques Brownlee",
+        "categoryId": "28",
+        "tags": []
+      },
+      {
+        "videoId": "ESABTN4VtrA",
+        "title": "iPhone Duo Review: First Generation Fun!",
+        "channelId": "UCBJycsmduvYEL83R_U4JriQ",
+        "channelTitle": "Marques Brownlee",
+        "categoryId": "28",
+        "tags": [
+          "iPhone Duo",
+          "iPhone duo review"
+        ]
+      },
+      {
+        "videoId": "scwlR0QHGOk",
+        "title": "The NEW Tesla Roadster: My Honest Reaction",
+        "channelId": "UCBJycsmduvYEL83R_U4JriQ",
+        "channelTitle": "Marques Brownlee",
+        "categoryId": "28",
+        "tags": [
+          "Tesla roadster",
+          "flying",
+          "thrust",
+          "rocket"
+        ]
+      },
+      {
+        "videoId": "QVv3mQzlrN0",
+        "title": "Apple Homeview Impressions: Not Convinced!",
+        "channelId": "UCBJycsmduvYEL83R_U4JriQ",
+        "channelTitle": "Marques Brownlee",
+        "categoryId": "28",
+        "tags": []
+      },
+      {
+        "videoId": "_0G4OG39XjI",
+        "title": "WTF is a Googlebook?",
+        "channelId": "UCBJycsmduvYEL83R_U4JriQ",
+        "channelTitle": "Marques Brownlee",
+        "categoryId": "28",
+        "tags": [
+          "Googlebook",
+          "MKBHD"
+        ]
+      }
+    ],
+    "keywords": [
+      "iPhone Duo",
+      "Ridge",
+      "dbrand",
+      "Apple",
+      "Tesla Roadster",
+      "Tesla",
+      "Hagerty",
+      "Apple Homeview",
+      "Googlebook",
+      "Google",
+      "Asus Googlebook",
+      "Asus",
+      "XPS Googlebook",
+      "Dell"
+    ],
+    "keywordSource": "gemini",
+    "entities": [
+      {
+        "id": "3180A68A-2853-4675-886E-CB05CDF3F63A",
+        "name": "Dbrand",
+        "type": "urn:entity:brand",
+        "popularity": 0.9878710311742469,
+        "affinity": null,
+        "source": "qloo",
+        "via": "search",
+        "query": "dbrand",
+        "genres": []
+      },
+      {
+        "id": "D5B78065-6DBB-4DDB-80DF-6495B9B1006B",
+        "name": "Apple Inc",
+        "type": "urn:entity:brand",
+        "popularity": 0.9992456476411656,
+        "affinity": null,
+        "source": "qloo",
+        "via": "search",
+        "query": "Apple",
+        "genres": [
+          "brand:electronics:headphones",
+          "brand:electronics:phones_and_tablets",
+          "brand:electronics",
+          "brand:software",
+          "brand:electronics:computers_and_laptops",
+          "brand:electronics:computer_accessories"
+        ]
+      },
+      {
+        "id": "29B49E3F-A0EC-42C6-A453-38B1C20D8374",
+        "name": "Tesla",
+        "type": "urn:entity:brand",
+        "popularity": 0.999143937210761,
+        "affinity": null,
+        "source": "qloo",
+        "via": "search",
+        "query": "Tesla",
+        "genres": [
+          "brand:automotive",
+          "brand:automotive:electric",
+          "brand:automotive:car_and_suv"
+        ]
+      },
+      {
+        "id": "EEC15C3C-DA67-4811-B25C-DECB5BA51E1F",
+        "name": "Hagerty",
+        "type": "urn:entity:brand",
+        "popularity": 0.8697258903900595,
+        "affinity": null,
+        "source": "qloo",
+        "via": "search",
+        "query": "Hagerty",
+        "genres": []
+      },
+      {
+        "id": "EF6C6B18-ABB3-4A9C-AF86-CF24976407A8",
+        "name": "Google",
+        "type": "urn:entity:brand",
+        "popularity": 0.999737248054788,
+        "affinity": null,
+        "source": "qloo",
+        "via": "search",
+        "query": "Google",
+        "genres": [
+          "brand:electronics:phones_and_tablets",
+          "brand:electronics:computer_accessories",
+          "brand:electronics",
+          "brand:software",
+          "brand:website"
+        ]
+      },
+      {
+        "id": "81C0AAC3-4484-4089-81C0-3A69EE301C15",
+        "name": "Asus",
+        "type": "urn:entity:brand",
+        "popularity": 0.9980251224763099,
+        "affinity": null,
+        "source": "qloo",
+        "via": "search",
+        "query": "Asus",
+        "genres": [
+          "brand:software",
+          "brand:electronics",
+          "brand:electronics:computer_components"
+        ]
+      },
+      {
+        "id": "0E550F19-C48D-431A-BF3E-0B4B6D9E8A17",
+        "name": "Dell Inc",
+        "type": "urn:entity:brand",
+        "popularity": 0.9899137156515401,
+        "affinity": null,
+        "source": "qloo",
+        "via": "search",
+        "query": "Dell",
+        "genres": [
+          "brand:electronics:computers_and_laptops",
+          "brand:electronics:home_theater",
+          "brand:electronics:phones_and_tablets",
+          "brand:electronics"
+        ]
+      }
+    ],
+    "unmatched": [
+      "iPhone Duo",
+      "Ridge",
+      "Tesla Roadster",
+      "Apple Homeview",
+      "Googlebook",
+      "Asus Googlebook",
+      "XPS Googlebook"
+    ]
+  },
+  "mentionsBrand": true,
+  "sharedEntities": [
+    {
+      "id": "29B49E3F-A0EC-42C6-A453-38B1C20D8374",
+      "name": "Tesla",
+      "type": "urn:entity:brand",
+      "popularity": 0.999143937210761,
+      "affinity": null,
+      "source": "qloo",
+      "via": "search",
+      "query": "Tesla",
+      "genres": [
+        "brand:automotive",
+        "brand:automotive:electric",
+        "brand:automotive:car_and_suv"
+      ],
+      "side": "direct",
+      "weight": 1,
+      "brandAffinity": 0.9277494800667277,
+      "dimension": "tech"
+    },
+    {
+      "id": "3C6380C8-8356-4ED6-AC6E-9BC22AF91615",
+      "name": "Venom",
+      "type": "urn:entity:movie",
+      "popularity": 0.9956910516425841,
+      "affinity": 0.936835740744864,
+      "source": "qloo",
+      "via": "insights",
+      "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+      "genres": [
+        "qloo:adventure",
+        "qloo:superhero",
+        "qloo:science_fiction",
+        "media:sci_fi",
+        "media:adventure",
+        "media:action",
+        "qloo:action"
+      ],
+      "side": "proxy",
+      "weight": 0.5,
+      "brandAffinity": 0.9345730608245403,
+      "dimension": "entertainment"
+    },
+    {
+      "id": "813B0455-6AD2-4802-B4B5-314799249A9F",
+      "name": "Avengers: Endgame",
+      "type": "urn:entity:movie",
+      "popularity": 0.9994060346875743,
+      "affinity": 0.9325077267096838,
+      "source": "qloo",
+      "via": "insights",
+      "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+      "genres": [
+        "media:sci_fi",
+        "qloo:adventure",
+        "media:adventure",
+        "qloo:science_fiction",
+        "qloo:action",
+        "media:action"
+      ],
+      "side": "proxy",
+      "weight": 0.5,
+      "brandAffinity": 0.9465212370581907,
+      "dimension": "entertainment"
+    },
+    {
+      "id": "A79D1D11-0686-401E-8FFF-633E6A604929",
+      "name": "Captain Marvel",
+      "type": "urn:entity:movie",
+      "popularity": 0.9968249854208514,
+      "affinity": 0.9324471182870208,
+      "source": "qloo",
+      "via": "insights",
+      "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+      "genres": [
+        "qloo:science_fiction",
+        "media:adventure",
+        "media:sci_fi",
+        "media:action",
+        "qloo:adventure",
+        "qloo:action"
+      ],
+      "side": "proxy",
+      "weight": 0.5,
+      "brandAffinity": 0.9413675520467116,
+      "dimension": "entertainment"
+    },
+    {
+      "id": "25679116-0941-4018-A5D8-885C1A026DF6",
+      "name": "Halt and Catch Fire",
+      "type": "urn:entity:tv_show",
+      "popularity": 0.9625024931852936,
+      "affinity": 0.9527987819412836,
+      "source": "qloo",
+      "via": "insights",
+      "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+      "genres": [
+        "qloo:drama",
+        "media:drama"
+      ],
+      "side": "proxy",
+      "weight": 0.5,
+      "brandAffinity": 0.9779007679531426,
+      "dimension": "entertainment"
+    },
+    {
+      "id": "5B305BA6-94B6-4988-BDB6-6FF5E92CC4C7",
+      "name": "Humans",
+      "type": "urn:entity:tv_show",
+      "popularity": 0.9610398244797553,
+      "affinity": 0.9465823940610101,
+      "source": "qloo",
+      "via": "insights",
+      "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+      "genres": [
+        "qloo:science_fiction",
+        "media:drama",
+        "qloo:drama",
+        "media:sci_fi"
+      ],
+      "side": "proxy",
+      "weight": 0.5,
+      "brandAffinity": 0.9401549121131964,
+      "dimension": "entertainment"
+    }
+  ],
+  "status": "completed",
+  "brand": {
+    "name": "Apple",
+    "category": "Technology",
+    "entity": {
+      "id": "D5B78065-6DBB-4DDB-80DF-6495B9B1006B",
+      "name": "Apple Inc",
+      "type": "urn:entity:brand",
+      "popularity": 0.9992456476411656,
+      "affinity": null,
+      "source": "qloo",
+      "via": "search",
+      "query": "Apple",
+      "genres": [
+        "brand:electronics:headphones",
+        "brand:electronics:phones_and_tablets",
+        "brand:electronics",
+        "brand:software",
+        "brand:electronics:computers_and_laptops",
+        "brand:electronics:computer_accessories"
+      ]
+    },
+    "entities": [
+      {
+        "id": "B6AF9615-7872-477F-AD01-86AAF0CC4F6B",
+        "name": "Mercedes-benz",
+        "type": "urn:entity:brand",
+        "popularity": 0.9997965791391907,
+        "affinity": 0.9364543716824926,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "brand:automotive:commercial",
+          "brand:automotive",
+          "brand:automotive:car_and_suv"
+        ]
+      },
+      {
+        "id": "96C5629A-CC62-45C7-9CD2-971331E403D1",
+        "name": "Porsche",
+        "type": "urn:entity:brand",
+        "popularity": 0.9995592548015799,
+        "affinity": 0.935213784499437,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "brand:automotive:car_and_suv",
+          "brand:automotive:electric",
+          "brand:automotive"
+        ]
+      },
+      {
+        "id": "22375E84-ADE8-435E-B1AE-13BA465C1952",
+        "name": "Bugatti",
+        "type": "urn:entity:brand",
+        "popularity": 0.9989150887423506,
+        "affinity": 0.9319289023463863,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "brand:automotive:car_and_suv",
+          "brand:automotive"
+        ]
+      },
+      {
+        "id": "3AC9684D-1579-453A-A4EE-827BE7151520",
+        "name": "Ferrari",
+        "type": "urn:entity:brand",
+        "popularity": 0.998923564611551,
+        "affinity": 0.9305423396490704,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "brand:automotive",
+          "brand:automotive:car_and_suv"
+        ]
+      },
+      {
+        "id": "29B49E3F-A0EC-42C6-A453-38B1C20D8374",
+        "name": "Tesla",
+        "type": "urn:entity:brand",
+        "popularity": 0.999143937210761,
+        "affinity": 0.9277494800667277,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "brand:automotive",
+          "brand:automotive:electric",
+          "brand:automotive:car_and_suv"
+        ]
+      },
+      {
+        "id": "A3638115-B086-4475-996A-E19EB5CF3C15",
+        "name": "Marshmello",
+        "type": "urn:entity:artist",
+        "popularity": 0.9935480277084193,
+        "affinity": 0.9642674427859698,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "qloo:trap",
+          "qloo:future_bass",
+          "music:dance",
+          "music:edm",
+          "qloo:electronic_dance_music",
+          "music:trap",
+          "music:pop",
+          "music:electronic"
+        ]
+      },
+      {
+        "id": "ADB51D79-491A-49E7-9A99-E1F739382E9F",
+        "name": "Post Malone",
+        "type": "urn:entity:artist",
+        "popularity": 0.9976243372720183,
+        "affinity": 0.9494877339912726,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "music:hip_hop",
+          "qloo:hip_hop",
+          "music:trap",
+          "music:pop",
+          "music:rap",
+          "qloo:rap",
+          "qloo:pop_rap",
+          "music:cloud_rap",
+          "qloo:trap",
+          "qloo:cloud_rap",
+          "qloo:pop"
+        ]
+      },
+      {
+        "id": "3F7BFE02-2151-443E-B972-33E674A3EBE9",
+        "name": "DJ Snake",
+        "type": "urn:entity:artist",
+        "popularity": 0.9951307106016817,
+        "affinity": 0.9478968380711759,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "music:edm",
+          "music:electronic",
+          "music:dance",
+          "music:trap",
+          "qloo:electronic",
+          "qloo:dance",
+          "qloo:house",
+          "music:french",
+          "qloo:edm",
+          "qloo:trap"
+        ]
+      },
+      {
+        "id": "739D4F94-C8E8-420B-9727-1F553F24B8D3",
+        "name": "Ava Max",
+        "type": "urn:entity:artist",
+        "popularity": 0.9930630648342934,
+        "affinity": 0.9432933016028477,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "music:pop",
+          "music:dance_pop",
+          "qloo:electropop",
+          "music:american",
+          "qloo:pop",
+          "qloo:dance_pop",
+          "qloo:dance_pop",
+          "qloo:synthpop"
+        ]
+      },
+      {
+        "id": "C37D9A2D-64CD-48A4-94D1-9E3304795C51",
+        "name": "Benny Blanco",
+        "type": "urn:entity:artist",
+        "popularity": 0.9791826409505272,
+        "affinity": 0.9425190663860458,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "qloo:r_b",
+          "music:electronic",
+          "music:hip_hop",
+          "music:pop",
+          "qloo:hip_hop",
+          "qloo:pop",
+          "qloo:electronic"
+        ]
+      },
+      {
+        "id": "813B0455-6AD2-4802-B4B5-314799249A9F",
+        "name": "Avengers: Endgame",
+        "type": "urn:entity:movie",
+        "popularity": 0.9994060346875743,
+        "affinity": 0.9465212370581907,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "media:sci_fi",
+          "qloo:adventure",
+          "media:adventure",
+          "qloo:science_fiction",
+          "qloo:action",
+          "media:action"
+        ]
+      },
+      {
+        "id": "7A5DD324-C74E-46D7-ABF8-4B09EB04928A",
+        "name": "Avengers: Infinity War",
+        "type": "urn:entity:movie",
+        "popularity": 0.9993412384716732,
+        "affinity": 0.9443376703553917,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "media:sci_fi",
+          "qloo:adventure",
+          "media:action",
+          "qloo:action",
+          "media:adventure",
+          "qloo:science_fiction"
+        ]
+      },
+      {
+        "id": "A79D1D11-0686-401E-8FFF-633E6A604929",
+        "name": "Captain Marvel",
+        "type": "urn:entity:movie",
+        "popularity": 0.9968249854208514,
+        "affinity": 0.9413675520467116,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "qloo:science_fiction",
+          "media:adventure",
+          "media:sci_fi",
+          "media:action",
+          "qloo:adventure",
+          "qloo:action"
+        ]
+      },
+      {
+        "id": "E743BA08-446C-4BB1-8AE2-1B813A18F162",
+        "name": "Black Panther",
+        "type": "urn:entity:movie",
+        "popularity": 0.9984556901876931,
+        "affinity": 0.9372215397935187,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "qloo:superhero",
+          "media:adventure",
+          "media:action",
+          "qloo:adventure",
+          "media:sci_fi",
+          "qloo:science_fiction",
+          "qloo:action"
+        ]
+      },
+      {
+        "id": "3C6380C8-8356-4ED6-AC6E-9BC22AF91615",
+        "name": "Venom",
+        "type": "urn:entity:movie",
+        "popularity": 0.9956910516425841,
+        "affinity": 0.9345730608245403,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "qloo:adventure",
+          "qloo:superhero",
+          "qloo:science_fiction",
+          "media:sci_fi",
+          "media:adventure",
+          "media:action",
+          "qloo:action"
+        ]
+      },
+      {
+        "id": "25679116-0941-4018-A5D8-885C1A026DF6",
+        "name": "Halt and Catch Fire",
+        "type": "urn:entity:tv_show",
+        "popularity": 0.9625024931852936,
+        "affinity": 0.9779007679531426,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "qloo:drama",
+          "media:drama"
+        ]
+      },
+      {
+        "id": "1C6281C2-00EF-4BC5-B8AB-06E661798292",
+        "name": "For All Mankind",
+        "type": "urn:entity:tv_show",
+        "popularity": 0.9683531680074463,
+        "affinity": 0.9471120366678619,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "qloo:drama",
+          "media:drama",
+          "media:sci_fi",
+          "qloo:science_fiction"
+        ]
+      },
+      {
+        "id": "5B305BA6-94B6-4988-BDB6-6FF5E92CC4C7",
+        "name": "Humans",
+        "type": "urn:entity:tv_show",
+        "popularity": 0.9610398244797553,
+        "affinity": 0.9401549121131964,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "qloo:science_fiction",
+          "media:drama",
+          "qloo:drama",
+          "media:sci_fi"
+        ]
+      },
+      {
+        "id": "3A299A31-61DF-44B7-9857-80531228579E",
+        "name": "Pachinko",
+        "type": "urn:entity:tv_show",
+        "popularity": 0.8409680207433017,
+        "affinity": 0.9401544546587254,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "media:drama",
+          "qloo:drama"
+        ]
+      },
+      {
+        "id": "BC0033BD-5DEE-4F1B-837B-72B0DD6835D9",
+        "name": "Lessons in Chemistry",
+        "type": "urn:entity:tv_show",
+        "popularity": 0.9575826075393923,
+        "affinity": 0.9359957637050762,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "media:drama",
+          "qloo:drama"
+        ]
+      },
+      {
+        "id": "208C8181-5D7E-447D-8834-89EFE1935961",
+        "name": "Abu Dhabi",
+        "type": "urn:entity:destination",
+        "popularity": 0.9587488667271079,
+        "affinity": 0.9591013248666745,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "destination:urban_destinations",
+          "destination:great_nightlife",
+          "destination:great_architecture",
+          "destination:great_shopping",
+          "destination:beaches"
+        ]
+      },
+      {
+        "id": "68DD62E5-255D-40EE-92C4-A7C1D02994DA",
+        "name": "Muscat",
+        "type": "urn:entity:destination",
+        "popularity": 0.49365367180417047,
+        "affinity": 0.9546162463189909,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "destination:history",
+          "destination:nature",
+          "destination:scenic_picturesque",
+          "destination:beaches"
+        ]
+      },
+      {
+        "id": "1AFA25AC-3017-4D91-B929-05FD4AA879B4",
+        "name": "Ajman",
+        "type": "urn:entity:destination",
+        "popularity": 0.025838621940163193,
+        "affinity": 0.9461347929946449,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "destination:beaches"
+        ]
+      },
+      {
+        "id": "82FF7A2D-BC04-437E-B2CE-333815B747F7",
+        "name": "Dubai",
+        "type": "urn:entity:destination",
+        "popularity": 0.9913871260199456,
+        "affinity": 0.946133668943924,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "destination:foodie_destination",
+          "destination:entertainment_performing_arts",
+          "destination:outdoor_activities",
+          "destination:kids",
+          "destination:great_shopping",
+          "destination:great_architecture",
+          "destination:great_nightlife",
+          "destination:beaches"
+        ]
+      },
+      {
+        "id": "5D27CA79-5539-4D0E-8697-12AC1BF1CA30",
+        "name": "Manama",
+        "type": "urn:entity:destination",
+        "popularity": 0.5339981867633726,
+        "affinity": 0.9392809650884556,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "destination:urban_destinations"
+        ]
+      },
+      {
+        "id": "DCB6522D-5CB3-43A7-BF07-CDC7894AA30A",
+        "name": "Madame Brasserie",
+        "type": "urn:entity:place",
+        "popularity": 1,
+        "affinity": 0.9624507473045557,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "place:restaurant:french",
+          "place",
+          "place:restaurant"
+        ]
+      },
+      {
+        "id": "8EC88B9D-1E5E-48E2-AA47-775EDE78253A",
+        "name": "Swarovski Kristallwelten",
+        "type": "urn:entity:place",
+        "popularity": 0.9995070764432686,
+        "affinity": 0.9563148242202142,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "place:museum",
+          "place:costume_jewelry_shop",
+          "place:tourist_attraction",
+          "place:jewelry_store",
+          "place",
+          "place:shopping"
+        ]
+      },
+      {
+        "id": "61A081BF-87D7-4A1C-AE3C-CB72B453E3AA",
+        "name": "Mouragio Maria",
+        "type": "urn:entity:place",
+        "popularity": 0.5930691307644104,
+        "affinity": 0.9476141734898891,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "place",
+          "place:restaurant"
+        ]
+      },
+      {
+        "id": "32D853D3-92FE-47B1-BA5B-8321B6EC95BE",
+        "name": "Louis Vuitton",
+        "type": "urn:entity:place",
+        "popularity": 0.8142913285942838,
+        "affinity": 0.9461631347472098,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "place:sunglasses_store",
+          "place:leather_goods_store",
+          "place:shoe_store",
+          "place:shopping",
+          "place:fashion_accessories_store",
+          "place"
+        ]
+      },
+      {
+        "id": "9C77596E-8193-401B-B082-FB343E4BA980",
+        "name": "AGELIA BEACH HOTEL",
+        "type": "urn:entity:place",
+        "popularity": 0.6208801229968712,
+        "affinity": 0.9456300444894256,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Apple Inc",
+        "genres": [
+          "place:hotel",
+          "place"
+        ]
+      }
+    ]
+  },
+  "compatibility": {
+    "fitScore": 75,
+    "confidence": 100,
+    "verdict": "medium",
+    "dimensions": [
+      {
+        "dimension": "tech",
+        "label": "Tech & Innovation",
+        "score": 79,
+        "weight": 0.2,
+        "itemCount": 8,
+        "intersection": [
+          {
+            "id": "29B49E3F-A0EC-42C6-A453-38B1C20D8374",
+            "name": "Tesla",
+            "type": "urn:entity:brand",
+            "popularity": 0.999143937210761,
+            "affinity": null,
+            "source": "qloo",
+            "via": "search",
+            "query": "Tesla",
+            "genres": [
+              "brand:automotive",
+              "brand:automotive:electric",
+              "brand:automotive:car_and_suv"
+            ],
+            "side": "direct",
+            "weight": 1,
+            "brandAffinity": 0.9277494800667277,
+            "dimension": "tech"
+          },
+          {
+            "id": "AA620FF2-87D7-43EC-BFAE-36631D076D8D",
+            "name": "Sony",
+            "type": "urn:entity:brand",
+            "popularity": 0.9993134545947687,
+            "affinity": 0.9521509749252708,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "brand:electronics",
+              "brand:electronics:camera_and_video",
+              "brand:electronics:home_theater",
+              "brand:entertainment:production_company",
+              "brand:entertainment:video_game_developer",
+              "brand:electronics:gaming",
+              "brand:entertainment"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9218704813422384,
+            "dimension": "tech"
+          },
+          {
+            "id": "7E8F2F65-1ADB-430B-9CE1-FF6C3F01DF6E",
+            "name": "OnePlus",
+            "type": "urn:entity:brand",
+            "popularity": 0.9972114390330729,
+            "affinity": 0.9482798507463199,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "brand:electronics:home_theater",
+              "brand:electronics",
+              "brand:electronics:headphones",
+              "brand:electronics:phones_and_tablets"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9169133360562783,
+            "dimension": "tech"
+          },
+          {
+            "id": "EF6C6B18-ABB3-4A9C-AF86-CF24976407A8",
+            "name": "Google",
+            "type": "urn:entity:brand",
+            "popularity": 0.999737248054788,
+            "affinity": null,
+            "source": "qloo",
+            "via": "search",
+            "query": "Google",
+            "genres": [
+              "brand:electronics:phones_and_tablets",
+              "brand:electronics:computer_accessories",
+              "brand:electronics",
+              "brand:software",
+              "brand:website"
+            ],
+            "side": "direct",
+            "weight": 1,
+            "brandAffinity": 0.9150973596781089,
+            "dimension": "tech"
+          },
+          {
+            "id": "81C0AAC3-4484-4089-81C0-3A69EE301C15",
+            "name": "Asus",
+            "type": "urn:entity:brand",
+            "popularity": 0.9980251224763099,
+            "affinity": null,
+            "source": "qloo",
+            "via": "search",
+            "query": "Asus",
+            "genres": [
+              "brand:software",
+              "brand:electronics",
+              "brand:electronics:computer_components"
+            ],
+            "side": "direct",
+            "weight": 1,
+            "brandAffinity": 0.8895028480911477,
+            "dimension": "tech"
+          },
+          {
+            "id": "0E550F19-C48D-431A-BF3E-0B4B6D9E8A17",
+            "name": "Dell Inc",
+            "type": "urn:entity:brand",
+            "popularity": 0.9899137156515401,
+            "affinity": null,
+            "source": "qloo",
+            "via": "search",
+            "query": "Dell",
+            "genres": [
+              "brand:electronics:computers_and_laptops",
+              "brand:electronics:home_theater",
+              "brand:electronics:phones_and_tablets",
+              "brand:electronics"
+            ],
+            "side": "direct",
+            "weight": 1,
+            "brandAffinity": 0.8768536534339989,
+            "dimension": "tech"
+          },
+          {
+            "id": "0FCD8FF7-7A50-486D-8D06-11B4F15D7307",
+            "name": "Advanced Micro Devices",
+            "type": "urn:entity:brand",
+            "popularity": 0.9951263752097778,
+            "affinity": 0.9440953871012223,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "brand:electronics:computer_components",
+              "brand:electronics"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8572942225355809,
+            "dimension": "tech"
+          },
+          {
+            "id": "5F55E5CB-3F3A-4B04-B794-E134A0835CD5",
+            "name": "Nvidia",
+            "type": "urn:entity:brand",
+            "popularity": 0.9937702361377159,
+            "affinity": 0.948788694837,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "brand:electronics:computers_and_laptops",
+              "brand:software",
+              "brand:electronics:gaming",
+              "brand:electronics"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8541599999219474,
+            "dimension": "tech"
+          }
+        ],
+        "divergence": []
+      },
+      {
+        "dimension": "entertainment",
+        "label": "Film, TV & Entertainment",
+        "score": 87,
+        "weight": 0.2,
+        "itemCount": 10,
+        "intersection": [
+          {
+            "id": "25679116-0941-4018-A5D8-885C1A026DF6",
+            "name": "Halt and Catch Fire",
+            "type": "urn:entity:tv_show",
+            "popularity": 0.9625024931852936,
+            "affinity": 0.9527987819412836,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "qloo:drama",
+              "media:drama"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9779007679531426,
+            "dimension": "entertainment"
+          },
+          {
+            "id": "813B0455-6AD2-4802-B4B5-314799249A9F",
+            "name": "Avengers: Endgame",
+            "type": "urn:entity:movie",
+            "popularity": 0.9994060346875743,
+            "affinity": 0.9325077267096838,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "media:sci_fi",
+              "qloo:adventure",
+              "media:adventure",
+              "qloo:science_fiction",
+              "qloo:action",
+              "media:action"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9465212370581907,
+            "dimension": "entertainment"
+          },
+          {
+            "id": "A79D1D11-0686-401E-8FFF-633E6A604929",
+            "name": "Captain Marvel",
+            "type": "urn:entity:movie",
+            "popularity": 0.9968249854208514,
+            "affinity": 0.9324471182870208,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "qloo:science_fiction",
+              "media:adventure",
+              "media:sci_fi",
+              "media:action",
+              "qloo:adventure",
+              "qloo:action"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9413675520467116,
+            "dimension": "entertainment"
+          },
+          {
+            "id": "5B305BA6-94B6-4988-BDB6-6FF5E92CC4C7",
+            "name": "Humans",
+            "type": "urn:entity:tv_show",
+            "popularity": 0.9610398244797553,
+            "affinity": 0.9465823940610101,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "qloo:science_fiction",
+              "media:drama",
+              "qloo:drama",
+              "media:sci_fi"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9401549121131964,
+            "dimension": "entertainment"
+          },
+          {
+            "id": "3C6380C8-8356-4ED6-AC6E-9BC22AF91615",
+            "name": "Venom",
+            "type": "urn:entity:movie",
+            "popularity": 0.9956910516425841,
+            "affinity": 0.936835740744864,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "qloo:adventure",
+              "qloo:superhero",
+              "qloo:science_fiction",
+              "media:sci_fi",
+              "media:adventure",
+              "media:action",
+              "qloo:action"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9345730608245403,
+            "dimension": "entertainment"
+          },
+          {
+            "id": "B3BDA0F6-8924-4BD5-84DE-8150A7E0EFDE",
+            "name": "Deadpool 2",
+            "type": "urn:entity:movie",
+            "popularity": 0.9971273677617227,
+            "affinity": 0.9322192591667855,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "media:sci_fi",
+              "media:comedy",
+              "qloo:action",
+              "qloo:science_fiction",
+              "qloo:comedy",
+              "media:action",
+              "media:adventure",
+              "qloo:adventure",
+              "qloo:superhero"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9341912493136136,
+            "dimension": "entertainment"
+          },
+          {
+            "id": "D8F970E7-664D-4A16-A35D-02F847567C8B",
+            "name": "Star Wars: Episode VIII - The Last Jedi",
+            "type": "urn:entity:movie",
+            "popularity": 0.997494546318495,
+            "affinity": 0.9311379262576187,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "qloo:action",
+              "media:adventure",
+              "media:fantasy",
+              "media:sci_fi",
+              "qloo:fantasy",
+              "qloo:science_fiction",
+              "media:action",
+              "qloo:adventure"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9273309814668779,
+            "dimension": "entertainment"
+          },
+          {
+            "id": "6E19CAD8-27B8-4506-9B0A-8C4DB9B84492",
+            "name": "You, Me and the Apocalypse",
+            "type": "urn:entity:tv_show",
+            "popularity": 0.8010770560468053,
+            "affinity": 0.9385179852372395,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "qloo:comedy",
+              "media:sci_fi",
+              "qloo:drama",
+              "media:drama",
+              "media:comedy",
+              "qloo:thriller",
+              "qloo:science_fiction",
+              "media:thriller"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9230485203384208,
+            "dimension": "entertainment"
+          },
+          {
+            "id": "1E3834E5-0718-4195-8FD1-EA666DBA57DD",
+            "name": "Dark Matter",
+            "type": "urn:entity:tv_show",
+            "popularity": 0.9607073997739513,
+            "affinity": 0.934388257005187,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "qloo:science_fiction",
+              "media:adventure",
+              "qloo:drama",
+              "media:sci_fi",
+              "media:mystery",
+              "qloo:mystery",
+              "media:drama",
+              "qloo:adventure",
+              "media:thriller",
+              "qloo:thriller"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9217017342030325,
+            "dimension": "entertainment"
+          },
+          {
+            "id": "2954894E-B40D-457B-841D-8052467613AF",
+            "name": "Silicon Valley",
+            "type": "urn:entity:tv_show",
+            "popularity": 0.9921547769430225,
+            "affinity": 0.9494228720261552,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "qloo:satire",
+              "media:comedy",
+              "qloo:comedy"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9055097065953162,
+            "dimension": "entertainment"
+          }
+        ],
+        "divergence": []
+      },
+      {
+        "dimension": "music",
+        "label": "Music",
+        "score": 72,
+        "weight": 0.2,
+        "itemCount": 5,
+        "intersection": [
+          {
+            "id": "9D1BCC1E-CCD9-45CA-82BE-7DD933215A25",
+            "name": "Vicetone",
+            "type": "urn:entity:artist",
+            "popularity": 0.9794709972540616,
+            "affinity": 0.908085284601096,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "music:electronic",
+              "qloo:electro_house",
+              "qloo:dance",
+              "qloo:progressive_house",
+              "music:progressive_house",
+              "music:edm",
+              "music:house",
+              "music:dance"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8994348353816256,
+            "dimension": "music"
+          },
+          {
+            "id": "E5EEDEE9-BD15-4EB7-A6C8-2EB5DC6A67B8",
+            "name": "TheFatRat",
+            "type": "urn:entity:artist",
+            "popularity": 0.9757747937269396,
+            "affinity": 0.9089212232148856,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "qloo:electronic",
+              "music:germany",
+              "qloo:dance",
+              "music:german",
+              "qloo:electro_house",
+              "music:glitch_hop",
+              "music:electronic",
+              "qloo:edm"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8903509700118241,
+            "dimension": "music"
+          },
+          {
+            "id": "AF33A1CE-9414-480A-84E7-1516380752B7",
+            "name": "Aero Chord",
+            "type": "urn:entity:artist",
+            "popularity": 0.9666719095085491,
+            "affinity": 0.9138966887383433,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "music:electronic",
+              "qloo:electronic_dance_music",
+              "qloo:trap",
+              "qloo:edm",
+              "music:trap",
+              "music:hybrid_trap",
+              "music:moombahton"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8616071510494002,
+            "dimension": "music"
+          }
+        ],
+        "divergence": []
+      },
+      {
+        "dimension": "lifestyle",
+        "label": "Lifestyle & Fashion",
+        "score": 63,
+        "weight": 0.2,
+        "itemCount": 3,
+        "intersection": [
+          {
+            "id": "8C1C3E04-9272-4F77-960E-40A6E7E74D25",
+            "name": "Unbox Therapy",
+            "type": "urn:entity:brand",
+            "popularity": 0.9955671204081978,
+            "affinity": 0.9707576919368097,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "brand:website"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9136787945638468,
+            "dimension": "lifestyle"
+          },
+          {
+            "id": "3180A68A-2853-4675-886E-CB05CDF3F63A",
+            "name": "Dbrand",
+            "type": "urn:entity:brand",
+            "popularity": 0.9878710311742469,
+            "affinity": null,
+            "source": "qloo",
+            "via": "search",
+            "query": "dbrand",
+            "genres": [],
+            "side": "direct",
+            "weight": 1,
+            "brandAffinity": 0.8519237319996689,
+            "dimension": "lifestyle"
+          }
+        ],
+        "divergence": []
+      },
+      {
+        "dimension": "food_travel",
+        "label": "Food & Travel",
+        "score": 74,
+        "weight": 0.2,
+        "itemCount": 10,
+        "intersection": [
+          {
+            "id": "E132D628-DD94-4C6D-A2F6-BC6CD2EACCF2",
+            "name": "La Bourdonnais",
+            "type": "urn:entity:place",
+            "popularity": 0.9182034775069732,
+            "affinity": 0.9316855362084726,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "place:hotel",
+              "place"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9126730043659993,
+            "dimension": "food_travel"
+          },
+          {
+            "id": "04557983-D6A4-45E9-AC68-F450AC3367C2",
+            "name": "Hotel Ares Eiffel",
+            "type": "urn:entity:place",
+            "popularity": 0.8650864139198343,
+            "affinity": 0.9345097465572495,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "place",
+              "place:hotel"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9092455216151127,
+            "dimension": "food_travel"
+          },
+          {
+            "id": "24D1D678-2618-4489-A728-2E46CDA7246C",
+            "name": "Hotel De La Source",
+            "type": "urn:entity:place",
+            "popularity": 0.8516914855720494,
+            "affinity": 0.9348237504279517,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "place",
+              "place:hotel",
+              "place:restaurant"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8935610996258642,
+            "dimension": "food_travel"
+          },
+          {
+            "id": "DA35206E-E007-4205-9064-BD0CE55FFD98",
+            "name": "Kochi",
+            "type": "urn:entity:destination",
+            "popularity": 0.7901178603807797,
+            "affinity": 0.9291813212556759,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "destination:outdoor_activities"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8694640227746736,
+            "dimension": "food_travel"
+          },
+          {
+            "id": "98DAED97-86FB-4EBF-81AA-689B0654B298",
+            "name": "Hyderabad",
+            "type": "urn:entity:destination",
+            "popularity": 0.727561196736174,
+            "affinity": 0.9468439980456936,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "destination:art_culture"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8680198325385987,
+            "dimension": "food_travel"
+          },
+          {
+            "id": "5FFCB253-AB20-4DED-9084-13113CDFF303",
+            "name": "Mysore",
+            "type": "urn:entity:destination",
+            "popularity": 0.6600181323662738,
+            "affinity": 0.9448442087847697,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "genres": [
+              "destination:art_culture",
+              "destination:history"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8619191619730308,
+            "dimension": "food_travel"
+          }
+        ],
+        "divergence": []
+      }
+    ]
+  },
+  "report": {
+    "summary": "Apple Inc × Marques Brownlee: Fit Score 75 (Moderate fit), confidence 100. Strongest dimension: Film, TV & Entertainment (87); weakest: Lifestyle & Fashion (63). The creator's videos already mention Apple Inc directly (not scored, to avoid rating the brand against itself).",
+    "cultureClash": "No evidence of conflicting taste: every scored entity has affinity of at least 0.7.",
+    "recommendations": [
+      "“Tesla”, “Venom”, “Avengers: Endgame”, “Captain Marvel”, “Halt and Catch Fire”, “Humans” appear both in the creator's taste graph and among Apple Inc's Qloo cultural proxies: the most direct angle for a collaboration.",
+      "Build content around “Deadpool 2” (Film, TV & Entertainment, affinity 0.93); Apple Inc's audience relates to it strongly.",
+      "Build content around “Star Wars: Episode VIII - The Last Jedi” (Film, TV & Entertainment, affinity 0.93); Apple Inc's audience relates to it strongly."
+    ],
+    "risks": [
+      "No evidence-backed risks found."
+    ]
+  },
+  "warnings": []
+}

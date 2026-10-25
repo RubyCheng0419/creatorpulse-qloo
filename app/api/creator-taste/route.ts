@@ -1,0 +1,19 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getCreatorTaste } from '@/lib/creator';
+import { ApiError } from '@/lib/errors';
+
+export async function POST(request: NextRequest) {
+  let body: any;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request: expected JSON.' }, { status: 400 });
+  }
+
+  try {
+    return NextResponse.json(await getCreatorTaste(body?.videoUrls));
+  } catch (e: any) {
+    if (e instanceof ApiError) return NextResponse.json({ error: e.message, ...e.extra }, { status: e.status });
+    return NextResponse.json({ error: e.message || 'Reading the creator’s taste failed.' }, { status: 500 });
+  }
+}

@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+/* Single light theme: the result page doubles as the printed PDF report. */
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans), "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* PDF export = browser print of the result page (PRODUCT_SPEC §7). */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+  /* Tailwind sizes are rem-based, so shrinking the root scales the whole report
+     to fit the ≤ 2 pages PRODUCT_SPEC §7 asks for. */
+  html {
+    font-size: 10.5px;
+  }
+  body {
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
