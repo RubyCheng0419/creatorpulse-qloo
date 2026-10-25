@@ -1,6 +1,6 @@
 import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL, geminiJson, hasGemini } from '@/lib/gemini';
-import { QlooEntity, resolveEntity } from '@/lib/qloo';
+import { QlooEntity, resolveEntity, searchEntities } from '@/lib/qloo';
 import { bypassCache } from '@/lib/request-context';
 import type { Trace } from '@/lib/trace';
 import type { OnStage } from '@/lib/stages';
@@ -101,6 +101,98 @@ async function extractMentions(videos: any[]): Promise<{ name: string; kind: str
     .map((e) => ({ name: String(e.name || '').trim(), kind: KIND_TYPES[e.kind] ? e.kind : 'brand' }))
     .filter((e) => e.name.length > 1 && !seen.has(e.name.toLocaleLowerCase()) && seen.add(e.name.toLocaleLowerCase()))
     .slice(0, 20);
+}
+
+// Retry for names Qloo had no exact match for: Gemini sees each name with Qloo's top
+// results and may pick one that is the same thing under another spelling or alias
+// ("Dell" → "Dell Inc"). It only chooses a new search term; Qloo must then return
+// that very entity by exact name or alias, or nothing is added. Gemini never scores.
+const RETRY_PROMPT = `For each name below, decide whether it refers to exactly the same real-world thing as one of its candidate entities: an abbreviation, alias, alternate spelling or translation of that candidate's name.
+Rules:
+- A product, model or product line is NOT the same as its maker or brand (e.g. "Tesla Roadster" is not "Tesla", "iPhone Duo" is not "Apple Inc").
+- A merely related, similarly named or partially matching entity is NOT the same (e.g. "Duo" the phone is not "Duolingo").
+- If unsure, answer -1.
+Return choice = the candidate's index, or -1 for none, and a one-sentence reason.`;
+
+const RETRY_SCHEMA = {
+  type: 'object',
+  properties: {
+    decisions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { name: { type: 'string' }, choice: { type: 'integer' }, reason: { type: 'string' } },
+        required: ['name', 'choice', 'reason'],
+      },
+    },
+  },
+  required: ['decisions'],
+};
+
+async function retryUnmatched(
+  queries: { keyword: string; types: string[] }[],
+  resolved: { keyword: string; entity: QlooEntity | null; error?: string }[],
+  trace?: Trace
+): Promise<void> {
+  // Candidates come from the same cached /search the first attempt made: no extra Qloo calls.
+  const pending: { row: (typeof resolved)[number]; types: string[]; candidates: any[] }[] = [];
+  for (const row of resolved) {
+    if (row.entity || row.error) continue;
+    const types = queries.find((q) => q.keyword === row.keyword)!.types;
+    const candidates = (await searchEntities(row.keyword, types)).filter((x) => x.entity_id && x.name).slice(0, 5);
+    if (candidates.length) pending.push({ row, types, candidates });
+  }
+  if (!pending.length) return;
+
+  const g0 = Date.now();
+  const tool = `Gemini retry decision (${GEMINI_MODEL})`;
+  const input = `${pending.length} name${pending.length === 1 ? '' : 's'} with no exact Qloo match, each with Qloo’s top results: is any result the same thing under another name?`;
+  let decisions: { name: string; choice: number; reason: string }[];
+  try {
+    const payload = pending.map((p) => ({
+      name: p.row.keyword,
+      candidates: p.candidates.map((c, i) => ({
+        index: i,
+        name: c.name,
+        type: String(c.types?.[0] || '').replace('urn:entity:', ''),
+        note: c.disambiguation || undefined,
+      })),
+    }));
+    decisions = (await geminiJson<{ decisions: typeof decisions }>(RETRY_PROMPT, JSON.stringify(payload), RETRY_SCHEMA)).decisions || [];
+  } catch (e: any) {
+    trace?.add({ stage: 'creator', tool, input, output: `Failed: ${geminiError(e)}`, decision: 'Keep the first-pass result', ms: Date.now() - g0, ok: false });
+    return;
+  }
+
+  const picks = pending.map((p) => {
+    const d = decisions.find((x) => x.name === p.row.keyword);
+    const candidate = d && d.choice >= 0 ? p.candidates[d.choice] : undefined;
+    return { ...p, candidate, reason: d?.reason || 'no answer' };
+  });
+  const chosen = picks.filter((p) => p.candidate);
+  trace?.add({
+    stage: 'creator',
+    tool,
+    input,
+    output: picks.map((p) => `“${p.row.keyword}” → ${p.candidate ? `“${p.candidate.name}”` : 'none'} (${p.reason})`).join(' · '),
+    decision: chosen.length
+      ? `Re-query Qloo for ${chosen.map((p) => `“${p.candidate.name}”`).join(', ')}; it counts only if Qloo returns that same entity by exact name or alias`
+      : 'No re-query: none of the results is the same thing',
+    ms: Date.now() - g0,
+  });
+
+  for (const p of chosen) {
+    const entity = await resolveEntity(p.candidate.name, p.types, undefined, trace && { trace, stage: 'creator' });
+    const ok = entity?.id === p.candidate.entity_id;
+    if (ok) p.row.entity = { ...entity!, query: `${p.row.keyword} → ${p.candidate.name}` };
+    trace?.add({
+      stage: 'creator',
+      tool: 'Rule',
+      input: `Verify the Gemini retry for “${p.row.keyword}”`,
+      output: ok ? `Qloo confirmed ${entity!.name} (${entity!.id})` : `Qloo did not return ${p.candidate.name} as an exact match`,
+      decision: ok ? 'Accepted as evidence' : 'Rejected: not used',
+    });
+  }
 }
 
 export interface CreatorTaste {
@@ -239,6 +331,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
       }
     })
   );
+  await retryUnmatched(queries, resolved, trace);
 
   onStage?.('creator');
 
