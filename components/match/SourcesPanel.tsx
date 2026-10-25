@@ -26,9 +26,7 @@ export function SourcesPanel({ match }: { match: Match }) {
             Name extraction:{' '}
             {c.keywordSource === 'gemini'
               ? 'Gemini (proposes search terms only; Qloo confirms)'
-              : c.keywordSource === 'pinned'
-                ? 'fixed for the demo pair (entities Qloo confirmed in a verified run, so the demo score is reproducible)'
-                : 'rule-based (Gemini unavailable)'}
+              : 'rule-based (Gemini unavailable)'}
           </h4>
           <p className="mt-1 text-slate-700">
             <span className="text-slate-500">Confirmed by Qloo ({c.entities.length}): </span>

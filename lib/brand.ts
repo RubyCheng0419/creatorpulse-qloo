@@ -1,5 +1,6 @@
 import { ApiError } from '@/lib/errors';
 import { PROXY_TYPES, QlooEntity, getInsights, resolveEntity } from '@/lib/qloo';
+import type { Trace } from '@/lib/trace';
 
 // PRODUCT_SPEC v3.1 §4.1 step 3: brand name → Qloo brand entity → its cultural proxies
 // (cross-domain entities Qloo associates with the brand, each with affinity). Server-only.
@@ -42,20 +43,27 @@ export type BrandLookup =
     };
 
 // Throws ApiError for bad input and Qloo failures; "not found" is a normal result.
-export async function lookupBrand(rawName: unknown, rawCategory: unknown): Promise<BrandLookup> {
+export async function lookupBrand(rawName: unknown, rawCategory: unknown, trace?: Trace): Promise<BrandLookup> {
   const name = String(rawName || '').trim();
   const category = String(rawCategory || '').trim();
   if (!name) throw new ApiError('Provide a brand name.', 400);
 
   let entity: QlooEntity | null;
   try {
-    entity = await resolveEntity(name, ['urn:entity:brand'], categoryMatcher(category));
+    entity = await resolveEntity(name, ['urn:entity:brand'], categoryMatcher(category), trace && { trace, stage: 'brand' });
   } catch (e: any) {
     throw new ApiError(`Qloo lookup failed: ${e.message}`, 502);
   }
 
   // Never fall back to a similar-looking brand (PRODUCT_SPEC §3.2).
   if (!entity) {
+    trace?.add({
+      stage: 'brand',
+      tool: 'Rule',
+      input: `Brand “${name}”`,
+      output: 'No Qloo brand with this exact name or alias',
+      decision: 'Stop: no similar-looking brand is substituted',
+    });
     return {
       found: false,
       brand: { name, category: category || null },
@@ -68,7 +76,7 @@ export async function lookupBrand(rawName: unknown, rawCategory: unknown): Promi
   const batches = await Promise.all(
     PROXY_TYPES.map(async (type) => {
       try {
-        return await getInsights([entity], type, PROXIES_PER_TYPE);
+        return await getInsights([entity], type, PROXIES_PER_TYPE, trace && { trace, stage: 'brand' });
       } catch (e: any) {
         warnings.push(`Cultural proxy lookup failed for ${type.replace('urn:entity:', '')}: ${e.message}`);
         return [] as QlooEntity[];

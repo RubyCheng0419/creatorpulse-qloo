@@ -11,6 +11,8 @@
 // - Matching is fuzzy: "iPhone" restricted to brands returns "Strava", so every
 //   result must pass namesMatch() before it can be used as evidence.
 
+import type { Trace, TraceStage } from '@/lib/trace';
+
 const QLOO_BASE = process.env.QLOO_BASE_URL || 'https://hackathon.api.qloo.com';
 const CACHE_MS = 60 * 60 * 1000;
 const MIN_REQUEST_GAP_MS = 125; // 8 req/s, under Qloo's 10 req/s limit
@@ -112,20 +114,34 @@ export function namesMatch(query: string, result: any): boolean {
   return names.some((n) => typeof n === 'string' && normalize(n) === q);
 }
 
-async function cachedGet(path: string, params: Record<string, string>): Promise<any> {
+
+// Where a traced call belongs in the Agent Trace.
+export interface TraceCtx {
+  trace: Trace;
+  stage: TraceStage;
+}
+
+const typeLabel = (types: string[]) => types.map((t) => t.replace('urn:entity:', '')).join('/');
+const fmt = (a: number) => a.toFixed(2);
+
+async function cachedGet(path: string, params: Record<string, string>): Promise<{ data: any; cached: boolean }> {
   const u = new URL(path, QLOO_BASE);
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
   const url = u.toString();
   const hit = responseCache.get(url);
-  if (hit && Date.now() - hit.at < CACHE_MS) return hit.data;
+  if (hit && Date.now() - hit.at < CACHE_MS) return { data: hit.data, cached: true };
   const data = await qlooFetch(url);
   responseCache.set(url, { at: Date.now(), data });
-  return data;
+  return { data, cached: false };
+}
+
+async function search(query: string, types: string[], take: number): Promise<{ results: any[]; cached: boolean }> {
+  const { data, cached } = await cachedGet('/search', { query, take: String(take), types: types.join(',') });
+  return { results: Array.isArray(data.results) ? data.results : [], cached };
 }
 
 export async function searchEntities(query: string, types: string[] = TASTE_TYPES, take = 5): Promise<any[]> {
-  const d = await cachedGet('/search', { query, take: String(take), types: types.join(',') });
-  return Array.isArray(d.results) ? d.results : [];
+  return (await search(query, types, take)).results;
 }
 
 // Resolve a keyword to one Qloo entity, or null when nothing matches by name.
@@ -134,12 +150,42 @@ export async function searchEntities(query: string, types: string[] = TASTE_TYPE
 export async function resolveEntity(
   query: string,
   types: string[] = TASTE_TYPES,
-  prefer: (result: any) => boolean = () => false
+  prefer: (result: any) => boolean = () => false,
+  ctx?: TraceCtx
 ): Promise<QlooEntity | null> {
-  const results = await searchEntities(query, types);
-  const best = results
+  const t0 = Date.now();
+  const { results, cached } = await search(query, types, 5);
+  const matches = results
     .filter((x) => x.entity_id && x.name && namesMatch(query, x))
-    .sort((a, b) => Number(prefer(b)) - Number(prefer(a)) || (b.popularity ?? 0) - (a.popularity ?? 0))[0];
+    .sort((a, b) => Number(prefer(b)) - Number(prefer(a)) || (b.popularity ?? 0) - (a.popularity ?? 0));
+  const best = matches[0];
+
+  if (ctx) {
+    const input = `“${query}” among ${typeLabel(types)}`;
+    if (best) {
+      const how = normalize(best.name) === normalize(query) ? 'name' : 'Qloo alias';
+      ctx.trace.add({
+        stage: ctx.stage,
+        tool: 'Qloo /search',
+        input,
+        output: `${best.name} (${best.entity_id}), exact ${how} match`,
+        decision: matches.length > 1 ? `Accepted: most popular of ${matches.length} exact matches` : 'Accepted as evidence',
+        cached,
+        ms: Date.now() - t0,
+      });
+    } else {
+      ctx.trace.add({
+        stage: ctx.stage,
+        tool: 'Qloo /search',
+        input,
+        output: results.length ? `${results.length} results, none named “${query}”: ${results.slice(0, 3).map((x) => x.name).join(', ')}` : 'No results',
+        decision: 'Rejected: no exact name or alias match, not used',
+        cached,
+        ms: Date.now() - t0,
+      });
+    }
+  }
+
   if (!best) return null;
   return {
     id: best.entity_id,
@@ -155,14 +201,15 @@ export async function resolveEntity(
 }
 
 // Cross-domain entities Qloo associates with the signal entities, with affinity.
-export async function getInsights(signal: QlooEntity[], type: string, take = 5): Promise<QlooEntity[]> {
-  const d = await cachedGet('/v2/insights', {
+export async function getInsights(signal: QlooEntity[], type: string, take = 5, ctx?: TraceCtx): Promise<QlooEntity[]> {
+  const t0 = Date.now();
+  const { data, cached } = await cachedGet('/v2/insights', {
     'filter.type': type,
     'signal.interests.entities': signal.map((e) => e.id).join(','),
     take: String(take),
   });
   const via = signal.map((e) => e.name).join(', ');
-  return (d?.results?.entities || [])
+  const entities: QlooEntity[] = (data?.results?.entities || [])
     .filter((x: any) => x.entity_id && x.name)
     .map((x: any) => ({
       id: x.entity_id,
@@ -175,28 +222,54 @@ export async function getInsights(signal: QlooEntity[], type: string, take = 5):
       query: via,
       genres: genresOf(x),
     }));
+  ctx?.trace.add({
+    stage: ctx.stage,
+    tool: 'Qloo /v2/insights',
+    input: `Signal: ${signal.length > 3 ? `${signal.length} entities (${signal.slice(0, 3).map((e) => e.name).join(', ')}…)` : via} · type ${typeLabel([type])}`,
+    output: entities.length
+      ? `${entities.length} entities: ${entities.slice(0, 3).map((e) => `${e.name}${e.affinity !== null ? ` ${fmt(e.affinity)}` : ''}`).join(', ')}${entities.length > 3 ? '…' : ''}`
+      : 'No entities',
+    cached,
+    ms: Date.now() - t0,
+  });
+  return entities;
 }
 
 // Affinity of specific target entities given the signal entities, e.g. "how much does
 // Apple's audience like Tesla?". Qloo requires filter.type, so targets go per type.
 // Targets Qloo does not score are absent from the returned map.
-export async function scoreEntities(signal: QlooEntity[], targets: QlooEntity[]): Promise<Map<string, number>> {
+export async function scoreEntities(signal: QlooEntity[], targets: QlooEntity[], ctx?: TraceCtx): Promise<Map<string, number>> {
   const byType = new Map<string, QlooEntity[]>();
   for (const t of targets) byType.set(t.type, [...(byType.get(t.type) || []), t]);
 
   const scores = new Map<string, number>();
   await Promise.all(
     [...byType].map(async ([type, group]) => {
+      const t0 = Date.now();
       const ids = [...new Set(group.map((t) => t.id))];
-      const d = await cachedGet('/v2/insights', {
+      const { data, cached } = await cachedGet('/v2/insights', {
         'filter.type': type,
         'signal.interests.entities': signal.map((e) => e.id).join(','),
         'filter.results.entities': ids.join(','),
         take: String(ids.length),
       });
-      for (const x of d?.results?.entities || []) {
-        if (x.entity_id && typeof x.query?.affinity === 'number') scores.set(x.entity_id, x.query.affinity);
+      const scored: { name: string; a: number }[] = [];
+      for (const x of data?.results?.entities || []) {
+        if (x.entity_id && typeof x.query?.affinity === 'number') {
+          scores.set(x.entity_id, x.query.affinity);
+          scored.push({ name: x.name, a: x.query.affinity });
+        }
       }
+      scored.sort((a, b) => b.a - a.a);
+      ctx?.trace.add({
+        stage: ctx.stage,
+        tool: 'Qloo /v2/insights',
+        input: `Signal: ${signal.map((e) => e.name).join(', ')} · affinity of ${ids.length} creator ${typeLabel([type])} entities (filter.results.entities)`,
+        output: `${scored.length}/${ids.length} scored: ${scored.slice(0, 4).map((s) => `${s.name} ${fmt(s.a)}`).join(', ')}${scored.length > 4 ? '…' : ''}`,
+        decision: scored.length < ids.length ? `${ids.length - scored.length} not scored by Qloo, left out` : undefined,
+        cached,
+        ms: Date.now() - t0,
+      });
     })
   );
   return scores;

@@ -27,13 +27,13 @@ The **Run demo** button uses this input. It is defined in [`lib/demo-pair.ts`](.
 - Descriptions name sponsors (Dell, Asus, dbrand), which gives Qloo plenty of entities to resolve.
 - A counter-example: a cooking channel resolved only 3 entities, and its Food & Travel dimension was driven by UK cities rather than food, because dishes are not Qloo entities. Not a good first impression.
 
-## Snapshot: pinned entities and fallback
+## Live runs and the snapshot fallback
 
-[`data/demo-snapshot.json`](../data/demo-snapshot.json) is a complete, real `/api/match` result for this pair.
+The demo runs the full pipeline every time: YouTube is read, Gemini is called (never cached), and Qloo resolves and scores the entities. Qloo responses may come from the server’s one-hour cache; the Agent Trace marks each call as live or cached.
 
-**Pinned entities.** Gemini’s extraction varied slightly between server instances (the same videos scored 74 on one and 75 on another), which breaks “same input, same score”. So the demo pair starts from the creator entities stored in the snapshot instead of re-running Gemini. YouTube is still read and every Qloo expansion and affinity is still fetched live. Verified on 2026-10-25: Fit 75 with identical dimension scores before and after a server restart (all caches cleared). The Sources panel shows “fixed for the demo pair”.
+Gemini’s proposals vary between calls, but Qloo’s exact-match check absorbs most of it: on 2026-10-25 two consecutive runs where Gemini proposed 13 and 12 names both confirmed the same 7 Qloo entities and scored 75.
 
-**Fallback.** If a live demo run throws (verified by pointing `QLOO_BASE_URL` at an unreachable address: the demo returned the snapshot in 0.3 s, while a non-demo match returned a clear 502 error), `/api/match` serves the snapshot instead, and the page labels it “Cached result from [date]”.
+[`data/demo-snapshot.json`](../data/demo-snapshot.json) is a complete, real `/api/match` result for this pair, used only as a **fallback**. If a live demo run throws, or Gemini is unavailable and the weaker rule-based keywords would change the result, `/api/match` serves the snapshot instead, and the page labels it “Cached result from [date]”. Verified by pointing `QLOO_BASE_URL` at an unreachable address: the demo returned the snapshot in 0.3 s, while a non-demo match returned a clear 502 error.
 
 Regenerate it before a demo, with the dev server running:
 
@@ -41,4 +41,4 @@ Regenerate it before a demo, with the dev server running:
 node scripts/save-demo-snapshot.mjs
 ```
 
-The script asks for fresh Gemini extraction (`pinDemoEntities: false`) and refuses to save anything except a live, Gemini-backed, fully scored result. Regenerating changes the pinned entities, so re-check the demo score afterwards.
+The script refuses to save anything except a live, Gemini-backed, fully scored result.

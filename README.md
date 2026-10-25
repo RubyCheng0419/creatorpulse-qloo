@@ -16,6 +16,7 @@ For a brand name and 1–5 YouTube videos from a creator:
 - **Evidence for every dimension**: the Qloo entities behind the score, each with its Qloo entity ID, its affinity, and whether it was named in the videos or reached through cross-domain expansion
 - **Culture clash, recommendations and risks**, each sentence built from those entities
 - **A two-page PDF report** with the same content as the page
+- **An Agent Trace**: every tool call (YouTube, Gemini, each Qloo request) and every decision behind the result, in order, with timings and whether each Qloo response was live or served from cache
 
 If Qloo cannot back a score with evidence (unknown brand, too few entities), CreatorPulse says *insufficient data* instead of inventing a number.
 
@@ -74,6 +75,10 @@ The score is computed in [`lib/scoring.ts`](lib/scoring.ts); the same Qloo data 
 
 Below 3 creator entities, or when Qloo has no exact match for the brand, there is no score.
 
+### Agent Trace
+
+Each result carries a trace of the run, recorded as it happens: the YouTube calls, the Gemini call and what it proposed, every Qloo `/search` with why its result was accepted or rejected (e.g. “iPhone Duo” → Strava, Duo Security, Duolingo: no exact match, rejected), every `/v2/insights` request, and the rule-based decisions: the evidence threshold, excluding the brand from its own expansion, dimension assignment, the score and the verdict. Qloo and YouTube calls are marked *live* or *cached*.
+
 ### Where the LLM fits (and where it doesn’t)
 
 Gemini (`gemini-3.5-flash`) reads video titles, descriptions and tags and proposes names that are **explicitly mentioned**, e.g. a sponsor in a description. These are only search terms: a name becomes evidence only if Qloo returns an entity whose name or Qloo alias matches it exactly. Gemini never sees or produces scores, entities or report text. If Gemini is unavailable, a rule-based keyword extractor takes over and the result says so.
@@ -116,10 +121,9 @@ Open http://localhost:3000 and click **Run demo**.
 
 ## Demo pair and fallback
 
-The demo pair is Apple × Marques Brownlee (MKBHD), five recent videos: see [docs/DEMO_PAIR.md](docs/DEMO_PAIR.md). [`data/demo-snapshot.json`](data/demo-snapshot.json) holds a real result for that pair, and serves two purposes:
+The demo pair is Apple × Marques Brownlee (MKBHD), five recent videos: see [docs/DEMO_PAIR.md](docs/DEMO_PAIR.md). The demo runs the full pipeline every time: YouTube is read, Gemini is called, and Qloo resolves and scores the entities. Qloo responses may come from the server’s one-hour cache, and the Agent Trace marks each one as live or cached.
 
-- **Reproducible demo score.** The demo starts from the creator entities Qloo confirmed in that verified run instead of re-running Gemini, whose extraction can differ slightly between server instances. The videos are still read and every Qloo expansion and affinity is still fetched live, so the demo is a live analysis with a fixed starting point. The Sources panel says so.
-- **Fallback.** If a live demo run fails (Qloo, YouTube or Gemini down), the app shows the snapshot, clearly labelled as a cached result with its date.
+[`data/demo-snapshot.json`](data/demo-snapshot.json) holds a real result for the pair and is used only as a **fallback**: if a live demo run fails (Qloo, YouTube or Gemini down), the app shows the snapshot, clearly labelled as a cached result with its date.
 
 Regenerate it with `node scripts/save-demo-snapshot.mjs` while the dev server runs.
 
@@ -128,7 +132,7 @@ Regenerate it with `node scripts/save-demo-snapshot.mjs` while the dev server ru
 - **Creator taste comes from what the videos name.** Topics that are not Qloo entities (an air fryer, a cheesecake) cannot be matched, so a cooking channel may score low on Food & Travel. CreatorPulse uses no audience personal data.
 - **No location signal yet**, so place and destination proxies can skew toward particular regions.
 - **Brand names must be in English**; Qloo’s matching of non-English brand names is unreliable.
-- **Gemini output can vary between server instances**, so a non-demo match may differ by a point or two on a different instance; within one instance, results are cached and repeatable. The demo pair is pinned and always gives the same score.
+- **Gemini output varies between calls** (Gemini is never cached). Qloo’s exact-match check absorbs most of it: two demo runs where Gemini proposed 13 and 12 names both confirmed the same 7 Qloo entities and scored 75. When the confirmed set does differ, the score can move by a point or two.
 - **History is stored in the browser** (localStorage), so `/match/[id]` links only open on the device that ran the match.
 
 ## Tech stack

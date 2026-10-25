@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import type { Match } from '@/lib/match';
 import { Button } from '@/components/ui/button';
+import { AgentTrace } from './AgentTrace';
 import { ReportDetails } from './ReportDetails';
 import { ScoreCard } from './ScoreCard';
 import { SourcesPanel } from './SourcesPanel';
@@ -45,6 +46,8 @@ export function MatchResult({ match, onReset, autoPrint }: { match: Match; onRes
       )}
 
       <SourcesPanel match={match} />
+
+      <AgentTrace steps={match.trace ?? []} />
 
       <p className="text-xs text-slate-500">{DISCLAIMER}</p>
 

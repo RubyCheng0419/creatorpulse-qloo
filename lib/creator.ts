@@ -1,6 +1,7 @@
 import { ApiError } from '@/lib/errors';
-import { geminiJson, hasGemini } from '@/lib/gemini';
+import { GEMINI_MODEL, geminiJson, hasGemini } from '@/lib/gemini';
 import { QlooEntity, TASTE_TYPES, resolveEntity } from '@/lib/qloo';
+import type { Trace } from '@/lib/trace';
 import type { OnStage } from '@/lib/stages';
 import { MAX_VIDEOS, parseVideoId } from '@/lib/youtube-url';
 
@@ -123,13 +124,8 @@ Rules:
 - Skip generic words (review, unboxing, camera, coffee), video formats and the channel itself.
 - At most 20 entities.`;
 
-const mentionCache = new Map<string, { at: number; mentions: { name: string; kind: string }[] }>();
-
+// Called on every match, never cached: the demo and every other match run real extraction.
 async function extractMentions(videos: any[]): Promise<{ name: string; kind: string }[]> {
-  const key = videos.map((v) => v.id).sort().join(',');
-  const hit = mentionCache.get(key);
-  if (hit && Date.now() - hit.at < VIDEO_CACHE_MS) return hit.mentions;
-
   const text = videos
     .map((v, i) => {
       const s = v.snippet || {};
@@ -139,36 +135,24 @@ async function extractMentions(videos: any[]): Promise<{ name: string; kind: str
   const d = await geminiJson<{ entities: { name: string; kind: string }[] }>(MENTION_PROMPT, text, MENTION_SCHEMA);
 
   const seen = new Set<string>();
-  const mentions = (d.entities || [])
+  return (d.entities || [])
     .map((e) => ({ name: String(e.name || '').trim(), kind: KIND_TYPES[e.kind] ? e.kind : 'brand' }))
     .filter((e) => e.name.length > 1 && !seen.has(e.name.toLocaleLowerCase()) && seen.add(e.name.toLocaleLowerCase()))
     .slice(0, 20);
-  // Cached per video set: temperature 0 is not a hard determinism guarantee, and the
-  // same videos must give the same entities (PRODUCT_SPEC §13: same input, same score).
-  mentionCache.set(key, { at: Date.now(), mentions });
-  return mentions;
 }
 
 export interface CreatorTaste {
   videos: { videoId: string; title: string; channelId: string; channelTitle: string; categoryId: string; tags: string[] }[];
   channels: { channelId: string; title: string; handle: string; description: string }[];
   keywords: string[];
-  // 'pinned': entities fixed in advance (the demo pair), so no extraction ran this time.
-  keywordSource: 'gemini' | 'heuristic' | 'pinned';
+  keywordSource: 'gemini' | 'heuristic';
   entities: QlooEntity[];
   unmatched: string[];
   warnings: string[];
 }
 
-export interface PinnedEntities {
-  entities: QlooEntity[]; // Qloo-confirmed in an earlier verified run
-  unmatched: string[];
-}
-
 // Throws ApiError for bad input, YouTube failures and total Qloo failure.
-// With `pinned`, the videos are still read live but name extraction and Qloo
-// resolution are skipped, so the same entities (and score) come back every time.
-export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, pinned?: PinnedEntities): Promise<CreatorTaste> {
+export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace?: Trace): Promise<CreatorTaste> {
   const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
   if (!YOUTUBE_API_KEY) throw new ApiError('YOUTUBE_API_KEY is not set. Check .env.local.', 500);
 
@@ -183,6 +167,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, pinne
   const videoIds = [...new Set(urls.map((u) => parseVideoId(u)!))];
 
   // 1. videos.list (1 quota unit per call; never search.list, which costs 100).
+  const t0 = Date.now();
   const items = new Map<string, any>();
   const missing = videoIds.filter((id) => {
     const hit = videoCache.get(id);
@@ -205,11 +190,30 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, pinne
     if (!items.has(id)) warnings.push(`Video ${i + 1} (${id}) could not be read (private, deleted or region-blocked) and was skipped.`);
   });
   const videos = videoIds.filter((id) => items.has(id)).map((id) => items.get(id));
+  const skipped = videoIds.length - videos.length;
+  trace?.add({
+    stage: 'youtube',
+    tool: 'YouTube videos.list',
+    input: `${videoIds.length} video ID${videoIds.length === 1 ? '' : 's'}`,
+    output: `${videos.length} readable: ${videos.map((v) => `“${v.snippet?.title}”`).join(', ')}`,
+    decision: skipped ? `Skipped ${skipped} unreadable video${skipped === 1 ? '' : 's'} (private, deleted or region-blocked)` : undefined,
+    cached: !missing.length,
+    ms: Date.now() - t0,
+  });
   if (!videos.length) throw new ApiError('None of the videos could be read. Make sure they are public.', 422, { warnings });
 
   // 2. channels.list for channel name, handle and description.
   const channelIds = [...new Set(videos.map((v) => v.snippet?.channelId).filter(Boolean))];
-  const ch = await youtube('channels', { part: 'snippet', id: channelIds.join(',') }, YOUTUBE_API_KEY);
+  const ch = await (trace
+    ? trace.call(
+        { stage: 'youtube', tool: 'YouTube channels.list', input: `${channelIds.length} channel ID${channelIds.length === 1 ? '' : 's'}` },
+        () => youtube('channels', { part: 'snippet', id: channelIds.join(',') }, YOUTUBE_API_KEY),
+        (d) => ({
+          output: (d.items || []).map((c: any) => `${c.snippet?.title} (${c.snippet?.customUrl || c.id})`).join(', '),
+          cached: false, // channels.list is not cached
+        })
+      )
+    : youtube('channels', { part: 'snippet', id: channelIds.join(',') }, YOUTUBE_API_KEY));
   const channels = (ch.items || []).map((c: any) => ({
     channelId: c.id,
     title: c.snippet?.title || '',
@@ -219,43 +223,41 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, pinne
 
   onStage?.('youtube');
 
-  const videoSummaries = videos.map((v) => ({
-    videoId: v.id,
-    title: v.snippet?.title || '',
-    channelId: v.snippet?.channelId || '',
-    channelTitle: v.snippet?.channelTitle || '',
-    categoryId: v.snippet?.categoryId || '',
-    tags: v.snippet?.tags || [],
-  }));
-
-  if (pinned) {
-    onStage?.('creator');
-    return {
-      videos: videoSummaries,
-      channels,
-      keywords: [...pinned.entities.map((e) => e.query), ...pinned.unmatched],
-      keywordSource: 'pinned',
-      entities: pinned.entities,
-      unmatched: pinned.unmatched,
-      warnings,
-    };
-  }
-
   // 3. Keywords → Qloo entities. Only name-matched Qloo results count as evidence.
   // lib/qloo throttles these under Qloo's 10 req/s limit.
   let queries: { keyword: string; types: string[] }[] = [];
   let keywordSource: CreatorTaste['keywordSource'] = 'heuristic';
   if (hasGemini()) {
+    const g0 = Date.now();
     try {
+      const mentions = await extractMentions(videos);
       // The prompt asks Gemini to skip these, but it doesn't always: the channel's own
       // name and YouTube itself say nothing about the audience's taste.
       const skip = new Set(['youtube', ...channels.flatMap((c: any) => [c.title, c.handle.replace(/^@/, '')])].map((x) => x.toLocaleLowerCase()));
-      queries = (await extractMentions(videos))
-        .filter((m) => !skip.has(m.name.toLocaleLowerCase()))
-        .map((m) => ({ keyword: m.name, types: KIND_TYPES[m.kind] }));
+      const dropped = mentions.filter((m) => skip.has(m.name.toLocaleLowerCase())).map((m) => m.name);
+      queries = mentions.filter((m) => !skip.has(m.name.toLocaleLowerCase())).map((m) => ({ keyword: m.name, types: KIND_TYPES[m.kind] }));
       keywordSource = 'gemini';
+      trace?.add({
+        stage: 'creator',
+        tool: `Gemini (${GEMINI_MODEL})`,
+        input: `Titles, tags and descriptions of ${videos.length} video${videos.length === 1 ? '' : 's'}: list names explicitly mentioned`,
+        output: mentions.length ? `Proposed ${mentions.length}: ${mentions.map((m) => `${m.name} (${m.kind})`).join(', ')}` : 'Proposed none',
+        decision: dropped.length
+          ? `Dropped ${dropped.join(', ')} (the channel itself or YouTube); ${queries.length} names go to Qloo as search terms`
+          : `${queries.length} names go to Qloo as search terms, not as evidence`,
+        ms: Date.now() - g0,
+      });
     } catch (e: any) {
       warnings.push(`Gemini extraction failed, fell back to rule-based keywords: ${e.message}`);
+      trace?.add({
+        stage: 'creator',
+        tool: `Gemini (${GEMINI_MODEL})`,
+        input: `Titles, tags and descriptions of ${videos.length} videos`,
+        output: `Failed: ${e.message}`,
+        decision: 'Fall back to rule-based keywords',
+        ms: Date.now() - g0,
+        ok: false,
+      });
     }
   }
   if (keywordSource === 'heuristic') {
@@ -265,14 +267,22 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, pinne
       keyword: k,
       types: /\s/.test(k.trim()) ? TASTE_TYPES : ['urn:entity:brand'],
     }));
+    trace?.add({
+      stage: 'creator',
+      tool: 'Rule',
+      input: 'Rule-based keywords from hashtags, title words and tags',
+      output: `${queries.length} keywords`,
+      decision: 'Single words may only match brands, to avoid common-word matches',
+    });
   }
 
   const keywords = queries.map((q) => q.keyword);
   const resolved: { keyword: string; entity: QlooEntity | null; error?: string }[] = await Promise.all(
     queries.map(async ({ keyword: k, types }) => {
       try {
-        return { keyword: k, entity: await resolveEntity(k, types) };
+        return { keyword: k, entity: await resolveEntity(k, types, undefined, trace && { trace, stage: 'creator' }) };
       } catch (e: any) {
+        trace?.add({ stage: 'creator', tool: 'Qloo /search', input: `“${k}”`, output: `Failed: ${e.message}`, ok: false });
         return { keyword: k, entity: null, error: e.message as string };
       }
     })
@@ -300,7 +310,14 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, pinne
   }
 
   return {
-    videos: videoSummaries,
+    videos: videos.map((v) => ({
+      videoId: v.id,
+      title: v.snippet?.title || '',
+      channelId: v.snippet?.channelId || '',
+      channelTitle: v.snippet?.channelTitle || '',
+      categoryId: v.snippet?.categoryId || '',
+      tags: v.snippet?.tags || [],
+    })),
     channels,
     keywords,
     keywordSource,

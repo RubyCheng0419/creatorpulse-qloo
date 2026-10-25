@@ -1,6 +1,6 @@
 {
   "id": "match_fd95e79c9adc",
-  "createdAt": "2026-10-25T05:33:40.307Z",
+  "createdAt": "2026-10-25T08:26:36.351Z",
   "creator": {
     "channelName": "Marques Brownlee",
     "youtubeHandle": "@mkbhd",
@@ -321,6 +321,426 @@
       "weight": 0.5,
       "brandAffinity": 0.9401549121131964,
       "dimension": "entertainment"
+    }
+  ],
+  "trace": [
+    {
+      "stage": "youtube",
+      "tool": "YouTube videos.list",
+      "input": "5 video IDs",
+      "output": "5 readable: “ASMR iPhone Duo Unboxing”, “iPhone Duo Review: First Generation Fun!”, “The NEW Tesla Roadster: My Honest Reaction”, “Apple Homeview Impressions: Not Convinced!”, “WTF is a Googlebook?”",
+      "cached": false,
+      "ms": 86,
+      "ok": true,
+      "t": 87
+    },
+    {
+      "stage": "youtube",
+      "tool": "YouTube channels.list",
+      "input": "1 channel ID",
+      "output": "Marques Brownlee (@mkbhd)",
+      "ms": 46,
+      "ok": true,
+      "t": 133
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /search",
+      "input": "“Apple” among brand",
+      "output": "Apple Inc (D5B78065-6DBB-4DDB-80DF-6495B9B1006B), exact Qloo alias match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "ms": 888,
+      "ok": true,
+      "t": 897
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · type brand",
+      "output": "5 entities: Mercedes-benz 0.94, Porsche 0.94, Bugatti 0.93…",
+      "cached": false,
+      "ms": 337,
+      "ok": true,
+      "t": 1235
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · type tv_show",
+      "output": "5 entities: Halt and Catch Fire 0.98, For All Mankind 0.95, Humans 0.94…",
+      "cached": false,
+      "ms": 1032,
+      "ok": true,
+      "t": 1930
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · type destination",
+      "output": "5 entities: Abu Dhabi 0.96, Muscat 0.95, Ajman 0.95…",
+      "cached": false,
+      "ms": 1152,
+      "ok": true,
+      "t": 2051
+    },
+    {
+      "stage": "creator",
+      "tool": "Gemini (gemini-3.5-flash)",
+      "input": "Titles, tags and descriptions of 5 videos: list names explicitly mentioned",
+      "output": "Proposed 14: iPhone Duo (product), Ridge (brand), dbrand (brand), Apple (brand), Tesla Roadster (product), Tesla (brand), Hagerty (brand), Apple Homeview (product), Googlebook (product), Google (brand), Asus Googlebook (product), Asus (brand), XPS Googlebook (product), Dell (brand)",
+      "decision": "14 names go to Qloo as search terms, not as evidence",
+      "ms": 1933,
+      "ok": true,
+      "t": 2066
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Apple” among brand",
+      "output": "Apple Inc (D5B78065-6DBB-4DDB-80DF-6495B9B1006B), exact Qloo alias match",
+      "decision": "Accepted as evidence",
+      "cached": true,
+      "ms": 3,
+      "ok": true,
+      "t": 2070
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“iPhone Duo” among brand",
+      "output": "5 results, none named “iPhone Duo”: Strava, Duo Security, Duolingo",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "ms": 231,
+      "ok": true,
+      "t": 2297
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Ridge” among brand",
+      "output": "4 results, none named “Ridge”: At Home, The Ridge, Juniper Ridge",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "ms": 371,
+      "ok": true,
+      "t": 2437
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“dbrand” among brand",
+      "output": "Dbrand (3180A68A-2853-4675-886E-CB05CDF3F63A), exact name match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "ms": 477,
+      "ok": true,
+      "t": 2544
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Tesla Roadster” among brand",
+      "output": "2 results, none named “Tesla Roadster”: Tesla, The Roadster Life",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "ms": 604,
+      "ok": true,
+      "t": 2671
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Tesla” among brand",
+      "output": "Tesla (29B49E3F-A0EC-42C6-A453-38B1C20D8374), exact name match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "ms": 726,
+      "ok": true,
+      "t": 2793
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Hagerty” among brand",
+      "output": "Hagerty (EEC15C3C-DA67-4811-B25C-DECB5BA51E1F), exact name match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "ms": 909,
+      "ok": true,
+      "t": 2976
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Apple Homeview” among brand",
+      "output": "5 results, none named “Apple Homeview”: Apple Inc, Apple Music, Apple TV+",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "ms": 988,
+      "ok": true,
+      "t": 3056
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Google” among brand",
+      "output": "Google (EF6C6B18-ABB3-4A9C-AF86-CF24976407A8), exact name match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "ms": 1231,
+      "ok": true,
+      "t": 3299
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · type movie",
+      "output": "5 entities: Avengers: Endgame 0.95, Avengers: Infinity War 0.94, Captain Marvel 0.94…",
+      "cached": false,
+      "ms": 2484,
+      "ok": true,
+      "t": 3382
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Asus Googlebook” among brand",
+      "output": "1 results, none named “Asus Googlebook”: Asus",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "ms": 1355,
+      "ok": true,
+      "t": 3423
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · type place",
+      "output": "5 entities: Madame Brasserie 0.96, Swarovski Kristallwelten 0.96, Mouragio Maria 0.95…",
+      "cached": false,
+      "ms": 2601,
+      "ok": true,
+      "t": 3500
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Asus” among brand",
+      "output": "Asus (81C0AAC3-4484-4089-81C0-3A69EE301C15), exact name match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "ms": 1490,
+      "ok": true,
+      "t": 3558
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Googlebook” among brand",
+      "output": "No results",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "ms": 1505,
+      "ok": true,
+      "t": 3573
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“XPS Googlebook” among brand",
+      "output": "No results",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "ms": 1639,
+      "ok": true,
+      "t": 3708
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Dell” among brand",
+      "output": "Dell Inc (0E550F19-C48D-431A-BF3E-0B4B6D9E8A17), exact Qloo alias match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "ms": 1740,
+      "ok": true,
+      "t": 3809
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · type artist",
+      "output": "5 entities: Marshmello 0.96, Post Malone 0.95, DJ Snake 0.95…",
+      "cached": false,
+      "ms": 3893,
+      "ok": true,
+      "t": 4791
+    },
+    {
+      "stage": "creator",
+      "tool": "Rule",
+      "input": "Evidence threshold: at least 3 Qloo-confirmed entities from the videos",
+      "output": "7 confirmed: Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+      "decision": "Continue",
+      "ok": true,
+      "t": 4792
+    },
+    {
+      "stage": "expand",
+      "tool": "Rule",
+      "input": "The videos mention the brand itself (Apple Inc)",
+      "output": "6 other entities form the expansion signal",
+      "decision": "Leave Apple Inc out of the signal and out of scoring, so the brand isn’t scored against itself; reported instead",
+      "ok": true,
+      "t": 4792
+    },
+    {
+      "stage": "expand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: 6 entities (Dbrand, Tesla, Hagerty…) · type brand",
+      "output": "5 entities: Unbox Therapy 0.97, Sony 0.95, Nvidia 0.95…",
+      "cached": false,
+      "ms": 328,
+      "ok": true,
+      "t": 5120
+    },
+    {
+      "stage": "expand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: 6 entities (Dbrand, Tesla, Hagerty…) · type destination",
+      "output": "5 entities: Hyderabad 0.95, Darjeeling 0.95, Mysore 0.94…",
+      "cached": false,
+      "ms": 755,
+      "ok": true,
+      "t": 5548
+    },
+    {
+      "stage": "expand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: 6 entities (Dbrand, Tesla, Hagerty…) · type place",
+      "output": "5 entities: One World Trade Center 0.94, Hotel De La Source 0.93, Hotel Ares Eiffel 0.93…",
+      "cached": false,
+      "ms": 2044,
+      "ok": true,
+      "t": 6837
+    },
+    {
+      "stage": "expand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: 6 entities (Dbrand, Tesla, Hagerty…) · type tv_show",
+      "output": "5 entities: Halt and Catch Fire 0.95, Silicon Valley 0.95, Humans 0.95…",
+      "cached": false,
+      "ms": 2100,
+      "ok": true,
+      "t": 6893
+    },
+    {
+      "stage": "expand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: 6 entities (Dbrand, Tesla, Hagerty…) · type movie",
+      "output": "5 entities: Venom 0.94, Avengers: Endgame 0.93, Captain Marvel 0.93…",
+      "cached": false,
+      "ms": 2414,
+      "ok": true,
+      "t": 7206
+    },
+    {
+      "stage": "expand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: 6 entities (Dbrand, Tesla, Hagerty…) · type artist",
+      "output": "5 entities: Aero Chord 0.91, KROMEA 0.91, Lindsey Stirling 0.91…",
+      "cached": false,
+      "ms": 3368,
+      "ok": true,
+      "t": 8160
+    },
+    {
+      "stage": "score",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · affinity of 5 creator artist entities (filter.results.entities)",
+      "output": "5/5 scored: Vicetone 0.90, TheFatRat 0.89, Aero Chord 0.86, Lindsey Stirling 0.85…",
+      "cached": false,
+      "ms": 378,
+      "ok": true,
+      "t": 8539
+    },
+    {
+      "stage": "score",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · affinity of 5 creator tv_show entities (filter.results.entities)",
+      "output": "5/5 scored: Halt and Catch Fire 0.98, Humans 0.94, You, Me and the Apocalypse 0.92, Dark Matter 0.92…",
+      "cached": false,
+      "ms": 639,
+      "ok": true,
+      "t": 8801
+    },
+    {
+      "stage": "score",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · affinity of 11 creator brand entities (filter.results.entities)",
+      "output": "11/11 scored: Tesla 0.93, Sony 0.92, OnePlus 0.92, Google 0.92…",
+      "cached": false,
+      "ms": 664,
+      "ok": true,
+      "t": 8825
+    },
+    {
+      "stage": "score",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · affinity of 5 creator destination entities (filter.results.entities)",
+      "output": "5/5 scored: Kochi 0.87, Hyderabad 0.87, Mysore 0.86, Panaji 0.85…",
+      "cached": false,
+      "ms": 747,
+      "ok": true,
+      "t": 8909
+    },
+    {
+      "stage": "score",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · affinity of 5 creator place entities (filter.results.entities)",
+      "output": "5/5 scored: La Bourdonnais 0.91, Hotel Ares Eiffel 0.91, Hotel De La Source 0.89, One World Trade Center 0.85…",
+      "cached": false,
+      "ms": 908,
+      "ok": true,
+      "t": 9071
+    },
+    {
+      "stage": "score",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · affinity of 5 creator movie entities (filter.results.entities)",
+      "output": "5/5 scored: Avengers: Endgame 0.95, Captain Marvel 0.94, Venom 0.93, Deadpool 2 0.93…",
+      "cached": false,
+      "ms": 1145,
+      "ok": true,
+      "t": 9307
+    },
+    {
+      "stage": "score",
+      "tool": "Rule",
+      "input": "36 scored entities (6 named in the videos at weight 1, 30 cross-domain at weight 0.5) sorted into dimensions by Qloo type and genre tags",
+      "output": "Tech & Innovation 79 (n=8) · Film, TV & Entertainment 87 (n=10) · Music 72 (n=5) · Lifestyle & Fashion 63 (n=3) · Food & Travel 74 (n=10)",
+      "decision": "Affinity rescaled from [0.5, 1] to [0, 100]; shared taste ≥ 0.85, clash < 0.7",
+      "ok": true,
+      "t": 9308
+    },
+    {
+      "stage": "score",
+      "tool": "Rule",
+      "input": "Equal-weight mean of 5 dimensions with data",
+      "output": "Fit Score 75, confidence 100",
+      "decision": "Verdict: Moderate fit (80+ strong, 60–79 moderate, 40–59 weak, below 40 no fit)",
+      "ok": true,
+      "t": 9308
+    },
+    {
+      "stage": "report",
+      "tool": "Rule",
+      "input": "Report template filled from the scored entities (no LLM)",
+      "output": "3 recommendations, 1 risks, 6 entities shared with the brand’s Qloo proxies",
+      "ok": true,
+      "t": 9309
     }
   ],
   "status": "completed",
