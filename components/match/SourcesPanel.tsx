@@ -4,6 +4,7 @@ import type { Match } from '@/lib/match';
 // and which of them Qloo confirmed as entities.
 export function SourcesPanel({ match }: { match: Match }) {
   const c = match.creator;
+  const llm = c.keywordSource === 'groq' ? 'Groq' : 'Gemini';
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 text-sm print:break-inside-avoid print:p-4">
@@ -26,14 +27,19 @@ export function SourcesPanel({ match }: { match: Match }) {
             Name extraction:{' '}
             {c.keywordSource === 'gemini'
               ? 'Gemini (proposes search terms only; Qloo confirms)'
-              : 'unavailable (Gemini failed, so no names were extracted)'}
+              : c.keywordSource === 'groq'
+                ? `Groq${c.extractionModel ? ` (${c.extractionModel})` : ''}, the fallback LLM (proposes search terms only; Qloo confirms)`
+                : 'unavailable (no LLM answered, so no names were extracted)'}
           </h4>
-          {c.keywordSource === 'gemini' && c.geminiCached !== undefined && (
+          {c.keywordSource === 'groq' && c.extractionFallback && (
+            <p className="mt-1 text-xs text-slate-500">Used because Gemini failed: {c.extractionFallback}.</p>
+          )}
+          {c.keywordSource !== 'unavailable' && c.geminiCached !== undefined && (
             <p className="mt-1">
               <span
                 className={`rounded px-1.5 py-0.5 text-xs font-medium ${c.geminiCached ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}`}
               >
-                {c.geminiCached ? 'Gemini cached' : 'Gemini live'}
+                {llm} {c.geminiCached ? 'cached' : 'live'}
               </span>
               <span className="ml-2 text-xs text-slate-500">
                 {c.geminiCached

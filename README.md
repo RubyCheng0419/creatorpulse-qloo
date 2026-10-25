@@ -93,7 +93,9 @@ Each result carries a trace of the run, recorded as it happens: the YouTube call
 
 Gemini (`gemini-3.5-flash`) reads video titles, descriptions and tags and proposes names that are **explicitly mentioned**, e.g. a sponsor in a description. These are only search terms: a name becomes evidence only if Qloo returns an entity whose name or Qloo alias matches it exactly. Gemini never sees or produces scores, entities or report text.
 
-If Gemini is unavailable (for example, its quota is used up), **no score is given.** An earlier rule-based keyword fallback produced wrong but Qloo-confirmable evidence (“TIME” → *Time* magazine, “INDIAN FOOD” → a book of that name), which is worse than no answer, so it was removed. The demo pair falls back to its labelled snapshot instead.
+If Gemini is over quota (429) or overloaded (503), the same prompt and JSON schema go to **Groq** (`openai/gpt-oss-120b`, temperature 0) once. Its answer is cached for 24 hours per set of videos like Gemini’s, and the page says which LLM proposed the names (“Groq live”, “Groq cached”). Groq is held to the same rule: it only proposes search terms.
+
+If neither answers, **no score is given.** An earlier rule-based keyword fallback produced wrong but Qloo-confirmable evidence (“TIME” → *Time* magazine, “INDIAN FOOD” → a book of that name), which is worse than no answer, so it was removed. The demo pair falls back to its labelled snapshot instead.
 
 ### Details that keep the evidence honest
 
@@ -122,7 +124,8 @@ Open http://localhost:3000 and click **Run demo**.
 | `YOUTUBE_API_KEY` | `videos.list` and `channels.list` (never `search.list`, which costs 100 quota units) |
 | `QLOO_API_KEY` | Qloo `/search` and `/v2/insights` |
 | `QLOO_BASE_URL` | Defaults to `https://hackathon.api.qloo.com` |
-| `GEMINI_API_KEY` | Name extraction; required for a score (without it every match returns *insufficient data*) |
+| `GEMINI_API_KEY` | Name extraction; a score needs this or `GROQ_API_KEY` (without either every match returns *insufficient data*) |
+| `GROQ_API_KEY` | Optional fallback for name extraction when Gemini returns 429 or 503 ([console.groq.com](https://console.groq.com)); `GROQ_MODEL` overrides the model |
 
 ### API
 

@@ -22,7 +22,7 @@ import type { OnStage } from '@/lib/stages';
 import { Trace, type TraceStep } from '@/lib/trace';
 import { parseVideoId } from '@/lib/youtube-url';
 
-// PRODUCT_SPEC v3.1 §6: collect (YouTube + Gemini + Qloo) → score (lib/scoring) → report.
+// PRODUCT_SPEC v3.1 §6: collect (YouTube + Gemini or Groq + Qloo) → score (lib/scoring) → report.
 // Every tool call and decision is recorded in the Agent Trace. Server-only.
 // A batch comparison can call runMatch once per creator.
 
@@ -55,7 +55,9 @@ export interface Match {
     videos: CreatorTaste['videos'];
     keywords: string[];
     keywordSource: CreatorTaste['keywordSource'];
-    geminiCached?: boolean;
+    extractionModel?: string;
+    extractionFallback?: string; // why Gemini didn't answer, when Groq did
+    geminiCached?: boolean; // the name extraction (Gemini or Groq) came from the 24-hour cache
     geminiAt?: string;
     entities: QlooEntity[]; // Qloo entities named in the videos (before cross-domain expansion)
     unmatched: string[];
@@ -120,6 +122,8 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
       videos: creator.videos,
       keywords: creator.keywords,
       keywordSource: creator.keywordSource,
+      extractionModel: creator.extractionModel,
+      extractionFallback: creator.extractionFallback,
       geminiCached: creator.geminiCached,
       geminiAt: creator.geminiAt,
       entities: creator.entities,

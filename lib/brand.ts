@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { KIND_TYPES, cachedGemini, cachedNote, extractBrandKeywords, extractBrandMentions, geminiError } from '@/lib/creator';
+import { KIND_TYPES, cachedAnswer, cachedNote, extractBrandKeywords, extractBrandMentions, geminiError } from '@/lib/creator';
 import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL } from '@/lib/gemini';
 import { fetchPageText } from '@/lib/web-page';
@@ -90,7 +90,7 @@ async function describedTags(description: string, trace?: Trace): Promise<{ tags
   let keywords: string[];
   try {
     const key = `brand-keywords:${createHash('sha256').update(page.text).digest('hex')}`;
-    const r = await cachedGemini(key, () => extractBrandKeywords(page.text));
+    const r = await cachedAnswer(key, () => extractBrandKeywords(page.text));
     keywords = r.value;
     trace?.add({
       stage: 'brand',
@@ -122,7 +122,7 @@ async function describedEntities(description: string, trace?: Trace): Promise<{ 
   let mentions: { name: string; kind: string }[];
   try {
     const key = `brand-desc:${createHash('sha256').update(text).digest('hex')}`;
-    const r = await cachedGemini(key, () => extractBrandMentions(text));
+    const r = await cachedAnswer(key, () => extractBrandMentions(text));
     mentions = r.value;
     trace?.add({
       stage: 'brand',

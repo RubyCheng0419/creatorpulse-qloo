@@ -52,12 +52,18 @@ export const STAGE_LABELS: Record<TraceStage, string> = {
   report: 'Report',
 };
 
+// Gemini, or Groq as its fallback for name extraction.
+export const isLlm = (tool: string) => tool.startsWith('Gemini') || tool.startsWith('Groq');
+export const llmName = (tool: string) => (tool.startsWith('Groq') ? 'Groq' : 'Gemini');
+
 export function summarizeTrace(steps: TraceStep[]) {
   const qloo = steps.filter((s) => s.tool.startsWith('Qloo'));
   return {
     youtube: steps.filter((s) => s.tool.startsWith('YouTube')).length,
-    gemini: steps.filter((s) => s.tool.startsWith('Gemini')).length,
-    geminiCached: steps.filter((s) => s.tool.startsWith('Gemini') && s.cached).length,
+    llm: steps.filter((s) => isLlm(s.tool)).length,
+    llmCached: steps.filter((s) => isLlm(s.tool) && s.cached).length,
+    // The LLM whose name extraction was used (Groq when Gemini fell back), if any.
+    extraction: steps.find((s) => s.stage === 'creator' && s.ok && /^(Gemini|Groq) \(/.test(s.tool)),
     qlooLive: qloo.filter((s) => !s.cached).length,
     qlooCached: qloo.filter((s) => s.cached).length,
     decisions: steps.filter((s) => s.tool === 'Rule').length,

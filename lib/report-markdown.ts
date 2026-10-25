@@ -1,7 +1,7 @@
 import type { Match } from '@/lib/match';
 import { VERDICT_LABELS, brandBasisNote } from '@/lib/report';
 import type { ScoredEntity } from '@/lib/scoring';
-import { summarizeTrace } from '@/lib/trace';
+import { isLlm, summarizeTrace } from '@/lib/trace';
 
 // The result page as a Markdown file, for judges and brand teams to take away.
 // Everything comes from the match itself, including the report text written by
@@ -82,10 +82,10 @@ export function matchToMarkdown(match: Match): string {
     lines.push(
       '## Agent Trace summary',
       '',
-      `${sum.youtube} YouTube calls · ${sum.gemini} Gemini call${sum.gemini === 1 ? '' : 's'} · ${sum.qlooLive + sum.qlooCached} Qloo calls (${sum.qlooLive} live, ${sum.qlooCached} from cache) · ${sum.decisions} decisions${match.liveRun ? ' · live run (cache bypassed)' : ''}`,
+      `${sum.youtube} YouTube calls · ${sum.llm} LLM call${sum.llm === 1 ? '' : 's'} · ${sum.qlooLive + sum.qlooCached} Qloo calls (${sum.qlooLive} live, ${sum.qlooCached} from cache) · ${sum.decisions} decisions${match.liveRun ? ' · live run (cache bypassed)' : ''}`,
       '',
       ...trace
-        .filter((s) => s.tool === 'Rule' || s.tool.startsWith('Gemini'))
+        .filter((s) => s.tool === 'Rule' || isLlm(s.tool))
         .map((s) => `- **${s.tool === 'Rule' ? 'Decision' : s.tool}:** ${s.output}${s.decision ? ` → ${s.decision}` : ''}`),
       ''
     );

@@ -1,5 +1,6 @@
 import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL, geminiJson, hasGemini } from '@/lib/gemini';
+import { GROQ_MODEL, groqJson, hasGroq } from '@/lib/groq';
 import { QlooEntity, resolveEntity, searchEntities } from '@/lib/qloo';
 import { bypassCache } from '@/lib/request-context';
 import type { Trace } from '@/lib/trace';
@@ -83,37 +84,80 @@ Rules:
 const MENTION_PROMPT = mentionPrompt('YouTube video metadata', 'video formats and the channel itself');
 const BRAND_MENTION_PROMPT = mentionPrompt('a brand’s own description or website text', 'slogans, product categories and the brand itself');
 
-export function geminiError(e: any): string {
+function llmError(e: any, llm: string): string {
   const msg = String(e?.message || e);
-  if (e?.status === 429 || /quota|RESOURCE_EXHAUSTED/i.test(msg)) return 'Gemini’s request quota is used up for now';
-  if (/abort|timeout/i.test(msg)) return 'Gemini did not answer in time';
+  if (e?.status === 429 || /quota|RESOURCE_EXHAUSTED|rate limit/i.test(msg)) return `${llm}’s request quota is used up for now`;
+  if (e?.status === 503) return `${llm} is overloaded right now`;
+  if (/abort|timeout/i.test(msg)) return `${llm} did not answer in time`;
   return msg.length > 160 ? `${msg.slice(0, 160)}…` : msg;
 }
 
-// Gemini results are cached for 24 hours per set of videos, so repeating a match (or the
-// demo) doesn't spend the Gemini quota again. Only successful answers are cached, "Run
-// live" bypasses the cache, and the Agent Trace marks every Gemini step live or cached.
-const geminiCache = new Map<string, { at: number; value: unknown }>();
+export const geminiError = (e: any) => llmError(e, 'Gemini');
 
-export async function cachedGemini<T>(key: string, call: () => Promise<T>): Promise<{ value: T; cached: boolean; at: number }> {
-  const hit = bypassCache() ? undefined : geminiCache.get(key);
+// LLM answers are cached for 24 hours per set of videos (or per brand description), so
+// repeating a match (or the demo) doesn't spend the Gemini or Groq quota again. Only
+// successful answers are cached, "Run live" bypasses the cache, and the Agent Trace
+// marks every LLM step live or cached.
+const llmCache = new Map<string, { at: number; value: unknown }>();
+
+export async function cachedAnswer<T>(key: string, call: () => Promise<T>): Promise<{ value: T; cached: boolean; at: number }> {
+  const hit = bypassCache() ? undefined : llmCache.get(key);
   if (hit && Date.now() - hit.at < VIDEO_CACHE_MS) return { value: hit.value as T, cached: true, at: hit.at };
   const value = await call();
   const at = Date.now();
-  geminiCache.set(key, { at, value });
+  llmCache.set(key, { at, value });
   return { value, cached: false, at };
 }
 
 export const cachedNote = (cached: boolean, at: number) => (cached ? ` (cached answer from ${new Date(at).toISOString()})` : '');
 
-async function extractMentions(videos: any[]): Promise<{ name: string; kind: string }[]> {
+type JsonCall = <T>(system: string, user: string, schema: object) => Promise<T>;
+
+interface Extraction {
+  mentions: { name: string; kind: string }[];
+  llm: 'gemini' | 'groq';
+  model: string;
+  geminiFailure?: string; // why Groq answered instead of Gemini
+}
+
+// Thrown when no LLM could extract names; each part is already a readable sentence.
+class ExtractionFailed extends Error {
+  geminiFailure: string | undefined;
+  groqFailure: string | undefined;
+  constructor(geminiFailure: string | undefined, groqFailure: string | undefined) {
+    super([geminiFailure, groqFailure && `the Groq fallback failed too: ${groqFailure}`].filter(Boolean).join('; '));
+    this.geminiFailure = geminiFailure;
+    this.groqFailure = groqFailure;
+  }
+}
+
+// Gemini first. Only when it is over quota (429) or overloaded (503) is Groq asked, once,
+// with the same prompt and schema; other Gemini errors would not be fixed by another model.
+async function extractMentions(videos: any[]): Promise<Extraction> {
   const text = videos
     .map((v, i) => {
       const s = v.snippet || {};
       return `Video ${i + 1}\nTitle: ${s.title || ''}\nTags: ${(s.tags || []).join(', ')}\nDescription: ${String(s.description || '').slice(0, 1500)}`;
     })
     .join('\n\n');
-  return namedEntities(MENTION_PROMPT, text);
+
+  let geminiFailure: string | undefined;
+  if (hasGemini()) {
+    try {
+      return { mentions: await namedEntities(MENTION_PROMPT, text), llm: 'gemini', model: GEMINI_MODEL };
+    } catch (e: any) {
+      geminiFailure = geminiError(e);
+      if (!hasGroq() || (e?.status !== 429 && e?.status !== 503)) throw new ExtractionFailed(geminiFailure, undefined);
+    }
+  } else {
+    geminiFailure = 'GEMINI_API_KEY is not set';
+    if (!hasGroq()) throw new ExtractionFailed(geminiFailure, undefined);
+  }
+  try {
+    return { mentions: await namedEntities(MENTION_PROMPT, text, groqJson), llm: 'groq', model: GROQ_MODEL, geminiFailure };
+  } catch (e: any) {
+    throw new ExtractionFailed(geminiFailure, llmError(e, 'Groq'));
+  }
 }
 
 // Names explicitly mentioned in a brand's description or website text (same rules).
@@ -144,8 +188,8 @@ export async function extractBrandKeywords(text: string): Promise<string[]> {
     .slice(0, 5);
 }
 
-async function namedEntities(prompt: string, text: string): Promise<{ name: string; kind: string }[]> {
-  const d = await geminiJson<{ entities: { name: string; kind: string }[] }>(prompt, text, MENTION_SCHEMA);
+async function namedEntities(prompt: string, text: string, json: JsonCall = geminiJson): Promise<{ name: string; kind: string }[]> {
+  const d = await json<{ entities: { name: string; kind: string }[] }>(prompt, text, MENTION_SCHEMA);
 
   const seen = new Set<string>();
   return (d.entities || [])
@@ -215,7 +259,7 @@ async function retryUnmatched(
     // Keyed by the videos and the exact question (names and candidate ids), so a change
     // in Qloo's results asks Gemini again.
     const key = `retry:${videoKey}|${JSON.stringify(pending.map((p) => [p.row.keyword, p.candidates.map((c) => c.entity_id)]))}`;
-    const r = await cachedGemini(key, async () =>
+    const r = await cachedAnswer(key, async () =>
       (await geminiJson<{ decisions: typeof decisions }>(RETRY_PROMPT, JSON.stringify(payload), RETRY_SCHEMA)).decisions || []
     );
     decisions = r.value;
@@ -264,12 +308,15 @@ export interface CreatorTaste {
   videos: { videoId: string; title: string; channelId: string; channelTitle: string; categoryId: string; tags: string[] }[];
   channels: { channelId: string; title: string; handle: string; description: string }[];
   keywords: string[];
-  // 'unavailable': Gemini failed or is not configured. No guessed keywords are used
-  // instead (they produced wrong evidence), so the match gets no score.
-  keywordSource: 'gemini' | 'unavailable';
+  // Which LLM proposed the names. 'groq' is the fallback when Gemini is over quota or
+  // overloaded. 'unavailable': neither answered. No guessed keywords are used instead
+  // (they produced wrong evidence), so the match gets no score.
+  keywordSource: 'gemini' | 'groq' | 'unavailable';
+  extractionModel?: string;
+  extractionFallback?: string; // why Gemini didn't answer, when Groq did
   extractionError?: string;
-  geminiCached?: boolean; // the extraction came from the 24-hour cache
-  geminiAt?: string; // when Gemini produced that extraction
+  geminiCached?: boolean; // the extraction (by either LLM) came from the 24-hour cache
+  geminiAt?: string; // when that extraction was produced
   entities: QlooEntity[];
   unmatched: string[];
   warnings: string[];
@@ -351,27 +398,42 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
   // lib/qloo throttles these under Qloo's 10 req/s limit.
   let queries: { keyword: string; types: string[] }[] = [];
   let keywordSource: CreatorTaste['keywordSource'] = 'unavailable';
-  let extractionError: string | undefined = hasGemini() ? undefined : 'GEMINI_API_KEY is not set';
+  let extractionError: string | undefined = hasGemini() || hasGroq() ? undefined : 'GEMINI_API_KEY is not set';
+  let extractionModel: string | undefined;
+  let extractionFallback: string | undefined;
   let geminiCached: boolean | undefined;
   let geminiAt: string | undefined;
-  // The set of readable videos, order-independent: the key for both Gemini caches.
+  // The set of readable videos, order-independent: the key for the extraction and retry
+  // caches. Whichever LLM answered, its answer is reused for these videos for 24 hours.
   const videoKey = videos.map((v) => v.id).sort().join(',');
-  if (hasGemini()) {
+  if (!extractionError) {
     const g0 = Date.now();
     try {
-      const r = await cachedGemini(`mentions:${videoKey}`, () => extractMentions(videos));
-      const mentions = r.value;
+      const r = await cachedAnswer(`mentions:${videoKey}`, () => extractMentions(videos));
+      const { mentions, llm, model, geminiFailure } = r.value;
+      extractionModel = model;
+      extractionFallback = geminiFailure;
       geminiCached = r.cached;
       geminiAt = new Date(r.at).toISOString();
+      if (geminiFailure && !r.cached) {
+        trace?.add({
+          stage: 'creator',
+          tool: `Gemini (${GEMINI_MODEL})`,
+          input: `Titles, tags and descriptions of ${videos.length} video${videos.length === 1 ? '' : 's'}`,
+          output: `Failed: ${geminiFailure}`,
+          decision: 'Ask Groq once, with the same prompt and schema',
+          ok: false,
+        });
+      }
       // The prompt asks Gemini to skip these, but it doesn't always: the channel's own
       // name and YouTube itself say nothing about the audience's taste.
       const skip = new Set(['youtube', ...channels.flatMap((c: any) => [c.title, c.handle.replace(/^@/, '')])].map((x) => x.toLocaleLowerCase()));
       const dropped = mentions.filter((m) => skip.has(m.name.toLocaleLowerCase())).map((m) => m.name);
       queries = mentions.filter((m) => !skip.has(m.name.toLocaleLowerCase())).map((m) => ({ keyword: m.name, types: KIND_TYPES[m.kind] }));
-      keywordSource = 'gemini';
+      keywordSource = llm;
       trace?.add({
         stage: 'creator',
-        tool: `Gemini (${GEMINI_MODEL})`,
+        tool: `${llm === 'groq' ? 'Groq' : 'Gemini'} (${model})`,
         input: `Titles, tags and descriptions of ${videos.length} video${videos.length === 1 ? '' : 's'}: list names explicitly mentioned`,
         output:
           (mentions.length ? `Proposed ${mentions.length}: ${mentions.map((m) => `${m.name} (${m.kind})`).join(', ')}` : 'Proposed none') +
@@ -383,16 +445,24 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
         ms: Date.now() - g0,
       });
     } catch (e: any) {
-      extractionError = geminiError(e);
-      trace?.add({
-        stage: 'creator',
-        tool: `Gemini (${GEMINI_MODEL})`,
-        input: `Titles, tags and descriptions of ${videos.length} videos`,
-        output: `Failed: ${extractionError}`,
-        decision: 'Stop: no guessed keywords are used instead, so no score is given',
-        ms: Date.now() - g0,
-        ok: false,
-      });
+      const failed = e instanceof ExtractionFailed ? e : new ExtractionFailed(geminiError(e), undefined);
+      extractionError = failed.message;
+      const input = `Titles, tags and descriptions of ${videos.length} videos`;
+      const stop = 'Stop: no guessed keywords are used instead, so no score is given';
+      if (failed.geminiFailure) {
+        trace?.add({
+          stage: 'creator',
+          tool: `Gemini (${GEMINI_MODEL})`,
+          input,
+          output: `Failed: ${failed.geminiFailure}`,
+          decision: failed.groqFailure ? 'Ask Groq once, with the same prompt and schema' : stop,
+          ms: failed.groqFailure ? undefined : Date.now() - g0,
+          ok: false,
+        });
+      }
+      if (failed.groqFailure) {
+        trace?.add({ stage: 'creator', tool: `Groq (${GROQ_MODEL})`, input, output: `Failed: ${failed.groqFailure}`, decision: stop, ms: Date.now() - g0, ok: false });
+      }
     }
   }
   if (extractionError) warnings.push(`Name extraction unavailable: ${extractionError}`);
@@ -443,6 +513,8 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
     channels,
     keywords,
     keywordSource,
+    extractionModel,
+    extractionFallback,
     extractionError,
     geminiCached,
     geminiAt,

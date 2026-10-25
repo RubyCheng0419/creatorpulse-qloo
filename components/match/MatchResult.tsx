@@ -130,7 +130,7 @@ function PrintedTraceSummary({ match }: { match: Match }) {
     <section className="hidden rounded-xl border border-slate-200 p-4 text-sm print:block print:break-inside-avoid">
       <h3 className="text-base font-semibold text-slate-900">Agent Trace summary</h3>
       <p className="mt-1 text-slate-600">
-        {sum.youtube} YouTube calls · {sum.gemini} Gemini call{sum.gemini === 1 ? '' : 's'} · {sum.qlooLive + sum.qlooCached} Qloo calls ({sum.qlooLive}{' '}
+        {sum.youtube} YouTube calls · {sum.llm} LLM call{sum.llm === 1 ? '' : 's'} · {sum.qlooLive + sum.qlooCached} Qloo calls ({sum.qlooLive}{' '}
         live, {sum.qlooCached} from cache) · {sum.decisions} decisions{match.liveRun ? ' · live run' : ''}
       </p>
       <ul className="mt-2 list-disc space-y-0.5 pl-5 text-slate-700">
