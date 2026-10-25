@@ -29,7 +29,7 @@ export function matchToMarkdown(match: Match): string {
     'CreatorPulse cultural compatibility due diligence',
     '',
     `- **Fit Score:** ${c.fitScore ?? 'no score'}${c.fitScore !== null ? '/100' : ''}`,
-    `- **Confidence:** ${c.confidence ?? '—'}`,
+    `- **Confidence:** ${typeof c.confidence === 'string' ? c.confidence : '—'}${c.confidenceBasis && 'entities' in c.confidenceBasis ? ` (based on ${c.confidenceBasis.entities} confirmed entities across ${c.confidenceBasis.dimensions} dimensions)` : ''}`,
     `- **Verdict:** ${VERDICT_LABELS[c.verdict]}`,
     `- **Date:** ${match.createdAt.slice(0, 10)} · Report ${match.id}`,
   ];

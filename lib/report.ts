@@ -19,7 +19,6 @@ export const VERDICT_LABELS: Record<Verdict, string> = {
   'insufficient-data': 'Insufficient data',
 };
 
-const LOW_CONFIDENCE = 60;
 const fmt = (a: number) => a.toFixed(2);
 const quote = (names: string[]) => names.map((n) => `“${n}”`).join(', ');
 
@@ -39,8 +38,8 @@ export function buildReport(
   const labelOf = (e: ScoredEntity) => c.dimensions.find((d) => d.dimension === e.dimension)!.label;
 
   const summary =
-    `${brand} × ${creator}: Fit Score ${c.fitScore} (${VERDICT_LABELS[c.verdict]}), confidence ${c.confidence}` +
-    (c.confidence! < LOW_CONFIDENCE ? ' (low confidence, indicative only)' : '') +
+    `${brand} × ${creator}: Fit Score ${c.fitScore} (${VERDICT_LABELS[c.verdict]}), ${c.confidence} confidence` +
+    (c.confidence === 'Low' ? ' (low confidence, indicative only)' : '') +
     `. Strongest dimension: ${best.label} (${best.score})` +
     (worst !== best ? `; weakest: ${worst.label} (${worst.score}).` : '.') +
     (mentionsBrand ? ` The creator's videos already mention ${brand} directly (not scored, to avoid rating the brand against itself).` : '');
@@ -81,7 +80,7 @@ export function buildReport(
     .sort((a, b) => a.brandAffinity - b.brandAffinity)
     .slice(0, 2)
     .map((e) => `Avoid “${e.name}” as a collaboration theme (${labelOf(e)}, affinity ${fmt(e.brandAffinity)}).`);
-  if (c.confidence! < LOW_CONFIDENCE) risks.push(`Confidence is ${c.confidence}, below ${LOW_CONFIDENCE}; treat the result as indicative.`);
+  if (c.confidence === 'Low') risks.push('Confidence is low (fewer than 5 named entities scored); treat the result as indicative.');
   const direct = items.filter((e) => e.side === 'direct').length;
   if (direct < 5) risks.push(`Only ${direct} entities named in the creator's videos were scored; the sample is small.`);
   if (!risks.length) risks.push('No evidence-backed risks found.');

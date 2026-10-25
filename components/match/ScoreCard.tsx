@@ -32,7 +32,9 @@ export function ScoreCard({ match }: { match: Match }) {
   const c = match.compatibility;
   const brand = match.brand.entity?.name || match.brand.name;
   const creator = match.creator.channelName || 'this creator';
-  const lowConfidence = c.confidence !== null && c.confidence < 60;
+  // Results saved before confidence became a level carry a number; don't show it.
+  const level = typeof c.confidence === 'string' ? c.confidence : null;
+  const lowConfidence = level === 'Low';
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 print:break-inside-avoid print:p-4">
@@ -57,8 +59,12 @@ export function ScoreCard({ match }: { match: Match }) {
         </div>
         <div>
           <p className="text-xs tracking-wide text-slate-500">Confidence</p>
-          <p className="text-3xl font-semibold tabular-nums text-slate-900">{c.confidence ?? '—'}</p>
-          <p className="max-w-36 text-xs text-slate-500">How much rests on names in the videos</p>
+          <p className="text-3xl font-semibold text-slate-900">{level ?? '—'}</p>
+          {c.confidenceBasis && 'entities' in c.confidenceBasis && (
+            <p className="max-w-48 text-xs text-slate-500">
+              Confidence based on {c.confidenceBasis.entities} confirmed entities across {c.confidenceBasis.dimensions} dimensions
+            </p>
+          )}
         </div>
         <div className="space-y-1">
           <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ring-1 ${VERDICT_STYLE[c.verdict]}`}>

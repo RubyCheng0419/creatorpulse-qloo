@@ -222,7 +222,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     output:
       `Fit Score ${compatibility.fitScore}, confidence ${compatibility.confidence}` +
       (compatibility.confidenceBasis
-        ? ` (named entities ${Math.round(compatibility.confidenceBasis.directEntities * 100)}% × 0.35, dimensions covered ${Math.round(compatibility.confidenceBasis.coverage * 100)}% × 0.25, share of weight from named entities ${Math.round(compatibility.confidenceBasis.directShare * 100)}% (full marks at 50%) × 0.40)`
+        ? ` (based on ${compatibility.confidenceBasis.entities} confirmed entities across ${compatibility.confidenceBasis.dimensions} dimensions; High = 10+ entities and all 5 dimensions, Medium = 5+, Low = fewer)`
         : ''),
     decision: `Verdict: ${VERDICT_LABELS[compatibility.verdict]} (80+ strong, 60–79 moderate, 40–59 weak, below 40 no fit)`,
   });

@@ -11,7 +11,7 @@ Most influencer-matching tools rank creators by follower counts, engagement rate
 
 For a brand name and 1–5 YouTube videos from a creator:
 
-- **Fit Score (0–100)** with a confidence value and a verdict (strong / moderate / weak / no fit)
+- **Fit Score (0–100)** with a confidence level (High / Medium / Low) and a verdict (strong / moderate / weak / no fit)
 - **Five taste dimensions**: Tech & Innovation, Film/TV & Entertainment, Music, Lifestyle & Fashion, Food & Travel
 - **Evidence for every dimension**: the Qloo entities behind the score, each with its Qloo entity ID, its affinity, and whether it was named in the videos or reached through cross-domain expansion
 - **Culture clash, recommendations and risks**, each sentence built from those entities
@@ -71,7 +71,7 @@ The score is computed in [`lib/scoring.ts`](lib/scoring.ts); the same Qloo data 
 4. **Dimensions**: by Qloo entity type; brands by majority vote over their Qloo genre tags (`electronics`, `automotive` → Tech; `fashion` → Lifestyle; `food_and_beverage`, `travel` → Food & Travel…).
 5. **Shared taste** is affinity ≥ 0.85; **clash** is affinity < 0.70: evidence of mismatch, not missing data.
 6. **Dimension score** = weighted mean; **Fit Score** = equal-weight mean of the dimensions that have data. Dimensions without data are excluded, never counted as zero.
-7. **Confidence** measures how much of the score rests on entities the creator actually named rather than on cross-domain inference: 35% named entities scored (full marks at 10) + 25% dimensions with data + 40% share of the score’s weight that comes from named entities (full marks at half). These weights are a judgement call. An earlier formula saturated at 100 for 9 of 12 test brands, so it carried no information; the current one ranges from about 44 (3 named entities) to 100.
+7. **Confidence** is a level, not a number, and only counts evidence: **High** with 10 or more confirmed entities named in the videos and data in all five dimensions, **Medium** with 5–9, **Low** with fewer than 5. The result page states what it is based on (“Confidence based on N confirmed entities across M dimensions”). Earlier numeric formulas either saturated at 100 or looked more precise than they were.
 
 Below 3 creator entities, or when Qloo has no exact match for the brand, there is no score.
 

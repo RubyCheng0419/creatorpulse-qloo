@@ -29,8 +29,10 @@ export const DIVERGENCE_MAX = 0.7;
 export const DIRECT_WEIGHT = 1; // entity named in the creator's own videos
 export const PROXY_WEIGHT = 0.5; // entity Qloo associates with those, one step removed
 export const MIN_DIRECT_ENTITIES = 3; // §3.2: fewer than this → no score
-const CONFIDENT_DIRECT_ENTITIES = 10; // named entities needed for full marks on that part of confidence
-const FULL_MARKS_DIRECT_SHARE = 0.5; // share of score weight from named entities that earns full marks
+// Confidence: High needs this many named entities and data in all five dimensions;
+// Medium needs MEDIUM_CONFIDENCE_ENTITIES; anything less is Low.
+const HIGH_CONFIDENCE_ENTITIES = 10;
+const MEDIUM_CONFIDENCE_ENTITIES = 5;
 
 const TYPE_DIMENSION: Record<string, Dimension> = {
   'urn:entity:artist': 'music',
@@ -98,12 +100,13 @@ export interface DimensionScore {
 
 export type Verdict = 'high' | 'medium' | 'low' | 'no-match' | 'insufficient-data';
 
+export type ConfidenceLevel = 'High' | 'Medium' | 'Low';
+
 export interface Compatibility {
   fitScore: number | null;
-  confidence: number | null;
-  // Each part 0–1: named entities scored (of 10), dimensions with data (of 5),
-  // share of the score's weight that comes from named entities.
-  confidenceBasis?: { directEntities: number; coverage: number; directShare: number };
+  confidence: ConfidenceLevel | null;
+  // What the level is based on: named entities scored, and dimensions with data.
+  confidenceBasis?: { entities: number; dimensions: number };
   verdict: Verdict;
   dimensions: DimensionScore[];
 }
@@ -145,21 +148,16 @@ export function computeCompatibility(items: ScoredEntity[]): Compatibility {
 
   const fitScore = Math.round(scored.reduce((s, d) => s + d.score! * d.weight, 0));
 
-  // Confidence = how much of the score rests on entities the creator actually named,
-  // rather than on Qloo's cross-domain inference. The first version (coverage, volume,
-  // 5 direct entities) saturated at 100 for 9 of 12 brands, so it said nothing.
-  // Weights are a judgement call, documented in the README.
-  const totalWeight = items.reduce((s, i) => s + i.weight, 0);
-  const direct = items.filter((i) => i.side === 'direct');
-  const basis = {
-    directEntities: Math.min(1, direct.length / CONFIDENT_DIRECT_ENTITIES),
-    coverage: scored.length / DIMENSIONS.length,
-    directShare: totalWeight ? direct.reduce((s, i) => s + i.weight, 0) / totalWeight : 0,
-  };
-  // Cross-domain entities outnumber named ones (~30 vs ~10), so even strong named evidence
-  // rarely exceeds half the weight; half counts as full marks, or confidence would cap at ~76.
-  const shareScore = Math.min(1, basis.directShare / FULL_MARKS_DIRECT_SHARE);
-  const confidence = Math.round(100 * (0.35 * basis.directEntities + 0.25 * basis.coverage + 0.4 * shareScore));
+  // Confidence is a level, not a number: a precise-looking 100 invited "how is that
+  // computed?", and the honest answer is that it only counts evidence.
+  const entities = items.filter((i) => i.side === 'direct').length;
+  const basis = { entities, dimensions: scored.length };
+  return { fitScore, confidence: confidenceLevel(basis), confidenceBasis: basis, verdict: verdictOf(fitScore), dimensions };
+}
 
-  return { fitScore, confidence, confidenceBasis: basis, verdict: verdictOf(fitScore), dimensions };
+// Named, Qloo-confirmed, scored entities from the videos, and dimensions with data.
+export function confidenceLevel({ entities, dimensions }: { entities: number; dimensions: number }): ConfidenceLevel {
+  if (entities >= HIGH_CONFIDENCE_ENTITIES && dimensions === DIMENSIONS.length) return 'High';
+  if (entities >= MEDIUM_CONFIDENCE_ENTITIES) return 'Medium';
+  return 'Low';
 }
