@@ -19,8 +19,12 @@ export const DIMENSION_LABELS: Record<Dimension, string> = {
 // Halt and Catch Fire 0.98, Adidas 0.87, Flying Magazine 0.69), so 100 × affinity
 // would put every pair at 75–95. Affinity is rescaled linearly from [FLOOR, 1] to [0, 100].
 export const AFFINITY_FLOOR = 0.5;
-export const INTERSECTION_MIN = 0.85; // brand audience clearly shares this taste
-export const DIVERGENCE_MAX = 0.7; // evidence of mismatch (not merely missing data)
+// Three tiers per entity, by the brand audience's affinity:
+//   ≥ INTERSECTION_MIN                  shared taste
+//   DIVERGENCE_MAX ≤ a < INTERSECTION_MIN weak link (related, but not strongly)
+//   < DIVERGENCE_MAX                     clash (evidence of mismatch, not merely missing data)
+export const INTERSECTION_MIN = 0.85;
+export const DIVERGENCE_MAX = 0.7;
 
 export const DIRECT_WEIGHT = 1; // entity named in the creator's own videos
 export const PROXY_WEIGHT = 0.5; // entity Qloo associates with those, one step removed
@@ -87,8 +91,9 @@ export interface DimensionScore {
   score: number | null; // null = no data; excluded from the total, not counted as 0
   weight: number; // share of the total after redistribution
   itemCount: number;
-  intersection: ScoredEntity[];
-  divergence: ScoredEntity[];
+  intersection: ScoredEntity[]; // shared taste
+  weakLink: ScoredEntity[];
+  divergence: ScoredEntity[]; // clash
 }
 
 export type Verdict = 'high' | 'medium' | 'low' | 'no-match' | 'insufficient-data';
@@ -126,6 +131,9 @@ export function computeCompatibility(items: ScoredEntity[]): Compatibility {
       weight: 0,
       itemCount: group.length,
       intersection: group.filter((i) => i.brandAffinity >= INTERSECTION_MIN).sort((a, b) => b.brandAffinity - a.brandAffinity),
+      weakLink: group
+        .filter((i) => i.brandAffinity >= DIVERGENCE_MAX && i.brandAffinity < INTERSECTION_MIN)
+        .sort((a, b) => b.brandAffinity - a.brandAffinity),
       divergence: group.filter((i) => i.brandAffinity < DIVERGENCE_MAX).sort((a, b) => a.brandAffinity - b.brandAffinity),
     };
   });

@@ -204,7 +204,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     input: `${items.length} scored entities (${items.filter((i) => i.side === 'direct').length} named in the videos at weight ${DIRECT_WEIGHT}, ${items.filter((i) => i.side === 'proxy').length} cross-domain at weight ${PROXY_WEIGHT}) sorted into dimensions by Qloo type and genre tags`,
     output: compatibility.dimensions.map((d) => `${d.label} ${d.score ?? 'no data'} (n=${d.itemCount})`).join(' · '),
     decision:
-      `Affinity rescaled from [${AFFINITY_FLOOR}, 1] to [0, 100]; shared taste ≥ ${INTERSECTION_MIN}, clash < ${DIVERGENCE_MAX}` +
+      `Affinity rescaled from [${AFFINITY_FLOOR}, 1] to [0, 100]; shared taste ≥ ${INTERSECTION_MIN}, weak link ${DIVERGENCE_MAX}–${INTERSECTION_MIN}, clash < ${DIVERGENCE_MAX}` +
       (empty.length ? `; ${empty.map((d) => d.label).join(', ')} excluded (no data, not counted as zero)` : ''),
   });
   onStage?.('score');

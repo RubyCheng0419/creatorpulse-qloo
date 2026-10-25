@@ -42,10 +42,10 @@ function EntityRow({ e }: { e: ScoredEntity }) {
   );
 }
 
-function EntityList({ title, items, empty }: { title: string; items: ScoredEntity[]; empty: string }) {
+function EntityList({ title, tone, items, empty }: { title: string; tone: string; items: ScoredEntity[]; empty: string }) {
   return (
     <div>
-      <h4 className="text-xs font-semibold tracking-wide text-slate-500">{title}</h4>
+      <h4 className={`text-xs font-semibold tracking-wide ${tone}`}>{title}</h4>
       {items.length ? (
         <ul className="divide-y divide-slate-100">
           {items.map((e) => (
@@ -61,14 +61,22 @@ function EntityList({ title, items, empty }: { title: string; items: ScoredEntit
 
 function Evidence({ d, limit }: { d: DimensionScore; limit?: number }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 print:grid-cols-2">
+    <div className="grid gap-4 sm:grid-cols-3 print:grid-cols-3">
       <EntityList
-        title={`Shared taste (affinity ≥ ${INTERSECTION_MIN})`}
+        title={`Shared taste (≥ ${INTERSECTION_MIN})`}
+        tone="text-teal-700"
         items={d.intersection.slice(0, limit)}
         empty="No strongly related entities"
       />
       <EntityList
-        title={`Clash (affinity < ${DIVERGENCE_MAX})`}
+        title={`Weak link (${DIVERGENCE_MAX}–${INTERSECTION_MIN})`}
+        tone="text-amber-700"
+        items={(d.weakLink ?? []).slice(0, limit)}
+        empty="No weak links"
+      />
+      <EntityList
+        title={`Clash (< ${DIVERGENCE_MAX})`}
+        tone="text-rose-700"
         items={d.divergence.slice(0, limit)}
         empty="No evidence of a clash"
       />
@@ -96,7 +104,16 @@ export function TasteComparison({ dimensions }: { dimensions: DimensionScore[] }
                 aria-expanded={isOpen}
                 className="flex w-full items-center gap-2 px-3 py-3 text-left enabled:hover:bg-slate-50 disabled:cursor-default sm:gap-4"
               >
-                <span className="w-28 shrink-0 text-sm leading-tight font-medium text-slate-800 sm:w-44">{d.label}</span>
+                <span className="w-28 shrink-0 sm:w-44">
+                  <span className="block text-sm leading-tight font-medium text-slate-800">{d.label}</span>
+                  {d.score !== null && (
+                    <span className="mt-0.5 block text-xs text-slate-500">
+                      <span className="text-teal-700">{d.intersection.length} shared</span> ·{' '}
+                      <span className="text-amber-700">{(d.weakLink ?? []).length} weak</span> ·{' '}
+                      <span className="text-rose-700">{d.divergence.length} clash</span>
+                    </span>
+                  )}
+                </span>
                 <span className="relative h-3 min-w-12 flex-1 overflow-hidden rounded-full bg-slate-100">
                   {d.score !== null && <span className="absolute inset-y-0 left-0 rounded-full bg-teal-600" style={{ width: `${d.score}%` }} />}
                 </span>
