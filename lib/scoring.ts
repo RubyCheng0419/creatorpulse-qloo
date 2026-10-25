@@ -155,6 +155,11 @@ export function computeCompatibility(items: ScoredEntity[]): Compatibility {
   return { fitScore, confidence: confidenceLevel(basis), confidenceBasis: basis, verdict: verdictOf(fitScore), dimensions };
 }
 
+// One level less sure, for a brand side that stands in for the brand (reference brands).
+export function lowerConfidence(level: ConfidenceLevel): ConfidenceLevel {
+  return level === 'High' ? 'Medium' : 'Low';
+}
+
 // Named, Qloo-confirmed, scored entities from the videos, and dimensions with data.
 export function confidenceLevel({ entities, dimensions }: { entities: number; dimensions: number }): ConfidenceLevel {
   if (entities >= HIGH_CONFIDENCE_ENTITIES && dimensions === DIMENSIONS.length) return 'High';

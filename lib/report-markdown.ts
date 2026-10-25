@@ -1,5 +1,5 @@
 import type { Match } from '@/lib/match';
-import { VERDICT_LABELS } from '@/lib/report';
+import { VERDICT_LABELS, brandBasisNote } from '@/lib/report';
 import type { ScoredEntity } from '@/lib/scoring';
 import { summarizeTrace } from '@/lib/trace';
 
@@ -33,6 +33,8 @@ export function matchToMarkdown(match: Match): string {
     `- **Verdict:** ${VERDICT_LABELS[c.verdict]}`,
     `- **Date:** ${match.createdAt.slice(0, 10)} · Report ${match.id}`,
   ];
+  const basisNote = brandBasisNote(match.brand);
+  if (basisNote) lines.push(`- **Brand side:** ${basisNote} Confidence is one level lower than the evidence alone would give.`);
   if (match.cachedAt) lines.push(`- **Cached result** from ${match.cachedAt}: the live analysis could not complete.`);
   if (match.mentionsBrand) lines.push(`- The creator already features ${brand} in these videos; that mention is not scored.`);
   lines.push('');

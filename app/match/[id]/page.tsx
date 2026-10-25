@@ -63,7 +63,13 @@ function SavedMatchResult({ match, autoPrint }: { match: Match; autoPrint: boole
     setError(null);
     try {
       const outcome = await requestMatch(
-        { videoUrls: match.creator.videoUrls, brandName: match.brand.name, category: match.brand.category ?? undefined, live: true },
+        {
+          videoUrls: match.creator.videoUrls,
+          brandName: match.brand.name,
+          category: match.brand.category ?? undefined,
+          referenceBrands: match.brand.referenceBrands,
+          live: true,
+        },
         () => {},
         new AbortController().signal
       );

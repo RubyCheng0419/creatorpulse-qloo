@@ -11,14 +11,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { DEMO_PAIRS, type DemoPair } from '@/lib/demo-pair';
 import { saveMatch } from '@/lib/history';
 import type { Match } from '@/lib/match';
-import { requestMatch } from '@/lib/match-client';
+import { type MatchRequest, requestMatch } from '@/lib/match-client';
 import type { MatchStage } from '@/lib/stages';
 import { MAX_VIDEOS, parseVideoId } from '@/lib/youtube-url';
 
 // PRODUCT_SPEC v3.1 §3.1: the four steps on one page, plus the one-click demo (§3.3).
 
 type Step = 1 | 2 | 3 | 4;
-type MatchRequest = { videoUrls: string[]; brandName: string; category?: string; live?: boolean };
 
 const CATEGORIES = ['Technology', 'Sports', 'Beauty', 'Food & Beverage', 'Automotive', 'Fashion'];
 
@@ -258,8 +257,9 @@ export default function MatchPage() {
             onUseBrand={(brand) => {
               if (!lastInput.current) return;
               setBrandName(brand);
-              analyse({ ...lastInput.current, brandName: brand });
+              analyse({ ...lastInput.current, brandName: brand, referenceBrands: undefined });
             }}
+            onReferenceBrands={(referenceBrands) => lastInput.current && analyse({ ...lastInput.current, referenceBrands })}
           />
         )}
       </main>

@@ -3,10 +3,18 @@ import type { MatchStage } from '@/lib/stages';
 
 // Browser side of the streaming /api/match (see app/api/match/route.ts).
 
+export type MatchRequest = {
+  videoUrls: string[];
+  brandName: string;
+  category?: string;
+  live?: boolean;
+  referenceBrands?: string[]; // when the brand isn't in Qloo
+};
+
 export type MatchOutcome = { ok: true; match: Match } | { ok: false; status: number; error: string; invalid?: string[] };
 
 export async function requestMatch(
-  input: { videoUrls: string[]; brandName: string; category?: string; live?: boolean },
+  input: MatchRequest,
   onStage: (stage: MatchStage) => void,
   signal: AbortSignal
 ): Promise<MatchOutcome> {

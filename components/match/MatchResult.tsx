@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { downloadMarkdown } from '@/lib/report-markdown';
 import { summarizeTrace } from '@/lib/trace';
 import { AgentTrace } from './AgentTrace';
+import { ReferenceBrandsForm } from './ReferenceBrandsForm';
 import { ReportDetails } from './ReportDetails';
 import { ScoreCard } from './ScoreCard';
 import { SourcesPanel } from './SourcesPanel';
@@ -30,6 +31,7 @@ export function MatchResult({
   onReset,
   onRunLive,
   onUseBrand,
+  onReferenceBrands,
   running,
   autoPrint,
 }: {
@@ -37,12 +39,15 @@ export function MatchResult({
   onReset?: () => void;
   onRunLive?: () => void; // re-run this match with every Qloo and YouTube cache bypassed
   onUseBrand?: (brandName: string) => void; // re-run with a brand name the user picked
+  onReferenceBrands?: (referenceBrands: string[]) => void; // re-run against reference brands
   running?: boolean;
   autoPrint?: boolean;
 }) {
   useEffect(() => {
     if (autoPrint) printMatch(match);
   }, [autoPrint, match]);
+  // No brand side at all: neither the brand nor (verified) reference brands are in Qloo.
+  const brandProblem = !match.brand.entity && !match.brand.basis;
 
   return (
     <div className="space-y-4">
@@ -73,7 +78,7 @@ export function MatchResult({
           <h3 className="text-base font-semibold">Insufficient data: no score</h3>
           <p className="mt-2">{match.errorMessage}</p>
           {/* The brand check comes first: its message would otherwise be contradicted. */}
-          {!match.brand.entity && match.brand.suggestions?.length && onUseBrand ? (
+          {brandProblem && match.brand.suggestions?.length && onUseBrand ? (
             <div className="mt-3 flex flex-wrap gap-2">
               {match.brand.suggestions.map((s) => (
                 <Button key={s} variant="outline" onClick={() => onUseBrand(s)}>
@@ -84,14 +89,17 @@ export function MatchResult({
           ) : null}
           <p className="mt-2 text-amber-800">
             We would rather give no score than one without Qloo evidence.{' '}
-            {!match.brand.entity
+            {brandProblem
               ? match.brand.suggestions?.length
-                ? 'Pick the brand you meant; we don’t substitute one for you.'
-                : 'Check the brand’s full English name.'
+                ? 'Pick the brand you meant; we don’t substitute one for you. If it’s none of these, score against reference brands below.'
+                : 'Check the brand’s full English name, or score against reference brands below.'
               : match.creator.keywordSource === 'unavailable'
                 ? 'This is a temporary problem with name extraction; please try again later.'
                 : 'Try videos that name more brands, works or people.'}
           </p>
+          {brandProblem && onReferenceBrands && (
+            <ReferenceBrandsForm key={`${match.id}:${match.createdAt}`} match={match} onSubmit={onReferenceBrands} />
+          )}
         </section>
       )}
 

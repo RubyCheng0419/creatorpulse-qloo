@@ -1,5 +1,5 @@
 import type { Match } from '@/lib/match';
-import { VERDICT_LABELS } from '@/lib/report';
+import { VERDICT_LABELS, brandBasisNote } from '@/lib/report';
 import type { Compatibility, Verdict } from '@/lib/scoring';
 
 const VERDICT_STYLE: Record<Verdict, string> = {
@@ -35,12 +35,18 @@ export function ScoreCard({ match }: { match: Match }) {
   // Results saved before confidence became a level carry a number; don't show it.
   const level = typeof c.confidence === 'string' ? c.confidence : null;
   const lowConfidence = level === 'Low';
+  const basisNote = brandBasisNote(match.brand);
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 print:break-inside-avoid print:p-4">
       {match.cachedAt && (
         <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
           Cached result from {new Date(match.cachedAt).toLocaleString('en-US')}: the live analysis could not complete, so this is the last real analysis of the demo pair.
+        </p>
+      )}
+      {basisNote && (
+        <p className="mb-4 rounded-md bg-violet-50 px-3 py-2 text-sm font-medium text-violet-900 ring-1 ring-violet-200">
+          {basisNote} <span className="font-normal">Confidence is one level lower than the evidence alone would give.</span>
         </p>
       )}
       <p className="text-sm text-slate-500">Cultural compatibility due diligence</p>

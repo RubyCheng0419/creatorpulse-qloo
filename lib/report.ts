@@ -19,6 +19,15 @@ export const VERDICT_LABELS: Record<Verdict, string> = {
   'insufficient-data': 'Insufficient data',
 };
 
+// What the brand side was built from, when it isn't the brand itself. Shown on the result
+// page (and so in the PDF) and in the Markdown export.
+export function brandBasisNote(brand: { basis?: string; signal?: { name: string }[] }): string | null {
+  if (brand.basis === 'reference') {
+    return `Your brand isn’t in Qloo. Scored against your reference brands: ${(brand.signal ?? []).map((e) => e.name).join(', ')}.`;
+  }
+  return null;
+}
+
 const fmt = (a: number) => a.toFixed(2);
 const quote = (names: string[]) => names.map((n) => `“${n}”`).join(', ');
 
