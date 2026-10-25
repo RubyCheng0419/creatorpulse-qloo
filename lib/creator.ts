@@ -124,11 +124,19 @@ interface Extraction {
 class ExtractionFailed extends Error {
   geminiFailure: string | undefined;
   groqFailure: string | undefined;
-  constructor(geminiFailure: string | undefined, groqFailure: string | undefined) {
+  noFallback: string | undefined; // why Groq wasn't asked
+  constructor(geminiFailure: string | undefined, groqFailure: string | undefined, noFallback?: string) {
     super([geminiFailure, groqFailure && `the Groq fallback failed too: ${groqFailure}`].filter(Boolean).join('; '));
     this.geminiFailure = geminiFailure;
     this.groqFailure = groqFailure;
+    this.noFallback = noFallback;
   }
+}
+
+// Over quota or overloaded. The status is checked first; the message covers errors that
+// arrive without one ("RESOURCE_EXHAUSTED", "UNAVAILABLE").
+function quotaOrOverload(e: any): boolean {
+  return e?.status === 429 || e?.status === 503 || /quota|RESOURCE_EXHAUSTED|UNAVAILABLE|overloaded/i.test(String(e?.message || ''));
 }
 
 // Gemini first. Only when it is over quota (429) or overloaded (503) is Groq asked, once,
@@ -147,11 +155,12 @@ async function extractMentions(videos: any[]): Promise<Extraction> {
       return { mentions: await namedEntities(MENTION_PROMPT, text), llm: 'gemini', model: GEMINI_MODEL };
     } catch (e: any) {
       geminiFailure = geminiError(e);
-      if (!hasGroq() || (e?.status !== 429 && e?.status !== 503)) throw new ExtractionFailed(geminiFailure, undefined);
+      if (!quotaOrOverload(e)) throw new ExtractionFailed(geminiFailure, undefined, 'only quota and overload errors fall back');
+      if (!hasGroq()) throw new ExtractionFailed(geminiFailure, undefined, 'GROQ_API_KEY is not set');
     }
   } else {
     geminiFailure = 'GEMINI_API_KEY is not set';
-    if (!hasGroq()) throw new ExtractionFailed(geminiFailure, undefined);
+    if (!hasGroq()) throw new ExtractionFailed(geminiFailure, undefined, 'GROQ_API_KEY is not set');
   }
   try {
     return { mentions: await namedEntities(MENTION_PROMPT, text, groqJson), llm: 'groq', model: GROQ_MODEL, geminiFailure };
@@ -455,7 +464,9 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
           tool: `Gemini (${GEMINI_MODEL})`,
           input,
           output: `Failed: ${failed.geminiFailure}`,
-          decision: failed.groqFailure ? 'Ask Groq once, with the same prompt and schema' : stop,
+          decision: failed.groqFailure
+            ? 'Ask Groq once, with the same prompt and schema'
+            : `${stop}${failed.noFallback ? ` (no Groq fallback: ${failed.noFallback})` : ''}`,
           ms: failed.groqFailure ? undefined : Date.now() - g0,
           ok: false,
         });
