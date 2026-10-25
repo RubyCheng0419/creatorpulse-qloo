@@ -1,6 +1,7 @@
 import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL, geminiJson, hasGemini } from '@/lib/gemini';
 import { QlooEntity, resolveEntity } from '@/lib/qloo';
+import { bypassCache } from '@/lib/request-context';
 import type { Trace } from '@/lib/trace';
 import type { OnStage } from '@/lib/stages';
 import { MAX_VIDEOS, parseVideoId } from '@/lib/youtube-url';
@@ -134,7 +135,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
   const t0 = Date.now();
   const items = new Map<string, any>();
   const missing = videoIds.filter((id) => {
-    const hit = videoCache.get(id);
+    const hit = bypassCache() ? undefined : videoCache.get(id);
     if (hit && Date.now() - hit.at < VIDEO_CACHE_MS) {
       items.set(id, hit.item);
       return false;

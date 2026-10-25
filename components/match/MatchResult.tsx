@@ -23,7 +23,19 @@ export function printMatch(match: Match) {
   window.print();
 }
 
-export function MatchResult({ match, onReset, autoPrint }: { match: Match; onReset?: () => void; autoPrint?: boolean }) {
+export function MatchResult({
+  match,
+  onReset,
+  onRunLive,
+  running,
+  autoPrint,
+}: {
+  match: Match;
+  onReset?: () => void;
+  onRunLive?: () => void; // re-run this match with every Qloo and YouTube cache bypassed
+  running?: boolean;
+  autoPrint?: boolean;
+}) {
   useEffect(() => {
     if (autoPrint) printMatch(match);
   }, [autoPrint, match]);
@@ -52,7 +64,7 @@ export function MatchResult({ match, onReset, autoPrint }: { match: Match; onRes
 
       <SourcesPanel match={match} />
 
-      <AgentTrace steps={match.trace ?? []} />
+      <AgentTrace steps={match.trace ?? []} liveRun={match.liveRun} onRunLive={onRunLive} running={running} />
 
       <p className="text-xs text-slate-500">{DISCLAIMER}</p>
 

@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Suspense, useSyncExternalStore } from 'react';
+import { Suspense, useState, useSyncExternalStore } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { MatchResult } from '@/components/match/MatchResult';
-import { useMatches } from '@/lib/history';
+import { saveMatch, useMatches } from '@/lib/history';
+import type { Match } from '@/lib/match';
+import { requestMatch } from '@/lib/match-client';
 
 const noop = () => () => {};
 
@@ -45,5 +47,43 @@ function SavedMatch() {
       </div>
     );
   }
-  return match ? <MatchResult match={match} autoPrint={autoPrint && match.status === 'completed'} /> : null;
+  return match ? (
+    <SavedMatchResult match={match} autoPrint={autoPrint && match.status === 'completed'} />
+  ) : null;
+}
+
+// "Run live" re-runs the stored inputs with every cache bypassed. The match id comes
+// from the inputs, so saving the new result replaces this entry and the page updates.
+function SavedMatchResult({ match, autoPrint }: { match: Match; autoPrint: boolean }) {
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function runLive() {
+    setRunning(true);
+    setError(null);
+    try {
+      const outcome = await requestMatch(
+        { videoUrls: match.creator.videoUrls, brandName: match.brand.name, category: match.brand.category ?? undefined, live: true },
+        () => {},
+        new AbortController().signal
+      );
+      if (outcome.ok) saveMatch(outcome.match);
+      else setError(outcome.error);
+    } catch (e: any) {
+      setError(`Connection failed: ${e?.message || e}`);
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <>
+      {error && (
+        <p role="alert" className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
+          {error}
+        </p>
+      )}
+      <MatchResult match={match} autoPrint={autoPrint} onRunLive={runLive} running={running} />
+    </>
+  );
 }

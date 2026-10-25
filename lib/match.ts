@@ -16,6 +16,7 @@ import {
   computeCompatibility,
   dimensionOf,
 } from '@/lib/scoring';
+import { bypassCache } from '@/lib/request-context';
 import type { OnStage } from '@/lib/stages';
 import { Trace, type TraceStep } from '@/lib/trace';
 import { parseVideoId } from '@/lib/youtube-url';
@@ -48,6 +49,7 @@ export interface Match {
   report: Report | null;
   warnings: string[];
   trace: TraceStep[];
+  liveRun?: boolean; // "Run live": every Qloo and YouTube call bypassed the cache
   cachedAt?: string; // set when a stored demo snapshot is served instead of a live run
 }
 
@@ -64,6 +66,7 @@ export interface MatchInput {
   videoUrls: unknown;
   brandName: unknown;
   category?: unknown;
+  live?: unknown; // true: bypass the Qloo and YouTube caches for this run
 }
 
 export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Match> {
@@ -98,6 +101,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     mentionsBrand: false,
     sharedEntities: [],
     trace: trace.steps,
+    liveRun: bypassCache(),
   };
   const warnings = [...creator.warnings];
   const insufficient = (errorMessage: string, b: Match['brand']): Match => ({

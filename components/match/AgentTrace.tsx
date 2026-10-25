@@ -39,7 +39,17 @@ function Step({ s }: { s: TraceStep }) {
 }
 
 // Every tool call and decision behind this result, grouped by stage.
-export function AgentTrace({ steps }: { steps: TraceStep[] }) {
+export function AgentTrace({
+  steps,
+  liveRun,
+  onRunLive,
+  running,
+}: {
+  steps: TraceStep[];
+  liveRun?: boolean;
+  onRunLive?: () => void;
+  running?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   if (!steps.length) return null;
   const sum = summarizeTrace(steps);
@@ -56,18 +66,35 @@ export function AgentTrace({ steps }: { steps: TraceStep[] }) {
             {(total / 1000).toFixed(1)}s
           </p>
           <p className="mt-1 text-xs text-slate-500">
-            “cached” means the Qloo or YouTube response was reused from this server’s cache (Qloo up to 1 hour, YouTube up to 24 hours); it is
-            the same data the API returned earlier. Gemini is never cached.
+            First run is live. Re-runs within 1 hour reuse cache (Qloo up to 1h, YouTube up to 24h). Gemini is never cached.
+          </p>
+          <p className={`mt-2 inline-block rounded px-2 py-0.5 text-xs font-medium ${liveRun ? 'bg-emerald-100 text-emerald-900' : 'bg-slate-100 text-slate-700'}`}>
+            {liveRun
+              ? 'This run: live. Every Qloo and YouTube call bypassed the cache.'
+              : `This run: cache allowed. ${sum.qlooCached} of ${sum.qlooLive + sum.qlooCached} Qloo calls came from cache.`}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
-        >
-          {open ? 'Hide steps' : `Show all ${steps.length} steps`}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {onRunLive && (
+            <button
+              type="button"
+              onClick={onRunLive}
+              disabled={running}
+              className="rounded-md bg-teal-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+              title="Re-run this match with every Qloo and YouTube call fetched live"
+            >
+              {running ? 'Running live…' : 'Run live'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-expanded={open}
+            className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+          >
+            {open ? 'Hide steps' : `Show all ${steps.length} steps`}
+          </button>
+        </div>
       </div>
 
       {open && (

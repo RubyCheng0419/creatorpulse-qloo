@@ -3,6 +3,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { withDemoFallback } from '@/lib/demo-snapshot';
 import { ApiError } from '@/lib/errors';
 import { MatchInput, runMatch } from '@/lib/match';
+import { withRequestContext } from '@/lib/request-context';
 import type { OnStage } from '@/lib/stages';
 
 // ~60 throttled Qloo calls on a cold cache (≈8s); leave room above the 20s target.
@@ -13,7 +14,9 @@ function errorBody(e: any): { status: number; body: Record<string, unknown> } {
   return { status: 500, body: { error: e?.message || 'Matching failed.' } };
 }
 
-const run = (input: MatchInput, onStage?: OnStage) => withDemoFallback(input, () => runMatch(input, onStage));
+// { live: true } (the "Run live" button) skips every Qloo and YouTube cache read.
+const run = (input: MatchInput, onStage?: OnStage) =>
+  withRequestContext({ bypassCache: input.live === true }, () => withDemoFallback(input, () => runMatch(input, onStage)));
 
 export async function POST(request: NextRequest) {
   const limited = rateLimit(request, 'match', 5);

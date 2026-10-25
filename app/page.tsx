@@ -18,6 +18,7 @@ import { MAX_VIDEOS, parseVideoId } from '@/lib/youtube-url';
 // PRODUCT_SPEC v3.1 §3.1: the four steps on one page, plus the one-click demo (§3.3).
 
 type Step = 1 | 2 | 3 | 4;
+type MatchRequest = { videoUrls: string[]; brandName: string; category?: string; live?: boolean };
 
 const CATEGORIES = ['Technology', 'Sports', 'Beauty', 'Food & Beverage', 'Automotive', 'Fashion'];
 
@@ -31,6 +32,7 @@ export default function MatchPage() {
   const [match, setMatch] = useState<Match | null>(null);
   const [error, setError] = useState<{ message: string; backTo: Step; invalid?: string[] } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const lastInput = useRef<MatchRequest | null>(null);
 
   const lines = urlsText.split(/\s*\n\s*/).map((l) => l.trim()).filter(Boolean);
   const checks = lines.map((line) => ({ line, id: parseVideoId(line) }));
@@ -45,7 +47,8 @@ export default function MatchPage() {
     return () => clearInterval(t);
   }, [step]);
 
-  async function analyse(input: { videoUrls: string[]; brandName: string; category?: string }) {
+  async function analyse(input: MatchRequest) {
+    lastInput.current = input;
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -239,7 +242,13 @@ export default function MatchPage() {
           />
         )}
 
-        {step === 4 && match && <MatchResult match={match} onReset={reset} />}
+        {step === 4 && match && (
+          <MatchResult
+            match={match}
+            onReset={reset}
+            onRunLive={() => lastInput.current && analyse({ ...lastInput.current, live: true })}
+          />
+        )}
       </main>
     </>
   );

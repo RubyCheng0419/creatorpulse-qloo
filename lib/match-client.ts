@@ -6,7 +6,7 @@ import type { MatchStage } from '@/lib/stages';
 export type MatchOutcome = { ok: true; match: Match } | { ok: false; status: number; error: string; invalid?: string[] };
 
 export async function requestMatch(
-  input: { videoUrls: string[]; brandName: string; category?: string },
+  input: { videoUrls: string[]; brandName: string; category?: string; live?: boolean },
   onStage: (stage: MatchStage) => void,
   signal: AbortSignal
 ): Promise<MatchOutcome> {

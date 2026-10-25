@@ -11,6 +11,7 @@
 // - Matching is fuzzy: "iPhone" restricted to brands returns "Strava", so every
 //   result must pass namesMatch() before it can be used as evidence.
 
+import { bypassCache } from '@/lib/request-context';
 import type { Trace, TraceStage } from '@/lib/trace';
 
 const QLOO_BASE = process.env.QLOO_BASE_URL || 'https://hackathon.api.qloo.com';
@@ -128,7 +129,7 @@ async function cachedGet(path: string, params: Record<string, string>): Promise<
   const u = new URL(path, QLOO_BASE);
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
   const url = u.toString();
-  const hit = responseCache.get(url);
+  const hit = bypassCache() ? undefined : responseCache.get(url);
   if (hit && Date.now() - hit.at < CACHE_MS) return { data: hit.data, cached: true };
   const data = await qlooFetch(url);
   responseCache.set(url, { at: Date.now(), data });
