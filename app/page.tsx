@@ -8,7 +8,7 @@ import { StepIndicator } from '@/components/match/StepIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { DEMO_PAIR } from '@/lib/demo-pair';
+import { DEMO_PAIRS, type DemoPair } from '@/lib/demo-pair';
 import { saveMatch } from '@/lib/history';
 import type { Match } from '@/lib/match';
 import { requestMatch } from '@/lib/match-client';
@@ -77,11 +77,11 @@ export default function MatchPage() {
     }
   }
 
-  function runDemo() {
-    setUrlsText(DEMO_PAIR.videoUrls.join('\n'));
-    setBrandName(DEMO_PAIR.brandName);
-    setCategory(DEMO_PAIR.category);
-    analyse({ videoUrls: DEMO_PAIR.videoUrls, brandName: DEMO_PAIR.brandName, category: DEMO_PAIR.category });
+  function runDemo(pair: DemoPair) {
+    setUrlsText(pair.videoUrls.join('\n'));
+    setBrandName(pair.brandName);
+    setCategory(pair.category);
+    analyse({ videoUrls: pair.videoUrls, brandName: pair.brandName, category: pair.category });
   }
 
   function cancel() {
@@ -173,12 +173,20 @@ export default function MatchPage() {
             <aside className="rounded-xl border border-teal-200 bg-teal-50 p-6">
               <h2 className="text-base font-semibold text-teal-900">Try the demo</h2>
               <p className="mt-2 text-sm text-teal-900">
-                {DEMO_PAIR.brandName} × {DEMO_PAIR.creatorLabel}, using {DEMO_PAIR.videoUrls.length} of the channel’s recent videos. Verified
-                end to end; one click runs the whole flow.
+                The same {DEMO_PAIRS[0].creatorLabel} videos against two brands. Each click runs the full pipeline live.
               </p>
-              <Button className="mt-4 w-full" size="lg" onClick={runDemo}>
-                Run demo: {DEMO_PAIR.brandName} × {DEMO_PAIR.creatorLabel}
-              </Button>
+              {DEMO_PAIRS.map((pair) => (
+                <div key={pair.key} className="mt-4">
+                  <Button className="w-full" size="lg" variant={pair.key === 'fit' ? 'default' : 'outline'} onClick={() => runDemo(pair)}>
+                    {pair.key === 'fit' ? 'Run demo' : 'Try a mismatch'}: {pair.brandName} × {pair.creatorLabel}
+                  </Button>
+                  <p className="mt-1 text-xs text-teal-900/80">
+                    {pair.key === 'fit'
+                      ? 'A tech reviewer and a tech brand.'
+                      : 'Same tech reviewer, a diaper brand: the score drops and clashes appear.'}
+                  </p>
+                </div>
+              ))}
             </aside>
           </div>
         )}
