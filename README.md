@@ -73,7 +73,17 @@ The score is computed in [`lib/scoring.ts`](lib/scoring.ts); the same Qloo data 
 6. **Dimension score** = weighted mean; **Fit Score** = equal-weight mean of the dimensions that have data. Dimensions without data are excluded, never counted as zero.
 7. **Confidence** is a level, not a number, and only counts evidence: **High** with 10 or more confirmed entities named in the videos and data in all five dimensions, **Medium** with 5–9, **Low** with fewer than 5. The result page states what it is based on (“Confidence based on N confirmed entities across M dimensions”). Earlier numeric formulas either saturated at 100 or looked more precise than they were.
 
-Below 3 creator entities, or when Qloo has no exact match for the brand, there is no score.
+Below 3 creator entities, or when no brand side can be built from Qloo (see below), there is no score.
+
+### When the brand isn’t in Qloo
+
+Niche brands often have no Qloo entity. Instead of a dead end, the user can build the brand side another way, and the result says which:
+
+1. **Reference brands (first choice).** 1–3 brands with a similar audience that *are* in Qloo. Each must pass the same exact name/alias check; one that doesn’t is sent back to be replaced, never dropped silently. The verified brands are used together as the signal. Label: “Your brand isn’t in Qloo. Scored against your reference brands: …”.
+2. **Brand description or web page.** Gemini lists the names the text explicitly mentions (same rules as for videos, at most 20), and only exact Qloo matches count. At least 3 are needed; slogans and adjectives name nothing, so generic copy falls back to asking for reference brands. Web pages are fetched server-side over https only, never from private addresses, with size and time limits. Label: “Scored from your brand description”.
+3. **Tags, only as a supplement.** When reference brands give fewer than 3 entities and the user also described the brand, Gemini proposes style keywords, and only keywords that exactly name a Qloo taste tag (genre, subgenre, theme, keyword) from `GET /v2/tags` are added, by tag ID, as `signal.interests.tags`. Label: “Includes tag-based signal”.
+
+Each of these approximates the brand’s audience rather than measuring it, so **confidence drops one level** (High → Medium → Low), and the Agent Trace records the step. Asking Gemini to *suggest* reference brands is future work: the user picks them today.
 
 ### Agent Trace
 
@@ -118,7 +128,7 @@ Open http://localhost:3000 and click **Run demo**.
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /api/match` | Full pipeline. Body: `{ "videoUrls": [...], "brandName": "Apple", "category"?: "Technology" }`. Send `Accept: application/x-ndjson` to stream progress stages. |
+| `POST /api/match` | Full pipeline. Body: `{ "videoUrls": [...], "brandName": "Apple", "category"?: "Technology", "referenceBrands"?: ["Byredo"], "brandDescription"?: "text or https:// URL" }` (the last two are used only when the brand isn’t in Qloo). Send `Accept: application/x-ndjson` to stream progress stages. |
 | `POST /api/creator-taste` | Videos → Qloo-confirmed creator entities |
 | `POST /api/brand-lookup` | Brand → Qloo entity and cultural proxies |
 
@@ -135,6 +145,7 @@ Regenerate it with `node scripts/save-demo-snapshot.mjs` while the dev server ru
 - **Creator taste comes from what the videos name.** Topics that are not Qloo entities (an air fryer, a cheesecake) cannot be matched, so a cooking channel may score low on Food & Travel. CreatorPulse uses no audience personal data.
 - **No location signal yet**, so place and destination proxies can skew toward particular regions.
 - **Brand names must be in English**; Qloo’s matching of non-English brand names is unreliable.
+- **Brands outside Qloo are approximated**, by reference brands or by the Qloo entities their description names, and labelled as such with lower confidence.
 - **Gemini output varies between calls.** Its answers are cached for 24 hours per set of videos, so repeating a match on the same server gives the same names (the result page says “Gemini cached” or “Gemini live”). Across servers or after the cache expires, Qloo’s exact-match check absorbs most of the variation: two demo runs where Gemini proposed 13 and 12 names both confirmed the same 7 Qloo entities and scored 75. When the confirmed set does differ, the score moves: the same five videos scored Samsung 77 on one run and 71 on another.
 - **History is stored in the browser** (localStorage), so `/match/[id]` links only open on the device that ran the match.
 

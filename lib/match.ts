@@ -45,6 +45,7 @@ export interface Match {
     signal?: QlooEntity[];
     tags?: QlooTag[];
     referenceBrands?: string[]; // as the user typed them
+    description?: string; // the brand description or web page URL the user gave
     missingReferences?: MissingReference[];
   };
   creator: {
@@ -85,6 +86,7 @@ export interface MatchInput {
   category?: unknown;
   live?: unknown; // true: bypass the Qloo and YouTube caches for this run
   referenceBrands?: unknown; // only used when the brand isn't in Qloo
+  brandDescription?: unknown; // likewise: a short description of the brand, or its https:// page
 }
 
 export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Match> {
@@ -95,7 +97,10 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   // 1. Collect both sides in parallel (lib/qloo throttles the shared rate limit).
   const [creator, brand] = await Promise.all([
     getCreatorTaste(input.videoUrls, onStage, trace),
-    lookupBrand(brandName, input.category, trace, { referenceBrands: input.referenceBrands }).then((b) => {
+    lookupBrand(brandName, input.category, trace, {
+      referenceBrands: input.referenceBrands,
+      description: input.brandDescription,
+    }).then((b) => {
       onStage?.('brand');
       return b;
     }),
@@ -103,9 +108,10 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
 
   const urls = (input.videoUrls as unknown[]).map(String);
   const referenceBrands = Array.isArray(input.referenceBrands) ? input.referenceBrands.map(String).filter((s) => s.trim()) : [];
+  const description = String(input.brandDescription || '').trim();
   const channel = creator.channels[0];
   const base = {
-    id: matchId(urls, brandName, referenceBrands),
+    id: matchId(urls, brandName, description ? [...referenceBrands, description] : referenceBrands),
     createdAt: new Date().toISOString(),
     creator: {
       channelName: channel?.title || creator.videos[0]?.channelTitle || '',
@@ -142,6 +148,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
       entities: [],
       suggestions: brand.suggestions,
       referenceBrands,
+      ...(description ? { description } : {}),
       missingReferences: brand.missingReferences,
     });
   }
@@ -153,6 +160,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     signal: brand.signal,
     tags: brand.tags,
     ...(brand.basis === 'reference' ? { referenceBrands } : {}),
+    ...(brand.basis !== 'brand' && description ? { description } : {}),
   };
   // The brand-side signal: the brand itself, or the reference brands standing in for it.
   const brandSignal = brand.signal;
@@ -269,15 +277,15 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
         : ''),
     decision: `Verdict: ${VERDICT_LABELS[compatibility.verdict]} (80+ strong, 60–79 moderate, 40–59 weak, below 40 no fit)`,
   });
-  // Reference brands only approximate the brand's audience, so the result is less certain.
+  // Reference brands or a description only approximate the brand's audience, so the result is less certain.
   if (brand.basis !== 'brand') {
     compatibility = { ...compatibility, confidence: lowerConfidence(evidenceLevel) };
     trace.add({
       stage: 'score',
       tool: 'Rule',
-      input: `“${brandName}” is not in Qloo; scored against reference brands ${brandSignal.map((e) => e.name).join(', ')}`,
+      input: `“${brandName}” is not in Qloo; scored against ${brand.basis === 'reference' ? 'reference brands' : 'entities named in its description'}: ${brandSignal.map((e) => e.name).join(', ')}`,
       output: `Confidence ${evidenceLevel} → ${compatibility.confidence}`,
-      decision: 'Lower confidence one level: reference brands approximate the brand’s audience, they aren’t it',
+      decision: 'Lower confidence one level: these approximate the brand’s audience, they aren’t it',
     });
   }
 

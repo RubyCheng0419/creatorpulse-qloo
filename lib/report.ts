@@ -21,10 +21,11 @@ export const VERDICT_LABELS: Record<Verdict, string> = {
 
 // What the brand side was built from, when it isn't the brand itself. Shown on the result
 // page (and so in the PDF) and in the Markdown export.
-export function brandBasisNote(brand: { basis?: string; signal?: { name: string }[] }): string | null {
-  if (brand.basis === 'reference') {
-    return `Your brand isn’t in Qloo. Scored against your reference brands: ${(brand.signal ?? []).map((e) => e.name).join(', ')}.`;
-  }
+export function brandBasisNote(brand: { basis?: string; signal?: { name: string }[]; tags?: { name: string }[] }): string | null {
+  const names = (brand.signal ?? []).map((e) => e.name).join(', ');
+  const tags = brand.tags?.length ? ` Includes tag-based signal: ${brand.tags.map((t) => t.name).join(', ')}.` : '';
+  if (brand.basis === 'reference') return `Your brand isn’t in Qloo. Scored against your reference brands: ${names}.${tags}`;
+  if (brand.basis === 'description') return `Scored from your brand description: the Qloo entities it names (${names}).${tags}`;
   return null;
 }
 

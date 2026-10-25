@@ -40,7 +40,7 @@ async function youtube(path: string, params: Record<string, string>, key: string
 
 // Gemini proposes names explicitly mentioned in the videos, with a kind that narrows
 // the Qloo search. Qloo still decides: only exact name/alias matches become entities.
-const KIND_TYPES: Record<string, string[]> = {
+export const KIND_TYPES: Record<string, string[]> = {
   brand: ['urn:entity:brand'],
   product: ['urn:entity:brand'],
   artist: ['urn:entity:artist'],
@@ -71,15 +71,19 @@ const MENTION_SCHEMA = {
   required: ['entities'],
 };
 
-const MENTION_PROMPT = `You list cultural entities that are explicitly named in YouTube video metadata.
+// The same rules for video metadata and for a brand's own description.
+const mentionPrompt = (source: string, skip: string) => `You list cultural entities that are explicitly named in ${source}.
 Include brands, products, artists, movies, TV shows, books, podcasts, video games, destinations and public figures.
 Rules:
 - Only entities whose name actually appears in the text. Never infer, guess or add related entities.
 - Use the entity's official English name when the text names it in another language (e.g. 蘋果 → Apple); otherwise copy it as written.
-- Skip generic words (review, unboxing, camera, coffee), video formats and the channel itself.
+- Skip generic words (review, unboxing, camera, coffee), ${skip}.
 - At most 20 entities.`;
 
-function geminiError(e: any): string {
+const MENTION_PROMPT = mentionPrompt('YouTube video metadata', 'video formats and the channel itself');
+const BRAND_MENTION_PROMPT = mentionPrompt('a brand’s own description or website text', 'slogans, product categories and the brand itself');
+
+export function geminiError(e: any): string {
   const msg = String(e?.message || e);
   if (e?.status === 429 || /quota|RESOURCE_EXHAUSTED/i.test(msg)) return 'Gemini’s request quota is used up for now';
   if (/abort|timeout/i.test(msg)) return 'Gemini did not answer in time';
@@ -91,7 +95,7 @@ function geminiError(e: any): string {
 // live" bypasses the cache, and the Agent Trace marks every Gemini step live or cached.
 const geminiCache = new Map<string, { at: number; value: unknown }>();
 
-async function cachedGemini<T>(key: string, call: () => Promise<T>): Promise<{ value: T; cached: boolean; at: number }> {
+export async function cachedGemini<T>(key: string, call: () => Promise<T>): Promise<{ value: T; cached: boolean; at: number }> {
   const hit = bypassCache() ? undefined : geminiCache.get(key);
   if (hit && Date.now() - hit.at < VIDEO_CACHE_MS) return { value: hit.value as T, cached: true, at: hit.at };
   const value = await call();
@@ -100,7 +104,7 @@ async function cachedGemini<T>(key: string, call: () => Promise<T>): Promise<{ v
   return { value, cached: false, at };
 }
 
-const cachedNote = (cached: boolean, at: number) => (cached ? ` (cached answer from ${new Date(at).toISOString()})` : '');
+export const cachedNote = (cached: boolean, at: number) => (cached ? ` (cached answer from ${new Date(at).toISOString()})` : '');
 
 async function extractMentions(videos: any[]): Promise<{ name: string; kind: string }[]> {
   const text = videos
@@ -109,7 +113,39 @@ async function extractMentions(videos: any[]): Promise<{ name: string; kind: str
       return `Video ${i + 1}\nTitle: ${s.title || ''}\nTags: ${(s.tags || []).join(', ')}\nDescription: ${String(s.description || '').slice(0, 1500)}`;
     })
     .join('\n\n');
-  const d = await geminiJson<{ entities: { name: string; kind: string }[] }>(MENTION_PROMPT, text, MENTION_SCHEMA);
+  return namedEntities(MENTION_PROMPT, text);
+}
+
+// Names explicitly mentioned in a brand's description or website text (same rules).
+export function extractBrandMentions(text: string): Promise<{ name: string; kind: string }[]> {
+  return namedEntities(BRAND_MENTION_PROMPT, text);
+}
+
+// Style and culture keywords a brand states about itself. They are only looked up as Qloo
+// tags; a keyword with no tag of exactly that name is dropped.
+const KEYWORD_PROMPT = `From a brand's own description or website text, list up to 5 taste keywords that the text explicitly states about the brand's style, aesthetic or culture (e.g. minimalism, streetwear, skateboarding, jazz, anime).
+Rules:
+- One or two words each, lowercase, in English.
+- Only words, or close forms of words, that appear in the text. Never infer.
+- Skip product categories (perfume, shoes, candles), quality claims and slogans (premium, sustainable, best, for everyone).`;
+
+const KEYWORD_SCHEMA = {
+  type: 'object',
+  properties: { keywords: { type: 'array', items: { type: 'string' } } },
+  required: ['keywords'],
+};
+
+export async function extractBrandKeywords(text: string): Promise<string[]> {
+  const d = await geminiJson<{ keywords: string[] }>(KEYWORD_PROMPT, text, KEYWORD_SCHEMA);
+  const seen = new Set<string>();
+  return (d.keywords || [])
+    .map((k) => String(k || '').trim().toLocaleLowerCase())
+    .filter((k) => k.length > 1 && !seen.has(k) && seen.add(k))
+    .slice(0, 5);
+}
+
+async function namedEntities(prompt: string, text: string): Promise<{ name: string; kind: string }[]> {
+  const d = await geminiJson<{ entities: { name: string; kind: string }[] }>(prompt, text, MENTION_SCHEMA);
 
   const seen = new Set<string>();
   return (d.entities || [])

@@ -9,6 +9,7 @@ export type MatchRequest = {
   category?: string;
   live?: boolean;
   referenceBrands?: string[]; // when the brand isn't in Qloo
+  brandDescription?: string; // likewise: a short description, or the brand's https:// page
 };
 
 export type MatchOutcome = { ok: true; match: Match } | { ok: false; status: number; error: string; invalid?: string[] };

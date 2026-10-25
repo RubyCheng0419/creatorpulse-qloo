@@ -68,6 +68,7 @@ function SavedMatchResult({ match, autoPrint }: { match: Match; autoPrint: boole
           brandName: match.brand.name,
           category: match.brand.category ?? undefined,
           referenceBrands: match.brand.referenceBrands,
+          brandDescription: match.brand.description,
           live: true,
         },
         () => {},

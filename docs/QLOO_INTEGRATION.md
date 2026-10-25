@@ -51,6 +51,21 @@ Only two, both `GET` with parameters in the query string and the header `X-Api-K
 - Verified types: brand, artist, movie, tv_show, place, destination, book, podcast, videogame, person.
 - `filter.results.entities=<ids>` scores exactly those entities against the signal. This is how CreatorPulse gets “how strongly does the brand’s audience relate to each creator entity”.
 
+- `signal.interests.tags=<tag ids>` can be sent next to `signal.interests.entities`. Tested on 2026-10-25 with every type above, alone and with `filter.results.entities`: all returned 200 and the tags changed the affinities. If Qloo ever rejects tags for a type (400), CreatorPulse retries that type without them and records it in the Agent Trace.
+
+### `GET /v2/tags`
+
+```
+/v2/tags?filter.query=minimalism&take=10
+```
+
+```json
+{ "results": { "tags": [{ "id": "urn:tag:genre:music:minimalism", "name": "Minimalism", "type": "urn:tag:genre:music", "parents": [{ "type": "urn:entity:artist" }] }] } }
+```
+
+- One of `filter.query`, `filter.tags`, `filter.tag.types`, `filter.parents.types`, `filter.popularity.min/max` or `filter.results.tags` is required; plain `query` returns 400.
+- Matching is broad: “perfume” returns place categories (*Perfume store*) and an occupation tag named exactly *Perfume*; “streetwear” returns only *Streetwear Culture Influence* (an ambience tag). → Only tags whose name equals the keyword **and** whose kind is genre, subgenre, theme or keyword are used.
+
 ### Rate limits
 
 From the response headers: **10 requests/second** (`x-second-ratelimit-*`) and **50,000 requests/month** (`x-month-ratelimit-*`). Exceeding the per-second limit returns `429`.
@@ -64,6 +79,8 @@ From the response headers: **10 requests/second** (`x-second-ratelimit-*`) and *
 | Creator entities | `/search`, types from Gemini’s hint | – | Exact name/alias match only |
 | Creator cross-domain expansion | `/v2/insights` × 6 types | creator entities (brand excluded) | Top 5 per type |
 | Scoring | `/v2/insights` per type, `filter.results.entities` | brand | Affinity of every creator entity |
+| Brand not in Qloo | `/search` for each reference brand, or for names in the brand’s description | – | Exact name/alias match only; these replace the brand as signal above |
+| Tag supplement | `/v2/tags`, `filter.query` | – | Exact-name taste tags, sent as `signal.interests.tags` |
 
 A cold match takes roughly 60 Qloo requests (5–12 s at the throttle below). Responses are cached for an hour, so repeating a match is near-instant and returns the same numbers.
 
@@ -81,4 +98,5 @@ A cold match takes roughly 60 Qloo requests (5–12 s at the throttle below). Re
 
 - No guessed entity IDs: IDs are stored exactly as Qloo returns them.
 - No LLM-generated taste signals: an LLM-proposed name counts only after Qloo confirms it.
-- No score without evidence: fewer than 3 creator entities, or no brand match, returns `insufficient-data`.
+- No score without evidence: fewer than 3 creator entities, or no brand side confirmed by Qloo, returns `insufficient-data`.
+- No free-text tags: only tag IDs returned by `/v2/tags` are sent as signal.

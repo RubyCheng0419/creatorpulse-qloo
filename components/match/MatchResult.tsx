@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { downloadMarkdown } from '@/lib/report-markdown';
 import { summarizeTrace } from '@/lib/trace';
 import { AgentTrace } from './AgentTrace';
-import { ReferenceBrandsForm } from './ReferenceBrandsForm';
+import { BrandFallbackForm, type BrandFallbackInput } from './BrandFallbackForm';
 import { ReportDetails } from './ReportDetails';
 import { ScoreCard } from './ScoreCard';
 import { SourcesPanel } from './SourcesPanel';
@@ -31,7 +31,7 @@ export function MatchResult({
   onReset,
   onRunLive,
   onUseBrand,
-  onReferenceBrands,
+  onBrandFallback,
   running,
   autoPrint,
 }: {
@@ -39,7 +39,7 @@ export function MatchResult({
   onReset?: () => void;
   onRunLive?: () => void; // re-run this match with every Qloo and YouTube cache bypassed
   onUseBrand?: (brandName: string) => void; // re-run with a brand name the user picked
-  onReferenceBrands?: (referenceBrands: string[]) => void; // re-run against reference brands
+  onBrandFallback?: (fallback: BrandFallbackInput) => void; // re-run against reference brands or a description
   running?: boolean;
   autoPrint?: boolean;
 }) {
@@ -97,8 +97,8 @@ export function MatchResult({
                 ? 'This is a temporary problem with name extraction; please try again later.'
                 : 'Try videos that name more brands, works or people.'}
           </p>
-          {brandProblem && onReferenceBrands && (
-            <ReferenceBrandsForm key={`${match.id}:${match.createdAt}`} match={match} onSubmit={onReferenceBrands} />
+          {brandProblem && onBrandFallback && (
+            <BrandFallbackForm key={`${match.id}:${match.createdAt}`} match={match} onSubmit={onBrandFallback} />
           )}
         </section>
       )}

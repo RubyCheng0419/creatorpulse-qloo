@@ -7,8 +7,11 @@
 // - GET /v2/insights?filter.type=...&signal.interests.entities=<ids>&take=N
 //   response: { results: { entities: [{ entity_id, name, popularity, tags, query.affinity }] } }
 //   filter.type is required. filter.results.entities=<ids> scores exactly those entities.
-// - signal.interests.tags=<tag ids> (from GET /v2/tags?filter.query=...) is accepted with
-//   every PROXY_TYPES filter.type, alone or next to signal.interests.entities.
+// - GET /v2/tags?filter.query=...&take=N → { results: { tags: [{ id, name, type, parents }] } }
+//   (plain `query` is rejected with 400).
+// - signal.interests.tags=<tag ids> is accepted next to signal.interests.entities for every
+//   entity type used here (brand, artist, movie, tv_show, destination, place, book,
+//   podcast, videogame, person), including with filter.results.entities (2026-10-25).
 // - Rate limit: 10 requests/second, 50,000/month (x-second-ratelimit-*, x-month-ratelimit-*).
 // - Matching is fuzzy: "iPhone" restricted to brands returns "Strava", so every
 //   result must pass namesMatch() before it can be used as evidence.
@@ -91,7 +94,7 @@ export async function qlooFetch(url: string): Promise<any> {
       if (r.ok) return d;
       const detail = d?.errors?.map((x: any) => x.message).join('; ') || d?.message || `Qloo returned ${r.status}`;
       const retryable = r.status === 429 || r.status >= 500;
-      if (!retryable || attempt > 0) throw Object.assign(Error(detail), { final: true });
+      if (!retryable || attempt > 0) throw Object.assign(Error(detail), { final: true, status: r.status });
       if (r.status === 429) {
         const reset = Number(r.headers.get('x-second-ratelimit-reset')) || 1;
         await new Promise((res) => setTimeout(res, reset * 1000));
@@ -131,10 +134,59 @@ export interface QlooTag {
   query: string; // the keyword that found it
 }
 
-function signalParams(signal: QlooEntity[], tags: QlooTag[]): Record<string, string> {
-  const p: Record<string, string> = { 'signal.interests.entities': signal.map((e) => e.id).join(',') };
-  if (tags.length) p['signal.interests.tags'] = tags.map((t) => t.id).join(',');
-  return p;
+// /v2/insights with the signal. Tags were accepted for every type when tested; should Qloo
+// reject them for a type (400), that type is asked again without tags, and the trace says so.
+async function insightsGet(
+  params: Record<string, string>,
+  signal: QlooEntity[],
+  tags: QlooTag[],
+  ctx?: TraceCtx
+): Promise<{ data: any; cached: boolean; tags: QlooTag[] }> {
+  const entities = { 'signal.interests.entities': signal.map((e) => e.id).join(',') };
+  if (tags.length) {
+    try {
+      return { ...(await cachedGet('/v2/insights', { ...params, ...entities, 'signal.interests.tags': tags.map((t) => t.id).join(',') })), tags };
+    } catch (e: any) {
+      if (e?.status !== 400) throw e;
+      ctx?.trace.add({
+        stage: ctx.stage,
+        tool: 'Rule',
+        input: `Tag signal for type ${params['filter.type'].replace('urn:entity:', '')}`,
+        output: `Qloo rejected it: ${e.message}`,
+        decision: 'Skip the tag signal for this type; use the entities alone',
+      });
+    }
+  }
+  return { ...(await cachedGet('/v2/insights', { ...params, ...entities })), tags: [] };
+}
+
+// Tag kinds that describe taste. Others are not used even when the name matches:
+// "perfume" exactly names urn:tag:occupation:wikidata:perfume, and place amenities abound.
+const TASTE_TAG_KINDS = ['genre', 'subgenre', 'theme', 'keyword'];
+
+// A Qloo taste tag whose name is exactly the keyword, or null. Like entities, a near match
+// is not accepted: "streetwear" finds only "Streetwear Culture Influence", which is not used.
+export async function findTag(keyword: string, ctx?: TraceCtx): Promise<QlooTag | null> {
+  const t0 = Date.now();
+  const { data, cached } = await cachedGet('/v2/tags', { 'filter.query': keyword, take: '10' });
+  const all = (data?.results?.tags || []).filter((t: any) => t?.id && t?.name);
+  const exact = all.filter((t: any) => compact(t.name) === compact(keyword) && TASTE_TAG_KINDS.includes(String(t.id).split(':')[2]));
+  // Genre tags first: "Jazz" the music genre rather than the keyword tag of the same name.
+  const best = exact.find((t: any) => String(t.id).startsWith('urn:tag:genre:')) || exact[0];
+  ctx?.trace.add({
+    stage: ctx.stage,
+    tool: 'Qloo /v2/tags',
+    input: `“${keyword}”`,
+    output: best
+      ? `${best.name} (${best.id}), exact name match`
+      : all.length
+        ? `${all.length} tags, no taste tag named “${keyword}”: ${all.slice(0, 3).map((t: any) => `${t.name} (${String(t.id).split(':')[2]})`).join(', ')}`
+        : 'No tags',
+    decision: best ? 'Accepted as tag signal' : 'Rejected: no exact taste-tag match, not used',
+    cached,
+    ms: Date.now() - t0,
+  });
+  return best ? { id: best.id, name: best.name, query: keyword } : null;
 }
 
 function signalLabel(signal: QlooEntity[], tags: QlooTag[]): string {
@@ -237,7 +289,7 @@ export async function getInsights(
   tags: QlooTag[] = []
 ): Promise<QlooEntity[]> {
   const t0 = Date.now();
-  const { data, cached } = await cachedGet('/v2/insights', { 'filter.type': type, ...signalParams(signal, tags), take: String(take) });
+  const { data, cached, tags: used } = await insightsGet({ 'filter.type': type, take: String(take) }, signal, tags, ctx);
   const via = signal.map((e) => e.name).join(', ');
   const entities: QlooEntity[] = (data?.results?.entities || [])
     .filter((x: any) => x.entity_id && x.name)
@@ -255,7 +307,7 @@ export async function getInsights(
   ctx?.trace.add({
     stage: ctx.stage,
     tool: 'Qloo /v2/insights',
-    input: `Signal: ${signalLabel(signal, tags)} · type ${typeLabel([type])}`,
+    input: `Signal: ${signalLabel(signal, used)} · type ${typeLabel([type])}`,
     output: entities.length
       ? `${entities.length} entities: ${entities.slice(0, 3).map((e) => `${e.name}${e.affinity !== null ? ` ${fmt(e.affinity)}` : ''}`).join(', ')}${entities.length > 3 ? '…' : ''}`
       : 'No entities',
@@ -282,12 +334,12 @@ export async function scoreEntities(
     [...byType].map(async ([type, group]) => {
       const t0 = Date.now();
       const ids = [...new Set(group.map((t) => t.id))];
-      const { data, cached } = await cachedGet('/v2/insights', {
-        'filter.type': type,
-        ...signalParams(signal, tags),
-        'filter.results.entities': ids.join(','),
-        take: String(ids.length),
-      });
+      const { data, cached, tags: used } = await insightsGet(
+        { 'filter.type': type, 'filter.results.entities': ids.join(','), take: String(ids.length) },
+        signal,
+        tags,
+        ctx
+      );
       const scored: { name: string; a: number }[] = [];
       for (const x of data?.results?.entities || []) {
         if (x.entity_id && typeof x.query?.affinity === 'number') {
@@ -299,7 +351,7 @@ export async function scoreEntities(
       ctx?.trace.add({
         stage: ctx.stage,
         tool: 'Qloo /v2/insights',
-        input: `Signal: ${signalLabel(signal, tags)} · affinity of ${ids.length} creator ${typeLabel([type])} entities (filter.results.entities)`,
+        input: `Signal: ${signalLabel(signal, used)} · affinity of ${ids.length} creator ${typeLabel([type])} entities (filter.results.entities)`,
         output: `${scored.length}/${ids.length} scored: ${scored.slice(0, 4).map((s) => `${s.name} ${fmt(s.a)}`).join(', ')}${scored.length > 4 ? '…' : ''}`,
         decision: scored.length < ids.length ? `${ids.length - scored.length} not scored by Qloo, left out` : undefined,
         cached,

@@ -257,9 +257,9 @@ export default function MatchPage() {
             onUseBrand={(brand) => {
               if (!lastInput.current) return;
               setBrandName(brand);
-              analyse({ ...lastInput.current, brandName: brand, referenceBrands: undefined });
+              analyse({ ...lastInput.current, brandName: brand, referenceBrands: undefined, brandDescription: undefined });
             }}
-            onReferenceBrands={(referenceBrands) => lastInput.current && analyse({ ...lastInput.current, referenceBrands })}
+            onBrandFallback={(fallback) => lastInput.current && analyse({ ...lastInput.current, ...fallback })}
           />
         )}
       </main>
