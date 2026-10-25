@@ -4,7 +4,7 @@
 
 Most influencer-matching tools rank creators by follower counts, engagement rates and audience demographics. CreatorPulse asks a different question: *will this partnership clash culturally?* It compares what a brand’s audience likes across music, film, TV, travel and other brands with what a creator’s content is about, and every point of the resulting **Fit Score** traces back to specific Qloo entities.
 
-- **Live demo:** _link added after deployment_
+- **Live demo:** https://creatorpulse-qloo.vercel.app/
 - **Try it:** open the demo and click **Run demo: Apple × MKBHD**. No sign-in, about 10–20 seconds.
 
 ## What you get
