@@ -12,7 +12,7 @@ export interface TraceStep {
   output: string;
   decision?: string;
   ms?: number; // duration of the call
-  cached?: boolean; // Qloo/YouTube response served from this server's cache
+  cached?: boolean; // Qloo, YouTube or Gemini response served from this server's cache
   ok: boolean;
 }
 
@@ -57,6 +57,7 @@ export function summarizeTrace(steps: TraceStep[]) {
   return {
     youtube: steps.filter((s) => s.tool.startsWith('YouTube')).length,
     gemini: steps.filter((s) => s.tool.startsWith('Gemini')).length,
+    geminiCached: steps.filter((s) => s.tool.startsWith('Gemini') && s.cached).length,
     qlooLive: qloo.filter((s) => !s.cached).length,
     qlooCached: qloo.filter((s) => s.cached).length,
     decisions: steps.filter((s) => s.tool === 'Rule').length,

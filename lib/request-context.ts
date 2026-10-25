@@ -4,8 +4,8 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 // every call. Server-only.
 
 interface RequestContext {
-  // "Run live": skip every Qloo and YouTube cache read for this request (results are
-  // still written back, so this also refreshes the cache).
+  // "Run live": skip every Qloo, YouTube and Gemini cache read for this request
+  // (results are still written back, so this also refreshes the cache).
   bypassCache: boolean;
 }
 

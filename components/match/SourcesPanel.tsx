@@ -28,6 +28,20 @@ export function SourcesPanel({ match }: { match: Match }) {
               ? 'Gemini (proposes search terms only; Qloo confirms)'
               : 'unavailable (Gemini failed, so no names were extracted)'}
           </h4>
+          {c.keywordSource === 'gemini' && c.geminiCached !== undefined && (
+            <p className="mt-1">
+              <span
+                className={`rounded px-1.5 py-0.5 text-xs font-medium ${c.geminiCached ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}`}
+              >
+                {c.geminiCached ? 'Gemini cached' : 'Gemini live'}
+              </span>
+              <span className="ml-2 text-xs text-slate-500">
+                {c.geminiCached
+                  ? `Reused the extraction for these videos from ${c.geminiAt ? new Date(c.geminiAt).toLocaleString('en-US') : 'earlier'} (cached 24h).`
+                  : 'Extracted during this run.'}
+              </span>
+            </p>
+          )}
           <p className="mt-1 text-slate-700">
             <span className="text-slate-500">Confirmed by Qloo ({c.entities.length}): </span>
             {c.entities.length ? c.entities.map((e) => (e.name === e.query ? e.name : `${e.name} (“${e.query}”)`)).join(', ') : 'none'}

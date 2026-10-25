@@ -22,8 +22,9 @@ function Step({ s }: { s: TraceStep }) {
         {external && s.ok && s.cached !== undefined && (
           <span
             className={`rounded px-1.5 py-0.5 text-xs font-medium ${s.cached ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}`}
-            title={s.cached ? 'Response reused from this server’s cache (up to 1 hour old)' : 'Fetched live during this match'}
+            title={s.cached ? 'Answer reused from this server’s cache (see the note at the top)' : 'Fetched live during this match'}
           >
+            {s.tool.startsWith('Gemini') ? 'Gemini ' : ''}
             {s.cached ? 'cached' : 'live'}
           </span>
         )}
@@ -61,17 +62,18 @@ export function AgentTrace({
         <div>
           <h3 className="text-base font-semibold text-slate-900">Agent Trace</h3>
           <p className="mt-1 text-sm text-slate-600">
-            {sum.youtube} YouTube call{sum.youtube === 1 ? '' : 's'} · {sum.gemini} Gemini call{sum.gemini === 1 ? '' : 's'} ·{' '}
+            {sum.youtube} YouTube call{sum.youtube === 1 ? '' : 's'} · {sum.gemini} Gemini call{sum.gemini === 1 ? '' : 's'} ({sum.gemini - sum.geminiCached} live, {sum.geminiCached} from cache) ·{' '}
             {sum.qlooLive + sum.qlooCached} Qloo calls ({sum.qlooLive} live, {sum.qlooCached} from cache) · {sum.decisions} decisions ·{' '}
             {(total / 1000).toFixed(1)}s
           </p>
           <p className="mt-1 text-xs text-slate-500">
-            First run is live. Re-runs within 1 hour reuse cache (Qloo up to 1h, YouTube up to 24h). Gemini is never cached.
+            First run is live. Re-runs reuse cache: Qloo up to 1h, YouTube and Gemini up to 24h for the same set of videos. “Run live”
+            bypasses every cache.
           </p>
           <p className={`mt-2 inline-block rounded px-2 py-0.5 text-xs font-medium ${liveRun ? 'bg-emerald-100 text-emerald-900' : 'bg-slate-100 text-slate-700'}`}>
             {liveRun
-              ? 'This run: live. Every Qloo and YouTube call bypassed the cache.'
-              : `This run: cache allowed. ${sum.qlooCached} of ${sum.qlooLive + sum.qlooCached} Qloo calls came from cache.`}
+              ? 'This run: live. Every Qloo, YouTube and Gemini call bypassed the cache.'
+              : `This run: cache allowed. Gemini ${sum.geminiCached ? 'cached' : 'live'}; ${sum.qlooCached} of ${sum.qlooLive + sum.qlooCached} Qloo calls came from cache.`}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -81,7 +83,7 @@ export function AgentTrace({
               onClick={onRunLive}
               disabled={running}
               className="rounded-md bg-teal-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
-              title="Re-run this match with every Qloo and YouTube call fetched live"
+              title="Re-run this match with every Qloo, YouTube and Gemini call fetched live"
             >
               {running ? 'Running live…' : 'Run live'}
             </button>

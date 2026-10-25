@@ -40,6 +40,8 @@ export interface Match {
     videos: CreatorTaste['videos'];
     keywords: string[];
     keywordSource: CreatorTaste['keywordSource'];
+    geminiCached?: boolean;
+    geminiAt?: string;
     entities: QlooEntity[]; // Qloo entities named in the videos (before cross-domain expansion)
     unmatched: string[];
   };
@@ -49,7 +51,7 @@ export interface Match {
   report: Report | null;
   warnings: string[];
   trace: TraceStep[];
-  liveRun?: boolean; // "Run live": every Qloo and YouTube call bypassed the cache
+  liveRun?: boolean; // "Run live": every Qloo, YouTube and Gemini call bypassed the cache
   cachedAt?: string; // set when a stored demo snapshot is served instead of a live run
 }
 
@@ -95,6 +97,8 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
       videos: creator.videos,
       keywords: creator.keywords,
       keywordSource: creator.keywordSource,
+      geminiCached: creator.geminiCached,
+      geminiAt: creator.geminiAt,
       entities: creator.entities,
       unmatched: creator.unmatched,
     },

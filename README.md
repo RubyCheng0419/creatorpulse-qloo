@@ -77,7 +77,7 @@ Below 3 creator entities, or when Qloo has no exact match for the brand, there i
 
 ### Agent Trace
 
-Each result carries a trace of the run, recorded as it happens: the YouTube calls, the Gemini call and what it proposed, every Qloo `/search` with why its result was accepted or rejected (e.g. “iPhone Duo” → Strava, Duo Security, Duolingo: no exact match, rejected), every `/v2/insights` request, and the rule-based decisions: the evidence threshold, excluding the brand from its own expansion, dimension assignment, the score and the verdict. Qloo and YouTube calls are marked *live* or *cached*.
+Each result carries a trace of the run, recorded as it happens: the YouTube calls, the Gemini call and what it proposed, every Qloo `/search` with why its result was accepted or rejected (e.g. “iPhone Duo” → Strava, Duo Security, Duolingo: no exact match, rejected), every `/v2/insights` request, and the rule-based decisions: the evidence threshold, excluding the brand from its own expansion, dimension assignment, the score and the verdict. Every Qloo, YouTube and Gemini call is marked *live* or *cached* (Qloo is cached up to 1 hour; YouTube and Gemini up to 24 hours for the same set of videos), and **Run live** re-runs the match with every cache bypassed.
 
 ### Where the LLM fits (and where it doesn’t)
 
@@ -135,7 +135,7 @@ Regenerate it with `node scripts/save-demo-snapshot.mjs` while the dev server ru
 - **Creator taste comes from what the videos name.** Topics that are not Qloo entities (an air fryer, a cheesecake) cannot be matched, so a cooking channel may score low on Food & Travel. CreatorPulse uses no audience personal data.
 - **No location signal yet**, so place and destination proxies can skew toward particular regions.
 - **Brand names must be in English**; Qloo’s matching of non-English brand names is unreliable.
-- **Gemini output varies between calls** (Gemini is never cached). Qloo’s exact-match check absorbs most of it: two demo runs where Gemini proposed 13 and 12 names both confirmed the same 7 Qloo entities and scored 75. When the confirmed set does differ, the score moves: the same five videos scored Samsung 77 on one run and 71 on another.
+- **Gemini output varies between calls.** Its answers are cached for 24 hours per set of videos, so repeating a match on the same server gives the same names (the result page says “Gemini cached” or “Gemini live”). Across servers or after the cache expires, Qloo’s exact-match check absorbs most of the variation: two demo runs where Gemini proposed 13 and 12 names both confirmed the same 7 Qloo entities and scored 75. When the confirmed set does differ, the score moves: the same five videos scored Samsung 77 on one run and 71 on another.
 - **History is stored in the browser** (localStorage), so `/match/[id]` links only open on the device that ran the match.
 
 ## Tech stack

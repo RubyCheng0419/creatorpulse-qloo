@@ -86,7 +86,22 @@ function geminiError(e: any): string {
   return msg.length > 160 ? `${msg.slice(0, 160)}…` : msg;
 }
 
-// Called on every match, never cached: the demo and every other match run real extraction.
+// Gemini results are cached for 24 hours per set of videos, so repeating a match (or the
+// demo) doesn't spend the Gemini quota again. Only successful answers are cached, "Run
+// live" bypasses the cache, and the Agent Trace marks every Gemini step live or cached.
+const geminiCache = new Map<string, { at: number; value: unknown }>();
+
+async function cachedGemini<T>(key: string, call: () => Promise<T>): Promise<{ value: T; cached: boolean; at: number }> {
+  const hit = bypassCache() ? undefined : geminiCache.get(key);
+  if (hit && Date.now() - hit.at < VIDEO_CACHE_MS) return { value: hit.value as T, cached: true, at: hit.at };
+  const value = await call();
+  const at = Date.now();
+  geminiCache.set(key, { at, value });
+  return { value, cached: false, at };
+}
+
+const cachedNote = (cached: boolean, at: number) => (cached ? ` (cached answer from ${new Date(at).toISOString()})` : '');
+
 async function extractMentions(videos: any[]): Promise<{ name: string; kind: string }[]> {
   const text = videos
     .map((v, i) => {
@@ -130,6 +145,7 @@ const RETRY_SCHEMA = {
 };
 
 async function retryUnmatched(
+  videoKey: string,
   queries: { keyword: string; types: string[] }[],
   resolved: { keyword: string; entity: QlooEntity | null; error?: string }[],
   trace?: Trace
@@ -148,6 +164,8 @@ async function retryUnmatched(
   const tool = `Gemini retry decision (${GEMINI_MODEL})`;
   const input = `${pending.length} name${pending.length === 1 ? '' : 's'} with no exact Qloo match, each with Qloo’s top results: is any result the same thing under another name?`;
   let decisions: { name: string; choice: number; reason: string }[];
+  let retryCached = false;
+  let retryAt = 0;
   try {
     const payload = pending.map((p) => ({
       name: p.row.keyword,
@@ -158,7 +176,15 @@ async function retryUnmatched(
         note: c.disambiguation || undefined,
       })),
     }));
-    decisions = (await geminiJson<{ decisions: typeof decisions }>(RETRY_PROMPT, JSON.stringify(payload), RETRY_SCHEMA)).decisions || [];
+    // Keyed by the videos and the exact question (names and candidate ids), so a change
+    // in Qloo's results asks Gemini again.
+    const key = `retry:${videoKey}|${JSON.stringify(pending.map((p) => [p.row.keyword, p.candidates.map((c) => c.entity_id)]))}`;
+    const r = await cachedGemini(key, async () =>
+      (await geminiJson<{ decisions: typeof decisions }>(RETRY_PROMPT, JSON.stringify(payload), RETRY_SCHEMA)).decisions || []
+    );
+    decisions = r.value;
+    retryCached = r.cached;
+    retryAt = r.at;
   } catch (e: any) {
     trace?.add({ stage: 'creator', tool, input, output: `Failed: ${geminiError(e)}`, decision: 'Keep the first-pass result', ms: Date.now() - g0, ok: false });
     return;
@@ -174,10 +200,13 @@ async function retryUnmatched(
     stage: 'creator',
     tool,
     input,
-    output: picks.map((p) => `“${p.row.keyword}” → ${p.candidate ? `“${p.candidate.name}”` : 'none'} (${p.reason})`).join(' · '),
+    output:
+      picks.map((p) => `“${p.row.keyword}” → ${p.candidate ? `“${p.candidate.name}”` : 'none'} (${p.reason})`).join(' · ') +
+      cachedNote(retryCached, retryAt),
     decision: chosen.length
       ? `Re-query Qloo for ${chosen.map((p) => `“${p.candidate.name}”`).join(', ')}; it counts only if Qloo returns that same entity by exact name or alias`
       : 'No re-query: none of the results is the same thing',
+    cached: retryCached,
     ms: Date.now() - g0,
   });
 
@@ -203,6 +232,8 @@ export interface CreatorTaste {
   // instead (they produced wrong evidence), so the match gets no score.
   keywordSource: 'gemini' | 'unavailable';
   extractionError?: string;
+  geminiCached?: boolean; // the extraction came from the 24-hour cache
+  geminiAt?: string; // when Gemini produced that extraction
   entities: QlooEntity[];
   unmatched: string[];
   warnings: string[];
@@ -285,10 +316,17 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
   let queries: { keyword: string; types: string[] }[] = [];
   let keywordSource: CreatorTaste['keywordSource'] = 'unavailable';
   let extractionError: string | undefined = hasGemini() ? undefined : 'GEMINI_API_KEY is not set';
+  let geminiCached: boolean | undefined;
+  let geminiAt: string | undefined;
+  // The set of readable videos, order-independent: the key for both Gemini caches.
+  const videoKey = videos.map((v) => v.id).sort().join(',');
   if (hasGemini()) {
     const g0 = Date.now();
     try {
-      const mentions = await extractMentions(videos);
+      const r = await cachedGemini(`mentions:${videoKey}`, () => extractMentions(videos));
+      const mentions = r.value;
+      geminiCached = r.cached;
+      geminiAt = new Date(r.at).toISOString();
       // The prompt asks Gemini to skip these, but it doesn't always: the channel's own
       // name and YouTube itself say nothing about the audience's taste.
       const skip = new Set(['youtube', ...channels.flatMap((c: any) => [c.title, c.handle.replace(/^@/, '')])].map((x) => x.toLocaleLowerCase()));
@@ -299,10 +337,13 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
         stage: 'creator',
         tool: `Gemini (${GEMINI_MODEL})`,
         input: `Titles, tags and descriptions of ${videos.length} video${videos.length === 1 ? '' : 's'}: list names explicitly mentioned`,
-        output: mentions.length ? `Proposed ${mentions.length}: ${mentions.map((m) => `${m.name} (${m.kind})`).join(', ')}` : 'Proposed none',
+        output:
+          (mentions.length ? `Proposed ${mentions.length}: ${mentions.map((m) => `${m.name} (${m.kind})`).join(', ')}` : 'Proposed none') +
+          cachedNote(r.cached, r.at),
         decision: dropped.length
           ? `Dropped ${dropped.join(', ')} (the channel itself or YouTube); ${queries.length} names go to Qloo as search terms`
           : `${queries.length} names go to Qloo as search terms, not as evidence`,
+        cached: r.cached,
         ms: Date.now() - g0,
       });
     } catch (e: any) {
@@ -331,7 +372,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
       }
     })
   );
-  await retryUnmatched(queries, resolved, trace);
+  await retryUnmatched(videoKey, queries, resolved, trace);
 
   onStage?.('creator');
 
@@ -367,6 +408,8 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
     keywords,
     keywordSource,
     extractionError,
+    geminiCached,
+    geminiAt,
     entities,
     unmatched,
     warnings,

@@ -29,7 +29,7 @@ The **Run demo** button uses this input. It is defined in [`lib/demo-pair.ts`](.
 
 ## Live runs and the snapshot fallback
 
-The demo runs the full pipeline every time: YouTube is read, Gemini is called (never cached), and Qloo resolves and scores the entities. Qloo responses may come from the server’s one-hour cache; the Agent Trace marks each call as live or cached.
+The demo runs the full pipeline every time: YouTube is read, Gemini proposes names, and Qloo resolves and scores the entities. Responses may come from the server’s cache (Qloo up to 1 hour; YouTube and Gemini up to 24 hours for the same set of videos), and the Agent Trace marks each call “live” or “cached”, including “Gemini live” / “Gemini cached”. “Run live” bypasses every cache.
 
 Gemini’s proposals vary between calls, but Qloo’s exact-match check absorbs most of it: on 2026-10-25 two consecutive runs where Gemini proposed 13 and 12 names both confirmed the same 7 Qloo entities and scored 75.
 
