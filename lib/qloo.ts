@@ -104,15 +104,20 @@ function normalize(s: string): string {
   return s.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 }
 
+// Spacing and punctuation can't make two names different things: "lelabo" = "Le Labo".
+export function compact(s: string): string {
+  return normalize(s).replace(/ /g, '');
+}
+
 // The keyword must equal the entity name or one of Qloo's own aliases (akas).
 // Containment is deliberately not accepted: it matched "flying" to Flying Lotus.
 // Aliases still cover "Apple" → Apple Inc. Chinese names are unreliable: "蘋果" and
 // "耐吉" are not in the aliases and "華碩" returns unrelated brands, so use English names.
 export function namesMatch(query: string, result: any): boolean {
-  const q = normalize(query);
+  const q = compact(query);
   if (!q) return false;
   const names = [result?.name, ...(result?.properties?.akas || []).map((a: any) => a?.value)];
-  return names.some((n) => typeof n === 'string' && normalize(n) === q);
+  return names.some((n) => typeof n === 'string' && compact(n) === q);
 }
 
 
@@ -164,7 +169,7 @@ export async function resolveEntity(
   if (ctx) {
     const input = `“${query}” among ${typeLabel(types)}`;
     if (best) {
-      const how = normalize(best.name) === normalize(query) ? 'name' : 'Qloo alias';
+      const how = compact(best.name) === compact(query) ? 'name' : 'Qloo alias';
       ctx.trace.add({
         stage: ctx.stage,
         tool: 'Qloo /search',

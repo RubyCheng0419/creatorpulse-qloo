@@ -29,12 +29,14 @@ export function MatchResult({
   match,
   onReset,
   onRunLive,
+  onUseBrand,
   running,
   autoPrint,
 }: {
   match: Match;
   onReset?: () => void;
   onRunLive?: () => void; // re-run this match with every Qloo and YouTube cache bypassed
+  onUseBrand?: (brandName: string) => void; // re-run with a brand name the user picked
   running?: boolean;
   autoPrint?: boolean;
 }) {
@@ -70,11 +72,25 @@ export function MatchResult({
         <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
           <h3 className="text-base font-semibold">Insufficient data: no score</h3>
           <p className="mt-2">{match.errorMessage}</p>
+          {/* The brand check comes first: its message would otherwise be contradicted. */}
+          {!match.brand.entity && match.brand.suggestions?.length && onUseBrand ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {match.brand.suggestions.map((s) => (
+                <Button key={s} variant="outline" onClick={() => onUseBrand(s)}>
+                  Use “{s}”
+                </Button>
+              ))}
+            </div>
+          ) : null}
           <p className="mt-2 text-amber-800">
             We would rather give no score than one without Qloo evidence.{' '}
-            {match.creator.keywordSource === 'unavailable'
-              ? 'This is a temporary problem with name extraction; please try again later.'
-              : 'Try videos that name more brands, works or people, or the brand’s full English name.'}
+            {!match.brand.entity
+              ? match.brand.suggestions?.length
+                ? 'Pick the brand you meant; we don’t substitute one for you.'
+                : 'Check the brand’s full English name.'
+              : match.creator.keywordSource === 'unavailable'
+                ? 'This is a temporary problem with name extraction; please try again later.'
+                : 'Try videos that name more brands, works or people.'}
           </p>
         </section>
       )}

@@ -1,5 +1,5 @@
 import { ApiError } from '@/lib/errors';
-import { PROXY_TYPES, QlooEntity, getInsights, resolveEntity } from '@/lib/qloo';
+import { PROXY_TYPES, QlooEntity, compact, getInsights, resolveEntity, searchEntities } from '@/lib/qloo';
 import type { Trace } from '@/lib/trace';
 
 // PRODUCT_SPEC v3.1 §4.1 step 3: brand name → Qloo brand entity → its cultural proxies
@@ -34,7 +34,7 @@ function categoryMatcher(category: string): (result: any) => boolean {
 }
 
 export type BrandLookup =
-  | { found: false; brand: { name: string; category: string | null }; entities: []; error: string }
+  | { found: false; brand: { name: string; category: string | null }; entities: []; suggestions: string[]; error: string }
   | {
       found: true;
       brand: { name: string; category: string | null; entity: QlooEntity };
@@ -55,20 +55,35 @@ export async function lookupBrand(rawName: unknown, rawCategory: unknown, trace?
     throw new ApiError(`Qloo lookup failed: ${e.message}`, 502);
   }
 
-  // Never fall back to a similar-looking brand (PRODUCT_SPEC §3.2).
+  // Never fall back to a similar-looking brand (PRODUCT_SPEC §3.2). Qloo names often carry
+  // a suffix the user doesn't type ("Le Labo" is "Le Labo Fragrances", with no aliases),
+  // so brands whose name starts with the input are offered for the user to pick.
   if (!entity) {
+    const q = compact(name);
+    const suggestions =
+      q.length < 3
+        ? []
+        : (await searchEntities(name, ['urn:entity:brand']))
+            .map((r) => String(r.name || ''))
+            .filter((n) => n && compact(n).startsWith(q))
+            .slice(0, 3);
     trace?.add({
       stage: 'brand',
       tool: 'Rule',
       input: `Brand “${name}”`,
-      output: 'No Qloo brand with this exact name or alias',
-      decision: 'Stop: no similar-looking brand is substituted',
+      output: `No Qloo brand with this exact name or alias${suggestions.length ? `; names starting with it: ${suggestions.join(', ')}` : ''}`,
+      decision: suggestions.length
+        ? 'Stop: ask the user to pick one, rather than substituting it'
+        : 'Stop: no similar-looking brand is substituted',
     });
     return {
       found: false,
       brand: { name, category: category || null },
       entities: [],
-      error: 'Qloo has no brand by this name. Try its full English name, or run the demo pair.',
+      suggestions,
+      error: suggestions.length
+        ? `Qloo has no brand named exactly “${name}”. Did you mean ${suggestions.map((s) => `“${s}”`).join(' or ')}?`
+        : 'Qloo has no brand by this name. Try its full English name, or run the demo pair.',
     };
   }
 

@@ -32,7 +32,13 @@ export interface Match {
   createdAt: string;
   status: 'completed' | 'insufficient-data';
   errorMessage?: string;
-  brand: { name: string; category: string | null; entity: QlooEntity | null; entities: QlooEntity[] };
+  brand: {
+    name: string;
+    category: string | null;
+    entity: QlooEntity | null;
+    entities: QlooEntity[];
+    suggestions?: string[]; // Qloo brands whose name starts with the input, when there was no exact match
+  };
   creator: {
     channelName: string;
     youtubeHandle: string;
@@ -119,7 +125,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   });
 
   if (!brand.found) {
-    return insufficient(brand.error, { ...brand.brand, entity: null, entities: [] });
+    return insufficient(brand.error, { ...brand.brand, entity: null, entities: [], suggestions: brand.suggestions });
   }
   warnings.push(...brand.warnings);
   const brandSide = { ...brand.brand, entities: brand.entities };

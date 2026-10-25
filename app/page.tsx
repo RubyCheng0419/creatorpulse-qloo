@@ -255,6 +255,11 @@ export default function MatchPage() {
             match={match}
             onReset={reset}
             onRunLive={() => lastInput.current && analyse({ ...lastInput.current, live: true })}
+            onUseBrand={(brand) => {
+              if (!lastInput.current) return;
+              setBrandName(brand);
+              analyse({ ...lastInput.current, brandName: brand });
+            }}
           />
         )}
       </main>
