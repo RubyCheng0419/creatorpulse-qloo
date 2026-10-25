@@ -116,14 +116,19 @@ Open http://localhost:3000 and click **Run demo**.
 
 ## Demo pair and fallback
 
-The demo pair is Apple × Marques Brownlee (MKBHD), five recent videos: see [docs/DEMO_PAIR.md](docs/DEMO_PAIR.md). [`data/demo-snapshot.json`](data/demo-snapshot.json) holds a real result for that pair. If a live demo run fails (Qloo, YouTube or Gemini down), the app shows that snapshot, clearly labelled as a cached result with its date. Regenerate it with `node scripts/save-demo-snapshot.mjs` while the dev server runs.
+The demo pair is Apple × Marques Brownlee (MKBHD), five recent videos: see [docs/DEMO_PAIR.md](docs/DEMO_PAIR.md). [`data/demo-snapshot.json`](data/demo-snapshot.json) holds a real result for that pair, and serves two purposes:
+
+- **Reproducible demo score.** The demo starts from the creator entities Qloo confirmed in that verified run instead of re-running Gemini, whose extraction can differ slightly between server instances. The videos are still read and every Qloo expansion and affinity is still fetched live, so the demo is a live analysis with a fixed starting point. The Sources panel says so.
+- **Fallback.** If a live demo run fails (Qloo, YouTube or Gemini down), the app shows the snapshot, clearly labelled as a cached result with its date.
+
+Regenerate it with `node scripts/save-demo-snapshot.mjs` while the dev server runs.
 
 ## Known limitations
 
 - **Creator taste comes from what the videos name.** Topics that are not Qloo entities (an air fryer, a cheesecake) cannot be matched, so a cooking channel may score low on Food & Travel. CreatorPulse uses no audience personal data.
 - **No location signal yet**, so place and destination proxies can skew toward particular regions.
 - **Brand names must be in English**; Qloo’s matching of non-English brand names is unreliable.
-- **Gemini output can vary between server restarts**; within one server run, results are cached and repeatable.
+- **Gemini output can vary between server instances**, so a non-demo match may differ by a point or two on a different instance; within one instance, results are cached and repeatable. The demo pair is pinned and always gives the same score.
 - **History is stored in the browser** (localStorage), so `/match/[id]` links only open on the device that ran the match.
 
 ## Tech stack

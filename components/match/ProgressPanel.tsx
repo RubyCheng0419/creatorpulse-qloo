@@ -15,7 +15,7 @@ export function ProgressPanel({
   onCancel: () => void;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6" aria-live="polite">
+    <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6" aria-live="polite">
       <h2 className="text-lg font-semibold text-slate-900">Analyzing {title}</h2>
       <ol className="mt-4 space-y-3">
         {STAGES.map((s, i) => {

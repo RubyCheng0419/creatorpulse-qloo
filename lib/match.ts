@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { lookupBrand } from '@/lib/brand';
-import { CreatorTaste, getCreatorTaste } from '@/lib/creator';
+import { CreatorTaste, PinnedEntities, getCreatorTaste } from '@/lib/creator';
 import { ApiError } from '@/lib/errors';
 import { PROXY_TYPES, QlooEntity, getInsights, scoreEntities } from '@/lib/qloo';
 import { Report, buildReport } from '@/lib/report';
@@ -58,15 +58,16 @@ export interface MatchInput {
   videoUrls: unknown;
   brandName: unknown;
   category?: unknown;
+  pinDemoEntities?: unknown; // false forces fresh extraction for the demo pair (snapshot script)
 }
 
-export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Match> {
+export async function runMatch(input: MatchInput, onStage?: OnStage, pinned?: PinnedEntities): Promise<Match> {
   const brandName = String(input.brandName || '').trim();
   if (!brandName) throw new ApiError('Provide a brand name.', 400);
 
   // 1. Collect both sides in parallel (lib/qloo throttles the shared rate limit).
   const [creator, brand] = await Promise.all([
-    getCreatorTaste(input.videoUrls, onStage),
+    getCreatorTaste(input.videoUrls, onStage, pinned),
     lookupBrand(brandName, input.category).then((b) => {
       onStage?.('brand');
       return b;

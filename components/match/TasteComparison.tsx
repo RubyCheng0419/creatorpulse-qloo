@@ -80,7 +80,7 @@ export function TasteComparison({ dimensions }: { dimensions: DimensionScore[] }
   const [open, setOpen] = useState<string | null>(null);
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6 print:p-4">
+    <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 print:p-4">
       <h3 className="text-base font-semibold text-slate-900">Five taste dimensions</h3>
       <p className="mt-1 text-sm text-slate-500 print:hidden">Open a dimension to see the Qloo entities and IDs behind its score.</p>
 
@@ -94,13 +94,13 @@ export function TasteComparison({ dimensions }: { dimensions: DimensionScore[] }
                 onClick={() => setOpen(isOpen ? null : d.dimension)}
                 disabled={d.score === null}
                 aria-expanded={isOpen}
-                className="flex w-full items-center gap-4 px-3 py-3 text-left enabled:hover:bg-slate-50 disabled:cursor-default"
+                className="flex w-full items-center gap-2 px-3 py-3 text-left enabled:hover:bg-slate-50 disabled:cursor-default sm:gap-4"
               >
-                <span className="w-44 shrink-0 text-sm font-medium text-slate-800">{d.label}</span>
-                <span className="relative h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
+                <span className="w-28 shrink-0 text-sm leading-tight font-medium text-slate-800 sm:w-44">{d.label}</span>
+                <span className="relative h-3 min-w-12 flex-1 overflow-hidden rounded-full bg-slate-100">
                   {d.score !== null && <span className="absolute inset-y-0 left-0 rounded-full bg-teal-600" style={{ width: `${d.score}%` }} />}
                 </span>
-                <span className="w-20 shrink-0 text-right text-sm tabular-nums text-slate-900">
+                <span className="w-14 shrink-0 text-right text-sm tabular-nums text-slate-900 sm:w-20">
                   {d.score === null ? <span className="text-slate-500">No data</span> : d.score}
                 </span>
                 <span className="w-4 shrink-0 text-slate-400 print:hidden">{d.score === null ? '' : isOpen ? '−' : '+'}</span>

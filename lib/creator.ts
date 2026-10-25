@@ -153,14 +153,22 @@ export interface CreatorTaste {
   videos: { videoId: string; title: string; channelId: string; channelTitle: string; categoryId: string; tags: string[] }[];
   channels: { channelId: string; title: string; handle: string; description: string }[];
   keywords: string[];
-  keywordSource: 'gemini' | 'heuristic';
+  // 'pinned': entities fixed in advance (the demo pair), so no extraction ran this time.
+  keywordSource: 'gemini' | 'heuristic' | 'pinned';
   entities: QlooEntity[];
   unmatched: string[];
   warnings: string[];
 }
 
+export interface PinnedEntities {
+  entities: QlooEntity[]; // Qloo-confirmed in an earlier verified run
+  unmatched: string[];
+}
+
 // Throws ApiError for bad input, YouTube failures and total Qloo failure.
-export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage): Promise<CreatorTaste> {
+// With `pinned`, the videos are still read live but name extraction and Qloo
+// resolution are skipped, so the same entities (and score) come back every time.
+export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, pinned?: PinnedEntities): Promise<CreatorTaste> {
   const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
   if (!YOUTUBE_API_KEY) throw new ApiError('YOUTUBE_API_KEY is not set. Check .env.local.', 500);
 
@@ -210,6 +218,28 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage): Prom
   }));
 
   onStage?.('youtube');
+
+  const videoSummaries = videos.map((v) => ({
+    videoId: v.id,
+    title: v.snippet?.title || '',
+    channelId: v.snippet?.channelId || '',
+    channelTitle: v.snippet?.channelTitle || '',
+    categoryId: v.snippet?.categoryId || '',
+    tags: v.snippet?.tags || [],
+  }));
+
+  if (pinned) {
+    onStage?.('creator');
+    return {
+      videos: videoSummaries,
+      channels,
+      keywords: [...pinned.entities.map((e) => e.query), ...pinned.unmatched],
+      keywordSource: 'pinned',
+      entities: pinned.entities,
+      unmatched: pinned.unmatched,
+      warnings,
+    };
+  }
 
   // 3. Keywords → Qloo entities. Only name-matched Qloo results count as evidence.
   // lib/qloo throttles these under Qloo's 10 req/s limit.
@@ -270,14 +300,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage): Prom
   }
 
   return {
-    videos: videos.map((v) => ({
-      videoId: v.id,
-      title: v.snippet?.title || '',
-      channelId: v.snippet?.channelId || '',
-      channelTitle: v.snippet?.channelTitle || '',
-      categoryId: v.snippet?.categoryId || '',
-      tags: v.snippet?.tags || [],
-    })),
+    videos: videoSummaries,
     channels,
     keywords,
     keywordSource,

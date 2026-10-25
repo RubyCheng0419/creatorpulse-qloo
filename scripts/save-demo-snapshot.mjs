@@ -21,7 +21,8 @@ const input = {
 const r = await fetch(`${base}/api/match`, {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
-  body: JSON.stringify(input),
+  // Fresh Gemini extraction, not the entities pinned from the previous snapshot.
+  body: JSON.stringify({ ...input, pinDemoEntities: false }),
 });
 const match = await r.json();
 

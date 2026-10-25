@@ -27,9 +27,13 @@ The **Run demo** button uses this input. It is defined in [`lib/demo-pair.ts`](.
 - Descriptions name sponsors (Dell, Asus, dbrand), which gives Qloo plenty of entities to resolve.
 - A counter-example: a cooking channel resolved only 3 entities, and its Food & Travel dimension was driven by UK cities rather than food, because dishes are not Qloo entities. Not a good first impression.
 
-## Snapshot fallback
+## Snapshot: pinned entities and fallback
 
-[`data/demo-snapshot.json`](../data/demo-snapshot.json) is a complete, real `/api/match` result for this pair. If a live demo run throws, or Gemini is unavailable and the weaker rule-based keywords would change the result, `/api/match` serves the snapshot instead, and the page labels it “Cached result from [date]”.
+[`data/demo-snapshot.json`](../data/demo-snapshot.json) is a complete, real `/api/match` result for this pair.
+
+**Pinned entities.** Gemini’s extraction varied slightly between server instances (the same videos scored 74 on one and 75 on another), which breaks “same input, same score”. So the demo pair starts from the creator entities stored in the snapshot instead of re-running Gemini. YouTube is still read and every Qloo expansion and affinity is still fetched live. Verified on 2026-10-25: Fit 75 with identical dimension scores before and after a server restart (all caches cleared). The Sources panel shows “fixed for the demo pair”.
+
+**Fallback.** If a live demo run throws (verified by pointing `QLOO_BASE_URL` at an unreachable address: the demo returned the snapshot in 0.3 s, while a non-demo match returned a clear 502 error), `/api/match` serves the snapshot instead, and the page labels it “Cached result from [date]”.
 
 Regenerate it before a demo, with the dev server running:
 
@@ -37,4 +41,4 @@ Regenerate it before a demo, with the dev server running:
 node scripts/save-demo-snapshot.mjs
 ```
 
-The script refuses to save anything except a live, Gemini-backed, fully scored result.
+The script asks for fresh Gemini extraction (`pinDemoEntities: false`) and refuses to save anything except a live, Gemini-backed, fully scored result. Regenerating changes the pinned entities, so re-check the demo score afterwards.

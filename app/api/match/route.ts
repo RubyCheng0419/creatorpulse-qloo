@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withDemoFallback } from '@/lib/demo-snapshot';
+import { demoPin, withDemoFallback } from '@/lib/demo-snapshot';
 import { ApiError } from '@/lib/errors';
 import { MatchInput, runMatch } from '@/lib/match';
 import type { OnStage } from '@/lib/stages';
@@ -12,7 +12,8 @@ function errorBody(e: any): { status: number; body: Record<string, unknown> } {
   return { status: 500, body: { error: e?.message || 'Matching failed.' } };
 }
 
-const run = (input: MatchInput, onStage?: OnStage) => withDemoFallback(input, () => runMatch(input, onStage));
+const run = (input: MatchInput, onStage?: OnStage) =>
+  withDemoFallback(input, () => runMatch(input, onStage, demoPin(input)));
 
 export async function POST(request: NextRequest) {
   let body: any;

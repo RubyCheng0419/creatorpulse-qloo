@@ -6,7 +6,7 @@ export function SourcesPanel({ match }: { match: Match }) {
   const c = match.creator;
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6 text-sm print:break-inside-avoid print:p-4">
+    <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 text-sm print:break-inside-avoid print:p-4">
       <h3 className="text-base font-semibold text-slate-900">Sources</h3>
       <div className="mt-3 grid gap-5 sm:grid-cols-2 print:grid-cols-2">
         <div>
@@ -23,7 +23,12 @@ export function SourcesPanel({ match }: { match: Match }) {
         </div>
         <div>
           <h4 className="text-xs font-semibold tracking-wide text-slate-500">
-            Name extraction: {c.keywordSource === 'gemini' ? 'Gemini (proposes search terms only; Qloo confirms)' : 'rule-based (Gemini unavailable)'}
+            Name extraction:{' '}
+            {c.keywordSource === 'gemini'
+              ? 'Gemini (proposes search terms only; Qloo confirms)'
+              : c.keywordSource === 'pinned'
+                ? 'fixed for the demo pair (entities Qloo confirmed in a verified run, so the demo score is reproducible)'
+                : 'rule-based (Gemini unavailable)'}
           </h4>
           <p className="mt-1 text-slate-700">
             <span className="text-slate-500">Confirmed by Qloo ({c.entities.length}): </span>

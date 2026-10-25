@@ -127,7 +127,7 @@ export default function MatchPage() {
 
         {step === 1 && (
           <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
-            <section className="rounded-xl border border-slate-200 bg-white p-6">
+            <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
               <label htmlFor="urls" className="text-base font-semibold text-slate-900">
                 The creator’s YouTube videos
               </label>
@@ -176,7 +176,7 @@ export default function MatchPage() {
         )}
 
         {step === 2 && (
-          <section className="rounded-xl border border-slate-200 bg-white p-6">
+          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
             <p className="text-sm text-slate-500">
               {lines.length} video{lines.length === 1 ? '' : 's'} added
             </p>
