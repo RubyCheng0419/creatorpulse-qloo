@@ -1,6 +1,6 @@
 import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL, geminiJson, hasGemini } from '@/lib/gemini';
-import { QlooEntity, TASTE_TYPES, resolveEntity } from '@/lib/qloo';
+import { QlooEntity, resolveEntity } from '@/lib/qloo';
 import type { Trace } from '@/lib/trace';
 import type { OnStage } from '@/lib/stages';
 import { MAX_VIDEOS, parseVideoId } from '@/lib/youtube-url';
@@ -10,7 +10,6 @@ import { MAX_VIDEOS, parseVideoId } from '@/lib/youtube-url';
 
 const YT_BASE = 'https://www.googleapis.com/youtube/v3';
 const VIDEO_CACHE_MS = 24 * 60 * 60 * 1000;
-const MAX_KEYWORDS = 40; // ≈5s at the 8 req/s throttle in lib/qloo
 
 const videoCache = new Map<string, { at: number; item: any }>();
 
@@ -36,51 +35,6 @@ async function youtube(path: string, params: Record<string, string>, key: string
       if (e instanceof ApiError || attempt > 0) throw e;
     }
   }
-}
-
-const BROAD_TOPIC =
-  /^(review|reviews|unboxing|tech|technology|科技|開箱|評測|測評|shorts|youtube|video|vlog|4k|hd|new|best|top|how to|tutorial|教學|推薦|分享|the|my|is|a|an|and|of|vs|wtf|asmr|first|impressions|reaction|honest)$/i;
-
-// Keywords come only from what the creator published. Titles say most about a
-// video, so they go first: hashtags, capitalised words and word pairs from titles
-// ("The NEW Tesla Roadster" → "Tesla", "Tesla Roadster"), title segments
-// ("iPhone 17 Pro 開箱｜MacBook Air M5" → "MacBook Air M5"), then tags.
-// Qloo decides which of them are real entities (exact name/alias match only).
-function extractKeywords(videos: any[]): string[] {
-  const hashtags: string[] = [];
-  const tags: string[] = [];
-  const segments: string[] = [];
-  const words: string[] = [];
-  for (const v of videos) {
-    const s = v.snippet || {};
-    tags.push(...(s.tags || []));
-    const text = `${s.title || ''}\n${s.description || ''}`;
-    hashtags.push(...Array.from(text.matchAll(/#([\p{L}\p{N}_-]{2,})/gu), (m) => m[1]));
-    const parts = String(s.title || '')
-      .split(/[|｜\-–—:：【】\[\]()（）「」『』,，!！?？]+/)
-      .map((x) => x.trim())
-      .filter(Boolean);
-    segments.push(...parts.filter((x) => x.split(/\s+/).length <= 4 && x.length <= 30));
-    for (const part of parts) {
-      const tokens = part.split(/\s+/).filter((t) => /\p{Lu}/u.test(t) && !BROAD_TOPIC.test(t));
-      for (let i = 0; i < tokens.length; i++) {
-        words.push(tokens[i]);
-        if (i + 1 < tokens.length) words.push(`${tokens[i]} ${tokens[i + 1]}`);
-      }
-    }
-  }
-  const out = [...hashtags, ...words, ...segments, ...tags];
-  const seen = new Set<string>();
-  return out
-    .map((x) => String(x).replace(/^#/, '').trim())
-    .filter((x) => x.length > 1 && !BROAD_TOPIC.test(x))
-    .filter((x) => {
-      const k = x.toLocaleLowerCase();
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    })
-    .slice(0, MAX_KEYWORDS);
 }
 
 // Gemini proposes names explicitly mentioned in the videos, with a kind that narrows
@@ -124,6 +78,13 @@ Rules:
 - Skip generic words (review, unboxing, camera, coffee), video formats and the channel itself.
 - At most 20 entities.`;
 
+function geminiError(e: any): string {
+  const msg = String(e?.message || e);
+  if (e?.status === 429 || /quota|RESOURCE_EXHAUSTED/i.test(msg)) return 'Gemini’s request quota is used up for now';
+  if (/abort|timeout/i.test(msg)) return 'Gemini did not answer in time';
+  return msg.length > 160 ? `${msg.slice(0, 160)}…` : msg;
+}
+
 // Called on every match, never cached: the demo and every other match run real extraction.
 async function extractMentions(videos: any[]): Promise<{ name: string; kind: string }[]> {
   const text = videos
@@ -145,7 +106,10 @@ export interface CreatorTaste {
   videos: { videoId: string; title: string; channelId: string; channelTitle: string; categoryId: string; tags: string[] }[];
   channels: { channelId: string; title: string; handle: string; description: string }[];
   keywords: string[];
-  keywordSource: 'gemini' | 'heuristic';
+  // 'unavailable': Gemini failed or is not configured. No guessed keywords are used
+  // instead (they produced wrong evidence), so the match gets no score.
+  keywordSource: 'gemini' | 'unavailable';
+  extractionError?: string;
   entities: QlooEntity[];
   unmatched: string[];
   warnings: string[];
@@ -226,7 +190,8 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
   // 3. Keywords → Qloo entities. Only name-matched Qloo results count as evidence.
   // lib/qloo throttles these under Qloo's 10 req/s limit.
   let queries: { keyword: string; types: string[] }[] = [];
-  let keywordSource: CreatorTaste['keywordSource'] = 'heuristic';
+  let keywordSource: CreatorTaste['keywordSource'] = 'unavailable';
+  let extractionError: string | undefined = hasGemini() ? undefined : 'GEMINI_API_KEY is not set';
   if (hasGemini()) {
     const g0 = Date.now();
     try {
@@ -248,33 +213,19 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
         ms: Date.now() - g0,
       });
     } catch (e: any) {
-      warnings.push(`Gemini extraction failed, fell back to rule-based keywords: ${e.message}`);
+      extractionError = geminiError(e);
       trace?.add({
         stage: 'creator',
         tool: `Gemini (${GEMINI_MODEL})`,
         input: `Titles, tags and descriptions of ${videos.length} videos`,
-        output: `Failed: ${e.message}`,
-        decision: 'Fall back to rule-based keywords',
+        output: `Failed: ${extractionError}`,
+        decision: 'Stop: no guessed keywords are used instead, so no score is given',
         ms: Date.now() - g0,
         ok: false,
       });
     }
   }
-  if (keywordSource === 'heuristic') {
-    // A single word is too ambiguous for every type ("Duo" in "iPhone Duo" matched the
-    // artist Duo, "Fun" the band fun.), so single words may only resolve to brands.
-    queries = extractKeywords(videos).map((k) => ({
-      keyword: k,
-      types: /\s/.test(k.trim()) ? TASTE_TYPES : ['urn:entity:brand'],
-    }));
-    trace?.add({
-      stage: 'creator',
-      tool: 'Rule',
-      input: 'Rule-based keywords from hashtags, title words and tags',
-      output: `${queries.length} keywords`,
-      decision: 'Single words may only match brands, to avoid common-word matches',
-    });
-  }
+  if (extractionError) warnings.push(`Name extraction unavailable: ${extractionError}`);
 
   const keywords = queries.map((q) => q.keyword);
   const resolved: { keyword: string; entity: QlooEntity | null; error?: string }[] = await Promise.all(
@@ -305,7 +256,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
   const entities = [...byId.values()];
   const unmatched = resolved.filter((x) => !x.entity && !x.error).map((x) => x.keyword);
 
-  if (entities.length < 3) {
+  if (!extractionError && entities.length < 3) {
     warnings.push(`Qloo matched only ${entities.length} taste entities, below the scoring minimum of 3.`);
   }
 
@@ -321,6 +272,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
     channels,
     keywords,
     keywordSource,
+    extractionError,
     entities,
     unmatched,
     warnings,

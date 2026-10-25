@@ -117,6 +117,13 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   const brandSide = { ...brand.brand, entities: brand.entities };
   const brandEntity = brand.brand.entity;
 
+  if (creator.extractionError) {
+    return insufficient(
+      `Couldn’t extract the names mentioned in the videos (${creator.extractionError}). No score is given rather than one built on guessed keywords. Please try again later.`,
+      brandSide
+    );
+  }
+
   const direct = creator.entities;
   const enough = direct.length >= MIN_DIRECT_ENTITIES;
   trace.add({
@@ -208,7 +215,11 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     stage: 'score',
     tool: 'Rule',
     input: `Equal-weight mean of ${scored.length} dimension${scored.length === 1 ? '' : 's'} with data`,
-    output: `Fit Score ${compatibility.fitScore}, confidence ${compatibility.confidence}`,
+    output:
+      `Fit Score ${compatibility.fitScore}, confidence ${compatibility.confidence}` +
+      (compatibility.confidenceBasis
+        ? ` (named entities ${Math.round(compatibility.confidenceBasis.directEntities * 100)}% × 0.35, dimensions covered ${Math.round(compatibility.confidenceBasis.coverage * 100)}% × 0.25, share of weight from named entities ${Math.round(compatibility.confidenceBasis.directShare * 100)}% (full marks at 50%) × 0.40)`
+        : ''),
     decision: `Verdict: ${VERDICT_LABELS[compatibility.verdict]} (80+ strong, 60–79 moderate, 40–59 weak, below 40 no fit)`,
   });
 

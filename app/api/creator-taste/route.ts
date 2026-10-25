@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
 import { getCreatorTaste } from '@/lib/creator';
 import { ApiError } from '@/lib/errors';
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, 'creator-taste', 5);
+  if (limited) return limited;
+
   let body: any;
   try {
     body = await request.json();

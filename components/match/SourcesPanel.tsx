@@ -26,7 +26,7 @@ export function SourcesPanel({ match }: { match: Match }) {
             Name extraction:{' '}
             {c.keywordSource === 'gemini'
               ? 'Gemini (proposes search terms only; Qloo confirms)'
-              : 'rule-based (Gemini unavailable)'}
+              : 'unavailable (Gemini failed, so no names were extracted)'}
           </h4>
           <p className="mt-1 text-slate-700">
             <span className="text-slate-500">Confirmed by Qloo ({c.entities.length}): </span>

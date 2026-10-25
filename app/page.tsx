@@ -103,6 +103,11 @@ export default function MatchPage() {
               Not follower counts or engagement rates. CreatorPulse uses Qloo’s cross-domain taste graph to compare a brand’s
               audience with a creator’s content, and every point of the score traces back to specific Qloo entities.
             </p>
+            <p className="mt-3 max-w-2xl text-sm text-slate-500">
+              <span className="font-medium text-slate-700">Works best</span> for creators whose titles and descriptions name brands,
+              products, shows or people (tech reviewers, for example). Channels that rarely name anything, like many kids’ or cooking
+              channels, may get “insufficient data” instead of a score.
+            </p>
           </div>
         )}
 

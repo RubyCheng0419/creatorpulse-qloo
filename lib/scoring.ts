@@ -25,6 +25,8 @@ export const DIVERGENCE_MAX = 0.7; // evidence of mismatch (not merely missing d
 export const DIRECT_WEIGHT = 1; // entity named in the creator's own videos
 export const PROXY_WEIGHT = 0.5; // entity Qloo associates with those, one step removed
 export const MIN_DIRECT_ENTITIES = 3; // §3.2: fewer than this → no score
+const CONFIDENT_DIRECT_ENTITIES = 10; // named entities needed for full marks on that part of confidence
+const FULL_MARKS_DIRECT_SHARE = 0.5; // share of score weight from named entities that earns full marks
 
 const TYPE_DIMENSION: Record<string, Dimension> = {
   'urn:entity:artist': 'music',
@@ -94,6 +96,9 @@ export type Verdict = 'high' | 'medium' | 'low' | 'no-match' | 'insufficient-dat
 export interface Compatibility {
   fitScore: number | null;
   confidence: number | null;
+  // Each part 0–1: named entities scored (of 10), dimensions with data (of 5),
+  // share of the score's weight that comes from named entities.
+  confidenceBasis?: { directEntities: number; coverage: number; directShare: number };
   verdict: Verdict;
   dimensions: DimensionScore[];
 }
@@ -132,11 +137,21 @@ export function computeCompatibility(items: ScoredEntity[]): Compatibility {
 
   const fitScore = Math.round(scored.reduce((s, d) => s + d.score! * d.weight, 0));
 
-  // More dimensions covered, more entities scored and more direct evidence → higher confidence.
-  const coverage = scored.length / DIMENSIONS.length;
-  const volume = Math.min(1, items.length / 20);
-  const directness = Math.min(1, items.filter((i) => i.side === 'direct').length / 5);
-  const confidence = Math.round(100 * (0.4 * coverage + 0.3 * volume + 0.3 * directness));
+  // Confidence = how much of the score rests on entities the creator actually named,
+  // rather than on Qloo's cross-domain inference. The first version (coverage, volume,
+  // 5 direct entities) saturated at 100 for 9 of 12 brands, so it said nothing.
+  // Weights are a judgement call, documented in the README.
+  const totalWeight = items.reduce((s, i) => s + i.weight, 0);
+  const direct = items.filter((i) => i.side === 'direct');
+  const basis = {
+    directEntities: Math.min(1, direct.length / CONFIDENT_DIRECT_ENTITIES),
+    coverage: scored.length / DIMENSIONS.length,
+    directShare: totalWeight ? direct.reduce((s, i) => s + i.weight, 0) / totalWeight : 0,
+  };
+  // Cross-domain entities outnumber named ones (~30 vs ~10), so even strong named evidence
+  // rarely exceeds half the weight; half counts as full marks, or confidence would cap at ~76.
+  const shareScore = Math.min(1, basis.directShare / FULL_MARKS_DIRECT_SHARE);
+  const confidence = Math.round(100 * (0.35 * basis.directEntities + 0.25 * basis.coverage + 0.4 * shareScore));
 
-  return { fitScore, confidence, verdict: verdictOf(fitScore), dimensions };
+  return { fitScore, confidence, confidenceBasis: basis, verdict: verdictOf(fitScore), dimensions };
 }

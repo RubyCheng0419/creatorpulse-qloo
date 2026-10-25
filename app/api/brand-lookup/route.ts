@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
 import { lookupBrand } from '@/lib/brand';
 import { ApiError } from '@/lib/errors';
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, 'brand-lookup', 10);
+  if (limited) return limited;
+
   let body: any;
   try {
     body = await request.json();

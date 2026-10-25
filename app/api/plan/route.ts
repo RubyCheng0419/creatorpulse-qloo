@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
 import { geminiJson, hasGemini } from '@/lib/gemini';
 
 const PLAN_SCHEMA = {
@@ -240,6 +241,9 @@ async function plan({
 }
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, 'plan', 5);
+  if (limited) return limited;
+
   try {
     const body = (await request.json()) as any;
 

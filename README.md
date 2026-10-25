@@ -71,7 +71,7 @@ The score is computed in [`lib/scoring.ts`](lib/scoring.ts); the same Qloo data 
 4. **Dimensions**: by Qloo entity type; brands by majority vote over their Qloo genre tags (`electronics`, `automotive` → Tech; `fashion` → Lifestyle; `food_and_beverage`, `travel` → Food & Travel…).
 5. **Shared taste** is affinity ≥ 0.85; **clash** is affinity < 0.70: evidence of mismatch, not missing data.
 6. **Dimension score** = weighted mean; **Fit Score** = equal-weight mean of the dimensions that have data. Dimensions without data are excluded, never counted as zero.
-7. **Confidence** = 40% dimension coverage + 30% entity volume + 30% directly named entities.
+7. **Confidence** measures how much of the score rests on entities the creator actually named rather than on cross-domain inference: 35% named entities scored (full marks at 10) + 25% dimensions with data + 40% share of the score’s weight that comes from named entities (full marks at half). These weights are a judgement call. An earlier formula saturated at 100 for 9 of 12 test brands, so it carried no information; the current one ranges from about 44 (3 named entities) to 100.
 
 Below 3 creator entities, or when Qloo has no exact match for the brand, there is no score.
 
@@ -81,14 +81,17 @@ Each result carries a trace of the run, recorded as it happens: the YouTube call
 
 ### Where the LLM fits (and where it doesn’t)
 
-Gemini (`gemini-3.5-flash`) reads video titles, descriptions and tags and proposes names that are **explicitly mentioned**, e.g. a sponsor in a description. These are only search terms: a name becomes evidence only if Qloo returns an entity whose name or Qloo alias matches it exactly. Gemini never sees or produces scores, entities or report text. If Gemini is unavailable, a rule-based keyword extractor takes over and the result says so.
+Gemini (`gemini-3.5-flash`) reads video titles, descriptions and tags and proposes names that are **explicitly mentioned**, e.g. a sponsor in a description. These are only search terms: a name becomes evidence only if Qloo returns an entity whose name or Qloo alias matches it exactly. Gemini never sees or produces scores, entities or report text.
+
+If Gemini is unavailable (for example, its quota is used up), **no score is given.** An earlier rule-based keyword fallback produced wrong but Qloo-confirmable evidence (“TIME” → *Time* magazine, “INDIAN FOOD” → a book of that name), which is worse than no answer, so it was removed. The demo pair falls back to its labelled snapshot instead.
 
 ### Details that keep the evidence honest
 
 - Qloo search is fuzzy (searching brands for “iPhone” returns Strava), so only exact name/alias matches are accepted; everything else is listed as *not found*.
-- A single word may only resolve to a brand (“Duo” in “iPhone Duo” otherwise matched an artist called Duo).
+- Gemini tags each name with a kind (brand, artist, show, person…), which narrows the Qloo search: “Duo” from “iPhone Duo” no longer matches an artist called Duo.
 - Local businesses (`urn:entity:place`) are excluded from creator search; they dominated fuzzy matches for product names.
 - Requests are throttled under Qloo’s 10 requests/second limit and retried once on 429/5xx.
+- The public API is rate-limited per IP (5 matches per minute), so a public demo can’t drain the Gemini, Qloo and YouTube quotas. The limit is kept in memory per server instance: a guard against bursts, not a global quota.
 
 More detail, including verified request/response shapes: [docs/QLOO_INTEGRATION.md](docs/QLOO_INTEGRATION.md).
 
@@ -109,7 +112,7 @@ Open http://localhost:3000 and click **Run demo**.
 | `YOUTUBE_API_KEY` | `videos.list` and `channels.list` (never `search.list`, which costs 100 quota units) |
 | `QLOO_API_KEY` | Qloo `/search` and `/v2/insights` |
 | `QLOO_BASE_URL` | Defaults to `https://hackathon.api.qloo.com` |
-| `GEMINI_API_KEY` | Name extraction; optional (falls back to rule-based keywords) |
+| `GEMINI_API_KEY` | Name extraction; required for a score (without it every match returns *insufficient data*) |
 
 ### API
 

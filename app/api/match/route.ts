@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
 import { withDemoFallback } from '@/lib/demo-snapshot';
 import { ApiError } from '@/lib/errors';
 import { MatchInput, runMatch } from '@/lib/match';
@@ -15,6 +16,9 @@ function errorBody(e: any): { status: number; body: Record<string, unknown> } {
 const run = (input: MatchInput, onStage?: OnStage) => withDemoFallback(input, () => runMatch(input, onStage));
 
 export async function POST(request: NextRequest) {
+  const limited = rateLimit(request, 'match', 5);
+  if (limited) return limited;
+
   let body: any;
   try {
     body = await request.json();

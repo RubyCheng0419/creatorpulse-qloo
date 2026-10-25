@@ -70,7 +70,7 @@ A cold match takes roughly 60 Qloo requests (5–12 s at the throttle below). Re
 ## Pitfalls found while testing, and how they are handled
 
 1. **Search is fuzzy.** Searching brands for “iPhone” returns Strava; an unfiltered “Apple” returns a video game first. → Only results whose `name` or one of `properties.akas` equals the query (case- and punctuation-insensitive) are accepted. Everything else is reported as *not found*.
-2. **Common words match real entities.** “Duo” matched an artist, “Fun” the band fun. → In rule-based fallback mode a single word may only resolve to a brand. With Gemini, each name comes with a kind that narrows the search types.
+2. **Common words match real entities.** “Duo” matched an artist, “Fun” the band fun. → Gemini tags each name with a kind (brand, artist, show, person…), which narrows the search types.
 3. **Local businesses flood product-name searches** (“iPhone” → repair shops). → `urn:entity:place` is excluded from creator search.
 4. **Affinities are compressed** into roughly 0.55–0.98. → Rescaled from [0.5, 1.0] to [0, 100] before scoring.
 5. **Non-English brand names are unreliable.** “蘋果” and “耐吉” are not Qloo aliases of Apple and Nike, “華碩” returns unrelated brands. → The UI asks for English brand names, and an unknown brand is reported, never substituted.

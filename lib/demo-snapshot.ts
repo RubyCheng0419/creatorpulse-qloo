@@ -8,8 +8,8 @@ import type { Match, MatchInput } from '@/lib/match';
 const stored = snapshot as unknown as Match | null;
 
 // The demo always runs the real pipeline first. Only if that fails (it throws, or
-// Gemini was unavailable so rule-based keywords were used) is the stored result
-// served, clearly labelled with its date (PRODUCT_SPEC §3.3).
+// Gemini was unavailable so no score could be given) is the stored result served,
+// clearly labelled with its date (PRODUCT_SPEC §3.3).
 export async function withDemoFallback(input: MatchInput, run: () => Promise<Match>): Promise<Match> {
   if (!stored || !isDemoInput(input.videoUrls, input.brandName)) return run();
   try {

@@ -41,7 +41,12 @@ export function MatchResult({ match, onReset, autoPrint }: { match: Match; onRes
         <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
           <h3 className="text-base font-semibold">Insufficient data: no score</h3>
           <p className="mt-2">{match.errorMessage}</p>
-          <p className="mt-2 text-amber-800">We would rather give no score than one without Qloo evidence. Try videos that name more brands, works or people, or the brand’s full English name.</p>
+          <p className="mt-2 text-amber-800">
+            We would rather give no score than one without Qloo evidence.{' '}
+            {match.creator.keywordSource === 'unavailable'
+              ? 'This is a temporary problem with name extraction; please try again later.'
+              : 'Try videos that name more brands, works or people, or the brand’s full English name.'}
+          </p>
         </section>
       )}
 

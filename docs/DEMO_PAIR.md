@@ -33,7 +33,7 @@ The demo runs the full pipeline every time: YouTube is read, Gemini is called (n
 
 Gemini’s proposals vary between calls, but Qloo’s exact-match check absorbs most of it: on 2026-10-25 two consecutive runs where Gemini proposed 13 and 12 names both confirmed the same 7 Qloo entities and scored 75.
 
-[`data/demo-snapshot.json`](../data/demo-snapshot.json) is a complete, real `/api/match` result for this pair, used only as a **fallback**. If a live demo run throws, or Gemini is unavailable and the weaker rule-based keywords would change the result, `/api/match` serves the snapshot instead, and the page labels it “Cached result from [date]”. Verified by pointing `QLOO_BASE_URL` at an unreachable address: the demo returned the snapshot in 0.3 s, while a non-demo match returned a clear 502 error.
+[`data/demo-snapshot.json`](../data/demo-snapshot.json) is a complete, real `/api/match` result for this pair, used only as a **fallback**. If a live demo run throws, or Gemini is unavailable so no score can be given, `/api/match` serves the snapshot instead, and the page labels it “Cached result from [date]”. Verified by pointing `QLOO_BASE_URL` at an unreachable address: the demo returned the snapshot in 0.3 s, while a non-demo match returned a clear 502 error.
 
 Regenerate it before a demo, with the dev server running:
 
