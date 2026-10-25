@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import type { Match } from '@/lib/match';
 import { Button } from '@/components/ui/button';
+import { downloadMarkdown } from '@/lib/report-markdown';
+import { summarizeTrace } from '@/lib/trace';
 import { AgentTrace } from './AgentTrace';
 import { ReportDetails } from './ReportDetails';
 import { ScoreCard } from './ScoreCard';
@@ -44,6 +46,21 @@ export function MatchResult({
     <div className="space-y-4">
       <ScoreCard match={match} />
 
+      <div className="print:hidden">
+        <div className="flex flex-wrap gap-3">
+          <Button size="lg" onClick={() => printMatch(match)}>
+            Download report (PDF)
+          </Button>
+          <Button size="lg" variant="outline" onClick={() => downloadMarkdown(match)}>
+            Download as Markdown
+          </Button>
+        </div>
+        <p className="mt-2 text-xs text-slate-500">
+          PDF opens the print dialog: choose “Save as PDF”. Both include the scores, every entity with its affinity, and the Agent Trace
+          summary.
+        </p>
+      </div>
+
       {match.status === 'completed' && match.report ? (
         <>
           <TasteComparison dimensions={match.compatibility.dimensions} />
@@ -65,24 +82,43 @@ export function MatchResult({
       <SourcesPanel match={match} />
 
       <AgentTrace steps={match.trace ?? []} liveRun={match.liveRun} onRunLive={onRunLive} running={running} />
+      <PrintedTraceSummary match={match} />
 
       <p className="text-xs text-slate-500">{DISCLAIMER}</p>
 
       <div className="flex flex-wrap gap-3 print:hidden">
-        {match.status === 'completed' && (
-          <Button size="lg" onClick={() => printMatch(match)}>
-            Download PDF report
-          </Button>
-        )}
         {onReset && (
           <Button size="lg" variant="outline" onClick={onReset}>
             Run another match
           </Button>
         )}
       </div>
-      {match.status === 'completed' && (
-        <p className="text-xs text-slate-500 print:hidden">Opens the print dialog: choose “Save as PDF” as the destination.</p>
-      )}
     </div>
+  );
+}
+
+// The interactive trace is screen-only; the printed report gets its summary and decisions.
+function PrintedTraceSummary({ match }: { match: Match }) {
+  const steps = match.trace ?? [];
+  if (!steps.length) return null;
+  const sum = summarizeTrace(steps);
+  return (
+    <section className="hidden rounded-xl border border-slate-200 p-4 text-sm print:block print:break-inside-avoid">
+      <h3 className="text-base font-semibold text-slate-900">Agent Trace summary</h3>
+      <p className="mt-1 text-slate-600">
+        {sum.youtube} YouTube calls · {sum.gemini} Gemini call{sum.gemini === 1 ? '' : 's'} · {sum.qlooLive + sum.qlooCached} Qloo calls ({sum.qlooLive}{' '}
+        live, {sum.qlooCached} from cache) · {sum.decisions} decisions{match.liveRun ? ' · live run' : ''}
+      </p>
+      <ul className="mt-2 list-disc space-y-0.5 pl-5 text-slate-700">
+        {steps
+          .filter((s) => s.tool === 'Rule')
+          .map((s, i) => (
+            <li key={i}>
+              {s.output}
+              {s.decision ? ` → ${s.decision}` : ''}
+            </li>
+          ))}
+      </ul>
+    </section>
   );
 }
