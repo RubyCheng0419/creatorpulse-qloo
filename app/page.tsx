@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
 import { MatchResult } from '@/components/match/MatchResult';
 import { ProgressPanel } from '@/components/match/ProgressPanel';
@@ -21,10 +22,33 @@ type Step = 1 | 2 | 3 | 4;
 
 const CATEGORIES = ['Technology', 'Sports', 'Beauty', 'Food & Beverage', 'Automotive', 'Fashion'];
 
-export default function MatchPage() {
+// useSearchParams needs a Suspense boundary for the static build.
+export default function Page() {
+  return (
+    <Suspense>
+      <MatchPage />
+    </Suspense>
+  );
+}
+
+// "Analyze videos" from Find creators links here with ?videos=<channel>&brand=… (and the
+// brand fallback as refs=a|b and desc=…), which prefills the form and starts the match.
+function linkedRequest(params: URLSearchParams): MatchRequest | null {
+  const videos = params.get('videos');
+  const brand = params.get('brand');
+  if (!videos || !brand) return null;
+  const refs = params.get('refs')?.split('|').filter(Boolean);
+  const desc = params.get('desc');
+  return { videoUrls: [videos], brandName: brand, ...(refs?.length ? { referenceBrands: refs } : {}), ...(desc ? { brandDescription: desc } : {}) };
+}
+
+function MatchPage() {
+  const params = useSearchParams();
+  const [linked] = useState(() => linkedRequest(params)); // read once, on the first render
+  const linkedRan = useRef(false);
   const [step, setStep] = useState<Step>(1);
-  const [urlsText, setUrlsText] = useState('');
-  const [brandName, setBrandName] = useState('');
+  const [urlsText, setUrlsText] = useState(linked?.videoUrls[0] ?? '');
+  const [brandName, setBrandName] = useState(linked?.brandName ?? '');
   const [category, setCategory] = useState('');
   const [done, setDone] = useState<MatchStage[]>([]);
   const [elapsed, setElapsed] = useState(0);
@@ -77,6 +101,14 @@ export default function MatchPage() {
       setStep(2);
     }
   }
+
+  // Runs once for a linked request (the ref guards against React running effects twice).
+  useEffect(() => {
+    if (!linked || linkedRan.current) return;
+    linkedRan.current = true;
+    analyse(linked);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function runDemo(pair: DemoPair) {
     setUrlsText(pair.videoUrls.join('\n'));

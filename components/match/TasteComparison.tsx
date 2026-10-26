@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { DIVERGENCE_MAX, INTERSECTION_MIN, type DimensionScore, type ScoredEntity } from '@/lib/scoring';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -18,7 +18,12 @@ const TYPE_LABELS: Record<string, string> = {
 
 const PRINT_LIMIT = 3;
 
+// What a one-step-removed entity is called: a match's cross-domain expansion, or a
+// creator's audience taste in Find creators.
+const ProxyLabel = createContext('Cross-domain expansion');
+
 function EntityRow({ e }: { e: ScoredEntity }) {
+  const proxyLabel = useContext(ProxyLabel);
   return (
     <li className="py-2 text-sm print:py-1">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
@@ -33,7 +38,7 @@ function EntityRow({ e }: { e: ScoredEntity }) {
           `Named in the videos (“${e.query}”)`
         ) : (
           <>
-            Cross-domain expansion<span className="print:hidden"> (from {e.query})</span>
+            {proxyLabel}<span className="print:hidden"> (from {e.query})</span>
           </>
         )}
         <span className="ml-2 font-mono break-all">{e.id}</span>
@@ -84,12 +89,21 @@ function Evidence({ d, limit }: { d: DimensionScore; limit?: number }) {
   );
 }
 
-export function TasteComparison({ dimensions }: { dimensions: DimensionScore[] }) {
+export function TasteComparison({
+  dimensions,
+  proxyLabel = 'Cross-domain expansion',
+  title = 'Five taste dimensions',
+}: {
+  dimensions: DimensionScore[];
+  proxyLabel?: string;
+  title?: string;
+}) {
   const [open, setOpen] = useState<string | null>(null);
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 print:p-4">
-      <h3 className="text-base font-semibold text-slate-900">Five taste dimensions</h3>
+    <ProxyLabel.Provider value={proxyLabel}>
+      <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 print:p-4">
+      <h3 className="text-base font-semibold text-slate-900">{title}</h3>
       <p className="mt-1 text-sm text-slate-500 print:hidden">Open a dimension to see the Qloo entities and IDs behind its score.</p>
 
       <ul className="mt-4 space-y-3">
@@ -144,6 +158,7 @@ export function TasteComparison({ dimensions }: { dimensions: DimensionScore[] }
           );
         })}
       </ul>
-    </section>
+      </section>
+    </ProxyLabel.Provider>
   );
 }

@@ -36,10 +36,11 @@ export interface QlooEntity {
   description?: string; // Qloo's short description, when insights returns one (people do)
 }
 
-// /search has properties.short_description; /v2/insights has short_descriptions[{ value }].
+// /search has properties.short_description; /v2/insights has short_descriptions
+// [{ value, language }] in many languages, in no fixed order. English only; none otherwise.
 function shortDescription(x: any): string | undefined {
   const p = x?.properties || {};
-  const d = p.short_description || p.short_descriptions?.[0]?.value;
+  const d = p.short_description || p.short_descriptions?.find((s: any) => s?.language === 'en')?.value;
   return typeof d === 'string' && d ? d : undefined;
 }
 

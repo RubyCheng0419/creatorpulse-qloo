@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import type { Match } from '@/lib/match';
 import { Button } from '@/components/ui/button';
 import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
+import { parseVideoId } from '@/lib/youtube-url';
 import { downloadMarkdown } from '@/lib/report-markdown';
 import { summarizeTrace } from '@/lib/trace';
 import { AgentTrace } from './AgentTrace';
@@ -108,7 +109,7 @@ export function MatchResult({
             <div className="mt-3">
               <p className="font-medium">What you can do</p>
               <ul className="mt-1 list-disc pl-5 text-amber-800">
-                {NO_DATA_NEXT_STEPS[match.noDataReason].map((s) => (
+                {nextSteps(match).map((s) => (
                   <li key={s}>{s}</li>
                 ))}
               </ul>
@@ -136,6 +137,18 @@ export function MatchResult({
       </div>
     </div>
   );
+}
+
+// A channel was already read in full, so "paste the channel URL" would send the user in a
+// circle; its audience-taste score in Find creators needs no named entities at all.
+function nextSteps(match: Match): string[] {
+  const steps = NO_DATA_NEXT_STEPS[match.noDataReason!];
+  const fromChannel = match.creator.videoUrls.length === 1 && !parseVideoId(match.creator.videoUrls[0]);
+  if (match.noDataReason !== 'too-few-creator-entities' || !fromChannel) return steps;
+  return [
+    'This channel’s latest videos name too few brands, works or people that Qloo knows.',
+    'Find creators scores creators from their audience’s taste in Qloo, which doesn’t depend on what the videos name.',
+  ];
 }
 
 // The interactive trace is screen-only; the printed report gets its summary and decisions.

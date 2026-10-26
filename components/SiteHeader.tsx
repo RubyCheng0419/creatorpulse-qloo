@@ -10,7 +10,10 @@ export function SiteHeader() {
         </Link>
         <nav className="flex gap-4 text-sm">
           <Link href="/" className="text-slate-600 hover:text-teal-700">
-            New match
+            Check a creator
+          </Link>
+          <Link href="/discover" className="text-slate-600 hover:text-teal-700">
+            Find creators
           </Link>
           <Link href="/matches" className="text-slate-600 hover:text-teal-700">
             History
