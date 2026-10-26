@@ -81,8 +81,12 @@ From the response headers: **10 requests/second** (`x-second-ratelimit-*`) and *
 | Scoring | `/v2/insights` per type, `filter.results.entities` | brand | Affinity of every creator entity |
 | Brand not in Qloo | `/search` for each reference brand, or for names in the brand’s description | – | Exact name/alias match only; these replace the brand as signal above |
 | Tag supplement | `/v2/tags`, `filter.query` | – | Exact-name taste tags, sent as `signal.interests.tags` |
+| Find creators: candidates | `/v2/insights`, `filter.type=urn:entity:person`, `filter.tags=urn:tag:genre:person:youtuber` (or a category tag) | brand | Top 10 YouTubers, with the brand audience’s affinity |
+| Find creators: audience taste | `/v2/insights` × 6 types | each candidate | Top 5 per type |
+| Find creators: scoring | `/v2/insights` per type, `filter.results.entities` | brand | Affinity of every candidate’s audience-taste entities, batched for all candidates |
+| Find creators: channel | `/search`, `types=urn:entity:person` | – | The same entity’s `properties.external` (Instagram, Twitter ids), tried as YouTube handles |
 
-A cold match takes roughly 60 Qloo requests (5–12 s at the throttle below). Responses are cached for an hour, so repeating a match is near-instant and returns the same numbers.
+A cold match takes roughly 60 Qloo requests (5–12 s at the throttle below); a cold Find creators run about 70 (10–20 s). Responses are cached for an hour, so repeating a match is near-instant and returns the same numbers.
 
 ## Pitfalls found while testing, and how they are handled
 
@@ -93,6 +97,11 @@ A cold match takes roughly 60 Qloo requests (5–12 s at the throttle below). Re
 5. **Non-English brand names are unreliable.** “蘋果” and “耐吉” are not Qloo aliases of Apple and Nike, “華碩” returns unrelated brands. → The UI asks for English brand names, and an unknown brand is reported, never substituted.
 6. **Rate limit.** → A process-wide throttle spaces requests 125 ms apart (8/s), and a `429` is retried once after `x-second-ratelimit-reset`.
 7. **No location signal is sent**, so destination and place proxies can skew regionally (Gulf cities appeared for several brands).
+8. **Some people are not valid signals.** For a few Qloo people, `/v2/insights` with the person as signal returns `400 All of the provided signal.interests.entities were invalid` for most types (Barry Lewis: only destinations worked). → Reported as “no audience-taste data” for those types and not retried; a creator with fewer than 10 scored entities gets no score.
+9. **Dropped connections and 429s under load.** A Find creators run sends about 60 profile queries; a few sometimes fail with a network error or `429`, and an immediate retry often fails again. → Network errors wait 750 ms before the one retry; anything still failing is asked once more after the rest. Each Qloo step in the Agent Trace records its HTTP attempts.
+10. **Descriptions come in many languages.** `/v2/insights` returns `properties.short_descriptions` as `[{ value, language }]` in no fixed order. → Only the `en` entry is shown.
+11. **No YouTube links in Qloo.** People carry `properties.external` (Instagram, Twitter, IMDb) on `/search` results only, not on `/v2/insights` results. → The channel lookup goes through `/search` and accepts a channel only if its title is the person’s name or alias and it has 10,000+ subscribers (“@TatiWestbrook” is an empty channel with the right title).
+12. **Category tags are Wikipedia categories.** `technology_youtubers`, `gaming_youtubers`, `beauty_makeup_youtubers` and others work as `filter.tags`, but coverage is uneven, and only two people are tagged `taiwanese_youtubers`. Several tags in a comma list are OR, not AND.
 
 ## What is deliberately not done
 
