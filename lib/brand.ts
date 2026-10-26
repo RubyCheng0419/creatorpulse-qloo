@@ -4,6 +4,7 @@ import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL } from '@/lib/gemini';
 import { fetchPageText } from '@/lib/web-page';
 import { PROXY_TYPES, QlooEntity, QlooTag, compact, findTag, getInsights, resolveEntity, searchEntities } from '@/lib/qloo';
+import type { NoDataReason } from '@/lib/no-data';
 import type { Trace } from '@/lib/trace';
 
 // PRODUCT_SPEC v3.1 §4.1 step 3: brand name → Qloo brand entity → its cultural proxies
@@ -56,7 +57,9 @@ const MAX_DESCRIPTION = 2000;
 const noPeriod = (s: string) => s.replace(/\.$/, '');
 
 // The description as given, or the visible text of the brand's web page.
-async function descriptionText(description: string, trace?: Trace): Promise<{ text: string } | { error: string }> {
+type DescriptionError = { error: string; kind: NoDataReason };
+
+async function descriptionText(description: string, trace?: Trace): Promise<{ text: string } | DescriptionError> {
   let text = description;
   if (/^https?:\/\//i.test(description)) {
     const t0 = Date.now();
@@ -72,10 +75,10 @@ async function descriptionText(description: string, trace?: Trace): Promise<{ te
       });
     } catch (e: any) {
       trace?.add({ stage: 'brand', tool: 'Brand web page', input: description, output: `Failed: ${e.message}`, ms: Date.now() - t0, ok: false });
-      return { error: `Couldn’t read that page (${noPeriod(e.message)})` };
+      return { error: `Couldn’t read that page (${noPeriod(e.message)})`, kind: 'description-unreadable' };
     }
   }
-  if (text.trim().length < 20) return { error: 'The description is too short to name anything' };
+  if (text.trim().length < 20) return { error: 'The description is too short to name anything', kind: 'description-unreadable' };
   return { text };
 }
 
@@ -127,7 +130,7 @@ async function describedTags(description: string, trace?: Trace): Promise<{ tags
 
 // The brand's description, or the text of its web page → the LLM proposes the names it
 // explicitly mentions (same rules as for videos) → only exact Qloo matches are kept.
-async function describedEntities(description: string, trace?: Trace): Promise<{ entities: QlooEntity[] } | { error: string }> {
+async function describedEntities(description: string, trace?: Trace): Promise<{ entities: QlooEntity[] } | DescriptionError> {
   const page = await descriptionText(description, trace);
   if ('error' in page) return page;
   const text = page.text;
@@ -154,7 +157,7 @@ async function describedEntities(description: string, trace?: Trace): Promise<{ 
   } catch (e: any) {
     const error = llmFailure(e);
     trace?.add({ stage: 'brand', tool: `Gemini (${GEMINI_MODEL})`, input, output: `Failed: ${error}`, ms: Date.now() - g0, ok: false });
-    return { error: `Couldn’t extract names from the description (${error})` };
+    return { error: `Couldn’t extract names from the description (${error})`, kind: 'llm-unavailable' };
   }
 
   const resolved = await Promise.all(
@@ -186,6 +189,7 @@ export type BrandLookup =
       entities: [];
       suggestions: string[];
       missingReferences: MissingReference[]; // reference brands Qloo doesn't have
+      reason: NoDataReason;
       error: string;
     }
   | {
@@ -232,12 +236,18 @@ export async function lookupBrand(
       throw new ApiError(`Qloo lookup failed: ${e.message}`, 502);
     }
   };
-  const notFound = (error: string, suggestions: string[] = [], missingReferences: MissingReference[] = []): BrandLookup => ({
+  const notFound = (
+    reason: NoDataReason,
+    error: string,
+    suggestions: string[] = [],
+    missingReferences: MissingReference[] = []
+  ): BrandLookup => ({
     found: false,
     brand: { name, category: category || null },
     entities: [],
     suggestions,
     missingReferences,
+    reason,
     error,
   });
 
@@ -263,6 +273,7 @@ export async function lookupBrand(
     });
     if (!enough) {
       return notFound(
+        'error' in found ? found.kind : 'description-too-few-names',
         'error' in found
           ? `${found.error}. Enter 1–${MAX_REFERENCE_BRANDS} reference brands with a similar audience that are in Qloo instead.`
           : `Only ${verified.length} name${verified.length === 1 ? '' : 's'} in your description matched Qloo exactly${verified.length ? ` (${verified.map((e) => e.name).join(', ')})` : ''}; at least ${MIN_DESCRIPTION_ENTITIES} are needed. Enter 1–${MAX_REFERENCE_BRANDS} reference brands with a similar audience that are in Qloo instead.`
@@ -284,6 +295,7 @@ export async function lookupBrand(
         : 'Stop: ask the user for reference brands; no similar-looking brand is substituted',
     });
     return notFound(
+      suggestions.length ? 'brand-name-mismatch' : 'brand-not-in-qloo',
       suggestions.length
         ? `Qloo has no brand named exactly “${name}”. Did you mean ${suggestions.map((s) => `“${s}”`).join(' or ')}?`
         : `Your brand isn’t in Qloo. Enter 1–${MAX_REFERENCE_BRANDS} reference brands with a similar audience that are in Qloo.`,
@@ -308,6 +320,7 @@ export async function lookupBrand(
     if (missing.length) {
       const missingReferences = await Promise.all(missing.map(async (m) => ({ name: m, suggestions: await suggestionsFor(m) })));
       return notFound(
+        'reference-not-in-qloo',
         `Qloo has no brand named exactly ${missing.map((m) => `“${m}”`).join(', ')}. Replace ${missing.length === 1 ? 'it' : 'them'} with a reference brand Qloo has.`,
         [],
         missingReferences

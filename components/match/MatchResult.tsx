@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import type { Match } from '@/lib/match';
 import { Button } from '@/components/ui/button';
+import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
 import { downloadMarkdown } from '@/lib/report-markdown';
 import { summarizeTrace } from '@/lib/trace';
 import { AgentTrace } from './AgentTrace';
@@ -87,16 +88,32 @@ export function MatchResult({
               ))}
             </div>
           ) : null}
-          <p className="mt-2 text-amber-800">
-            We would rather give no score than one without Qloo evidence.{' '}
-            {brandProblem
-              ? match.brand.suggestions?.length
-                ? 'Pick the brand you meant; we don’t substitute one for you. If it’s none of these, score against reference brands below.'
-                : 'Check the brand’s full English name, or score against reference brands below.'
-              : match.creator.keywordSource === 'unavailable'
-                ? 'This is a temporary problem with name extraction; please try again later.'
-                : 'Try videos that name more brands, works or people.'}
-          </p>
+          <p className="mt-2 text-amber-800">We would rather give no score than one without Qloo evidence.</p>
+          {match.noDataReason === 'too-few-creator-entities' && (
+            // What the videos gave, so the user sees how far short it fell, not just "no".
+            <dl className="mt-3 space-y-1 text-amber-900">
+              <div>
+                <dt className="inline font-medium">Confirmed by Qloo ({match.creator.entities.length}): </dt>
+                <dd className="inline">{match.creator.entities.map((e) => e.name).join(', ') || 'none'}</dd>
+              </div>
+              {match.creator.unmatched.length > 0 && (
+                <div>
+                  <dt className="inline font-medium">Not in Qloo, dropped ({match.creator.unmatched.length}): </dt>
+                  <dd className="inline">{match.creator.unmatched.join(', ')}</dd>
+                </div>
+              )}
+            </dl>
+          )}
+          {match.noDataReason && (
+            <div className="mt-3">
+              <p className="font-medium">What you can do</p>
+              <ul className="mt-1 list-disc pl-5 text-amber-800">
+                {NO_DATA_NEXT_STEPS[match.noDataReason].map((s) => (
+                  <li key={s}>{s}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           {brandProblem && onBrandFallback && (
             <BrandFallbackForm key={`${match.id}:${match.createdAt}`} match={match} onSubmit={onBrandFallback} />
           )}

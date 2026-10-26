@@ -3,6 +3,7 @@ import { BrandBasis, MissingReference, lookupBrand } from '@/lib/brand';
 import { CreatorTaste, getCreatorTaste } from '@/lib/creator';
 import { ApiError } from '@/lib/errors';
 import { PROXY_TYPES, QlooEntity, QlooTag, getInsights, scoreEntities } from '@/lib/qloo';
+import type { NoDataReason } from '@/lib/no-data';
 import { Report, VERDICT_LABELS, buildReport } from '@/lib/report';
 import {
   AFFINITY_FLOOR,
@@ -33,6 +34,7 @@ export interface Match {
   createdAt: string;
   status: 'completed' | 'insufficient-data';
   errorMessage?: string;
+  noDataReason?: NoDataReason; // why there is no score, as a countable category
   brand: {
     name: string;
     category: string | null;
@@ -135,10 +137,11 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     liveRun: bypassCache(),
   };
   const warnings = [...creator.warnings];
-  const insufficient = (errorMessage: string, b: Match['brand']): Match => ({
+  const insufficient = (noDataReason: NoDataReason, errorMessage: string, b: Match['brand']): Match => ({
     ...base,
     status: 'insufficient-data',
     errorMessage,
+    noDataReason,
     brand: b,
     compatibility: NO_SCORE,
     report: null,
@@ -146,7 +149,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   });
 
   if (!brand.found) {
-    return insufficient(brand.error, {
+    return insufficient(brand.reason, brand.error, {
       ...brand.brand,
       entity: null,
       entities: [],
@@ -174,6 +177,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
 
   if (creator.extractionError) {
     return insufficient(
+      'llm-unavailable',
       `Couldn’t extract the names mentioned in the videos (${creator.extractionError}). No score is given rather than one built on guessed keywords. Please try again later.`,
       brandSide
     );
@@ -190,6 +194,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   });
   if (!enough) {
     return insufficient(
+      'too-few-creator-entities',
       `Qloo matched only ${direct.length} taste entities from the videos, below the scoring minimum of ${MIN_DIRECT_ENTITIES}.`,
       brandSide
     );
@@ -267,7 +272,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   });
   onStage?.('score');
   if (compatibility.fitScore === null) {
-    return insufficient('Qloo returned no affinity for any creator entity, so no score can be given.', brandSide);
+    return insufficient('no-affinity', 'Qloo returned no affinity for any creator entity, so no score can be given.', brandSide);
   }
   const evidenceLevel = compatibility.confidence!;
   trace.add({

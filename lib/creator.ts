@@ -5,7 +5,7 @@ import { QlooEntity, resolveEntity, searchEntities } from '@/lib/qloo';
 import { bypassCache } from '@/lib/request-context';
 import type { Trace } from '@/lib/trace';
 import type { OnStage } from '@/lib/stages';
-import { MAX_VIDEOS, parseVideoId } from '@/lib/youtube-url';
+import { CHANNEL_VIDEOS, ChannelRef, MAX_VIDEOS, channelLabel, parseChannelRef, parseVideoId } from '@/lib/youtube-url';
 
 // PRODUCT_SPEC v3.1 §4.1 steps 1–2: YouTube video metadata → keywords → Qloo entities.
 // Replaces the old /api/extract. Comments are not fetched (§1.4). Server-only.
@@ -172,10 +172,13 @@ export const llmFailure = (e: any) => (e instanceof ExtractionFailed ? e.message
 type Mentions = { name: string; kind: string }[];
 
 function extractMentions(videos: any[]): Promise<LlmAnswer<Mentions>> {
+  // Up to MAX_VIDEOS videos get 1,500 description characters each, as always; a channel's
+  // longer list gets less per video so the prompt stays about the same size.
+  const perVideo = videos.length > MAX_VIDEOS ? 600 : 1500;
   const text = videos
     .map((v, i) => {
       const s = v.snippet || {};
-      return `Video ${i + 1}\nTitle: ${s.title || ''}\nTags: ${(s.tags || []).join(', ')}\nDescription: ${String(s.description || '').slice(0, 1500)}`;
+      return `Video ${i + 1}\nTitle: ${s.title || ''}\nTags: ${(s.tags || []).join(', ')}\nDescription: ${String(s.description || '').slice(0, perVideo)}`;
     })
     .join('\n\n');
   return withFallback((json) => namedEntities(MENTION_PROMPT, text, json));
@@ -349,20 +352,50 @@ export interface CreatorTaste {
   warnings: string[];
 }
 
+// A channel's latest CHANNEL_VIDEOS uploads: channels.list for its uploads playlist, then
+// playlistItems.list (1 quota unit each, never search.list).
+async function latestUploads(ref: ChannelRef, key: string, trace?: Trace): Promise<string[]> {
+  const t0 = Date.now();
+  const ch = await youtube('channels', { part: 'contentDetails,snippet', ...('handle' in ref ? { forHandle: ref.handle } : { id: ref.id }) }, key);
+  const channel = ch.items?.[0];
+  const uploads = channel?.contentDetails?.relatedPlaylists?.uploads;
+  if (!uploads) {
+    trace?.add({ stage: 'youtube', tool: 'YouTube channels.list', input: channelLabel(ref), output: 'No such channel', ms: Date.now() - t0, ok: false });
+    throw new ApiError(`YouTube has no channel ${channelLabel(ref)}.`, 422);
+  }
+  const list = await youtube('playlistItems', { part: 'contentDetails', playlistId: uploads, maxResults: String(CHANNEL_VIDEOS) }, key);
+  const ids: string[] = (list.items || []).map((x: any) => x.contentDetails?.videoId).filter(Boolean);
+  trace?.add({
+    stage: 'youtube',
+    tool: 'YouTube channels.list + playlistItems.list',
+    input: `Channel ${channelLabel(ref)}: latest ${CHANNEL_VIDEOS} uploads`,
+    output: `${channel.snippet?.title}: ${ids.length} video IDs`,
+    ms: Date.now() - t0,
+  });
+  if (!ids.length) throw new ApiError(`Channel ${channelLabel(ref)} has no public uploads.`, 422);
+  return ids;
+}
+
 // Throws ApiError for bad input, YouTube failures and total Qloo failure.
 export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace?: Trace): Promise<CreatorTaste> {
   const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
   if (!YOUTUBE_API_KEY) throw new ApiError('YOUTUBE_API_KEY is not set. Check .env.local.', 500);
 
   const urls: string[] = Array.isArray(rawUrls) ? rawUrls.map(String).filter((x) => x.trim()) : [];
-  if (urls.length < 1 || urls.length > MAX_VIDEOS) {
-    throw new ApiError(`Provide 1 to ${MAX_VIDEOS} YouTube video URLs.`, 400);
+  // One channel URL instead of videos: its latest uploads are read.
+  const channelRef = urls.length === 1 && !parseVideoId(urls[0]) ? parseChannelRef(urls[0]) : null;
+  if (!channelRef) {
+    if (urls.length < 1 || urls.length > MAX_VIDEOS) {
+      throw new ApiError(`Provide 1 to ${MAX_VIDEOS} YouTube video URLs, or one channel URL.`, 400);
+    }
+    const invalid = urls.filter((u) => !parseVideoId(u));
+    if (invalid.length) throw new ApiError('These are not valid YouTube video URLs:', 400, { invalid });
   }
-  const invalid = urls.filter((u) => !parseVideoId(u));
-  if (invalid.length) throw new ApiError('These are not valid YouTube video URLs:', 400, { invalid });
 
   const warnings: string[] = [];
-  const videoIds = [...new Set(urls.map((u) => parseVideoId(u)!))];
+  const videoIds = channelRef
+    ? await latestUploads(channelRef, YOUTUBE_API_KEY, trace)
+    : [...new Set(urls.map((u) => parseVideoId(u)!))];
 
   // 1. videos.list (1 quota unit per call; never search.list, which costs 100).
   const t0 = Date.now();

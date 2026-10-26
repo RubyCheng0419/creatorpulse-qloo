@@ -13,7 +13,7 @@ import { saveMatch } from '@/lib/history';
 import type { Match } from '@/lib/match';
 import { type MatchRequest, requestMatch } from '@/lib/match-client';
 import type { MatchStage } from '@/lib/stages';
-import { MAX_VIDEOS, parseVideoId } from '@/lib/youtube-url';
+import { CHANNEL_VIDEOS, MAX_VIDEOS, channelLabel, parseChannelRef, parseVideoId } from '@/lib/youtube-url';
 
 // PRODUCT_SPEC v3.1 §3.1: the four steps on one page, plus the one-click demo (§3.3).
 
@@ -34,8 +34,10 @@ export default function MatchPage() {
   const lastInput = useRef<MatchRequest | null>(null);
 
   const lines = urlsText.split(/\s*\n\s*/).map((l) => l.trim()).filter(Boolean);
+  // One channel URL reads that channel's latest uploads instead of picked videos.
+  const channel = lines.length === 1 && !parseVideoId(lines[0]) ? parseChannelRef(lines[0]) : null;
   const checks = lines.map((line) => ({ line, id: parseVideoId(line) }));
-  const invalidCount = checks.filter((c) => !c.id).length;
+  const invalidCount = channel ? 0 : checks.filter((c) => !c.id).length;
   const tooMany = lines.length > MAX_VIDEOS;
   const canContinue = lines.length > 0 && !invalidCount && !tooMany;
 
@@ -138,7 +140,10 @@ export default function MatchPage() {
               <label htmlFor="urls" className="text-base font-semibold text-slate-900">
                 The creator’s YouTube videos
               </label>
-              <p className="mt-1 text-sm text-slate-500">Paste 1–{MAX_VIDEOS} video URLs, one per line.</p>
+              <p className="mt-1 text-sm text-slate-500">
+                Paste 1–{MAX_VIDEOS} video URLs, one per line, or one channel URL (e.g. youtube.com/@mkbhd) to read its latest{' '}
+                {CHANNEL_VIDEOS} videos.
+              </p>
               <Textarea
                 id="urls"
                 rows={6}
@@ -147,7 +152,10 @@ export default function MatchPage() {
                 placeholder={'https://www.youtube.com/watch?v=...\nhttps://youtu.be/...'}
                 className="mt-3 font-mono"
               />
-              {checks.length > 0 && (
+              {channel && (
+                <p className="mt-3 text-sm text-teal-700">✓ Channel {channelLabel(channel)}: its latest {CHANNEL_VIDEOS} videos will be read</p>
+              )}
+              {checks.length > 0 && !channel && (
                 <ul className="mt-3 space-y-1 text-sm">
                   {checks.map((c, i) => (
                     <li key={i} className={`break-all ${c.id ? 'text-teal-700' : 'text-rose-700'}`}>
@@ -193,7 +201,7 @@ export default function MatchPage() {
         {step === 2 && (
           <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
             <p className="text-sm text-slate-500">
-              {lines.length} video{lines.length === 1 ? '' : 's'} added
+              {channel ? `Channel ${channelLabel(channel)}` : `${lines.length} video${lines.length === 1 ? '' : 's'} added`}
             </p>
             <label htmlFor="brand" className="mt-4 block text-base font-semibold text-slate-900">
               Brand
@@ -242,7 +250,7 @@ export default function MatchPage() {
 
         {step === 3 && (
           <ProgressPanel
-            title={`${brandName || 'brand'} × ${lines.length} video${lines.length === 1 ? '' : 's'}`}
+            title={`${brandName || 'brand'} × ${channel ? channelLabel(channel) : `${lines.length} video${lines.length === 1 ? '' : 's'}`}`}
             done={done}
             elapsed={elapsed}
             onCancel={cancel}
