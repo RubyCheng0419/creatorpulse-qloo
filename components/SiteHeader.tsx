@@ -15,6 +15,9 @@ export function SiteHeader() {
           <Link href="/discover" className="text-slate-600 hover:text-teal-700">
             Find creators
           </Link>
+          <Link href="/projects" className="text-slate-600 hover:text-teal-700">
+            Projects
+          </Link>
           <Link href="/matches" className="text-slate-600 hover:text-teal-700">
             History
           </Link>

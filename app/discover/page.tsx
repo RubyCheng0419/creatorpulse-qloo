@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
 import { CandidateCard } from '@/components/discover/CandidateCard';
 import { AgentTrace } from '@/components/match/AgentTrace';
@@ -10,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { CREATOR_CATEGORIES, type CreatorCategory } from '@/lib/creator-categories';
 import type { Discovery } from '@/lib/discover';
 import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
+import { type ProjectInputs, addRun, createProject, getProject, updateInputs, useProjects } from '@/lib/projects';
 import { brandBasisNote } from '@/lib/report';
 
 // "Find creators": the brand goes in, Qloo's YouTubers come out ranked by how their
@@ -55,12 +58,33 @@ async function loadImage(file: File): Promise<Image> {
   }
 }
 
-export default function DiscoverPage() {
-  const [brandName, setBrandName] = useState('');
-  const [creatorCategory, setCreatorCategory] = useState<CreatorCategory>('any');
-  const [moreOpen, setMoreOpen] = useState(false);
-  const [refs, setRefs] = useState(['', '', '']);
-  const [description, setDescription] = useState('');
+const NEW_PROJECT = '__new';
+const threeRefs = (list: string[]) => Array.from({ length: 3 }, (_, i) => list[i] ?? '');
+
+// useSearchParams needs a Suspense boundary for the static build.
+export default function Page() {
+  return (
+    <Suspense>
+      <DiscoverPage />
+    </Suspense>
+  );
+}
+
+function DiscoverPage() {
+  // /discover?project=<id> (from the Projects page) opens with that project's inputs.
+  const params = useSearchParams();
+  const [initial] = useState(() => {
+    const id = params.get('project');
+    return id ? (getProject(id) ?? null) : null;
+  });
+  const projects = useProjects();
+  const [projectId, setProjectId] = useState(initial?.id ?? '');
+  const [newProjectName, setNewProjectName] = useState('');
+  const [brandName, setBrandName] = useState(initial?.inputs.brandName ?? '');
+  const [creatorCategory, setCreatorCategory] = useState<CreatorCategory>(initial?.inputs.creatorCategory ?? 'any');
+  const [moreOpen, setMoreOpen] = useState(Boolean(initial?.inputs.referenceBrands.length || initial?.inputs.brandDescription));
+  const [refs, setRefs] = useState(threeRefs(initial?.inputs.referenceBrands ?? []));
+  const [description, setDescription] = useState(initial?.inputs.brandDescription ?? '');
   const [image, setImage] = useState<Image | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
@@ -75,6 +99,27 @@ export default function DiscoverPage() {
     const t = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
     return () => clearInterval(t);
   }, [running]);
+
+  const project = projects?.find((p) => p.id === projectId) ?? null;
+  const inputs = (): ProjectInputs => ({
+    brandName: brandName.trim(),
+    creatorCategory,
+    referenceBrands: refs.map((r) => r.trim()).filter(Boolean),
+    brandDescription: description.trim(),
+  });
+  const unsaved = project !== null && JSON.stringify(inputs()) !== JSON.stringify(project.inputs);
+
+  function chooseProject(id: string) {
+    setProjectId(id);
+    const p = projects?.find((x) => x.id === id);
+    if (!p) return;
+    setBrandName(p.inputs.brandName);
+    setCreatorCategory(p.inputs.creatorCategory);
+    setRefs(threeRefs(p.inputs.referenceBrands));
+    setDescription(p.inputs.brandDescription);
+    setMoreOpen(Boolean(p.inputs.referenceBrands.length || p.inputs.brandDescription));
+    setResult(null);
+  }
 
   function currentRequest(overrides: Partial<Request> = {}): Request {
     const referenceBrands = refs.map((r) => r.trim()).filter(Boolean);
@@ -102,6 +147,7 @@ export default function DiscoverPage() {
       else {
         setResult(d);
         if (d.status !== 'completed' && !d.brand?.basis) setMoreOpen(true); // the brand side needs help
+        if (project) addRun(project.id, d, brandBasisNote(d.brand));
       }
     } catch (e: any) {
       setError(`Connection failed: ${e?.message || e}`);
@@ -111,6 +157,7 @@ export default function DiscoverPage() {
   }
 
   function runDemo(name: string) {
+    setProjectId(''); // a demo is not part of the user's project
     setBrandName(name);
     setCreatorCategory('any');
     setRefs(['', '', '']);
@@ -143,6 +190,58 @@ export default function DiscoverPage() {
 
         <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
           <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
+            <div className="mb-5 rounded-lg bg-slate-50 p-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="text-sm font-medium text-slate-900">
+                  Project
+                  <select
+                    value={projectId}
+                    onChange={(e) => chooseProject(e.target.value)}
+                    className="mt-1 block h-9 rounded-md border border-slate-200 bg-white px-2 text-sm font-normal"
+                  >
+                    <option value="">No project</option>
+                    {projects?.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                    <option value={NEW_PROJECT}>New project…</option>
+                  </select>
+                </label>
+                {projectId === NEW_PROJECT && (
+                  <>
+                    <Input
+                      aria-label="Project name"
+                      value={newProjectName}
+                      onChange={(e) => setNewProjectName(e.target.value)}
+                      placeholder="e.g. Spring launch"
+                      className="h-9 max-w-xs"
+                    />
+                    <Button
+                      size="sm"
+                      disabled={!newProjectName.trim() && !brandName.trim()}
+                      onClick={() => setProjectId(createProject(newProjectName, inputs()).id)}
+                    >
+                      Create
+                    </Button>
+                  </>
+                )}
+                {unsaved && (
+                  <Button size="sm" variant="outline" onClick={() => updateInputs(project!.id, inputs())}>
+                    Save inputs to “{project!.name}”
+                  </Button>
+                )}
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                {project
+                  ? `Rankings are saved to “${project.name}” (${project.runs.length} so far). Key visuals are not stored.`
+                  : 'A project keeps one campaign’s brand inputs and every ranking found with them.'}{' '}
+                <Link href="/projects" className="text-teal-700 hover:underline">
+                  All projects
+                </Link>
+              </p>
+            </div>
+
             <label htmlFor="brand" className="text-base font-semibold text-slate-900">
               Your brand
             </label>
