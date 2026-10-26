@@ -2,7 +2,7 @@
 // order they finished. Recorded by the server, shown on the result page. Pure data,
 // shared by the server and the browser.
 
-export type TraceStage = 'youtube' | 'creator' | 'brand' | 'expand' | 'score' | 'report';
+export type TraceStage = 'youtube' | 'creator' | 'brand' | 'candidates' | 'profile' | 'expand' | 'score' | 'report';
 
 export interface TraceStep {
   t: number; // ms since the match started, when this step finished
@@ -51,6 +51,8 @@ export const STAGE_LABELS: Record<TraceStage, string> = {
   youtube: 'Read the videos',
   creator: 'Resolve the creator’s taste',
   brand: 'Resolve the brand',
+  candidates: 'Find candidate creators',
+  profile: 'Read each creator’s audience taste',
   expand: 'Expand across domains',
   score: 'Score',
   report: 'Report',

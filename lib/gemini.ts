@@ -17,7 +17,13 @@ export function hasGemini(): boolean {
 
 // Returns parsed JSON matching `schema`. Throws when the key is missing or the call
 // fails; callers fall back to non-LLM behaviour.
-export async function geminiJson<T>(system: string, user: string, schema: object, temperature = 0): Promise<T> {
+// An image (e.g. a brand's key visual) can be sent along with the text.
+export interface InlineImage {
+  data: string; // base64, no data: prefix
+  mimeType: string;
+}
+
+export async function geminiJson<T>(system: string, user: string, schema: object, temperature = 0, image?: InlineImage): Promise<T> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw Error('GEMINI_API_KEY is not set. Check .env.local.');
   client ??= new GoogleGenAI({ apiKey });
@@ -28,7 +34,7 @@ export async function geminiJson<T>(system: string, user: string, schema: object
     try {
       const res = await client.models.generateContent({
         model: GEMINI_MODEL,
-        contents: user,
+        contents: image ? [{ inlineData: image }, { text: user }] : user,
         config: {
           systemInstruction: system,
           temperature,

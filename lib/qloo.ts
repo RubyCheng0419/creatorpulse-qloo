@@ -33,6 +33,14 @@ export interface QlooEntity {
   via: 'search' | 'insights';
   query: string; // evidence chain: the keyword (search) or signal entity name (insights)
   genres: string[]; // Qloo genre tags without "urn:tag:genre:", e.g. "brand:electronics:phones_and_tablets"
+  description?: string; // Qloo's short description, when insights returns one (people do)
+}
+
+// /search has properties.short_description; /v2/insights has short_descriptions[{ value }].
+function shortDescription(x: any): string | undefined {
+  const p = x?.properties || {};
+  const d = p.short_description || p.short_descriptions?.[0]?.value;
+  return typeof d === 'string' && d ? d : undefined;
 }
 
 // /search tags carry "tag_id", /v2/insights tags carry "id".
@@ -113,6 +121,8 @@ export async function qlooFetch(url: string): Promise<{ data: any; http: string 
       if (e.final) throw e;
       seen.push(/timeout|abort/i.test(`${e?.name} ${e?.message}`) ? 'timeout' : 'network error');
       if (attempt > 0) throw Object.assign(e, { http: attemptsLabel(seen, 'gave up after retry') });
+      // A dropped connection retried at once mostly fails again (seen in the Agent Trace).
+      await new Promise((res) => setTimeout(res, 750));
     }
   }
 }
@@ -346,6 +356,7 @@ export async function getInsights(
       via: 'insights' as const,
       query: via,
       genres: genresOf(x),
+      description: shortDescription(x),
     }));
   ctx?.trace.add({
     stage: ctx.stage,

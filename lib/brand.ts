@@ -1,10 +1,21 @@
 import { createHash } from 'node:crypto';
-import { KIND_TYPES, LlmAnswer, cachedAnswer, cachedNote, extractBrandKeywords, extractBrandMentions, llmFailure, llmLabel } from '@/lib/creator';
+import {
+  KIND_TYPES,
+  LlmAnswer,
+  cachedAnswer,
+  cachedNote,
+  extractBrandKeywords,
+  extractBrandMentions,
+  extractImageKeywords,
+  llmFailure,
+  llmLabel,
+} from '@/lib/creator';
 import { ApiError } from '@/lib/errors';
-import { GEMINI_MODEL } from '@/lib/gemini';
+import { GEMINI_MODEL, InlineImage } from '@/lib/gemini';
 import { fetchPageText } from '@/lib/web-page';
 import { PROXY_TYPES, QlooEntity, QlooTag, compact, findTag, getInsights, resolveEntity, searchEntities } from '@/lib/qloo';
 import type { NoDataReason } from '@/lib/no-data';
+import { Compatibility, ConfidenceLevel, lowerConfidence } from '@/lib/scoring';
 import type { Trace } from '@/lib/trace';
 
 // PRODUCT_SPEC v3.1 §4.1 step 3: brand name → Qloo brand entity → its cultural proxies
@@ -128,6 +139,47 @@ async function describedTags(description: string, trace?: Trace): Promise<{ tags
   return { tags: [...new Map(tags.filter((t): t is QlooTag => Boolean(t)).map((t) => [t.id, t])).values()].slice(0, 3) };
 }
 
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_IMAGE_BASE64 = 4_000_000; // about 3 MB of image
+
+function parseImage(raw: unknown): InlineImage | null {
+  const img = raw as any;
+  if (!img) return null;
+  const data = String(img.data || '');
+  const mimeType = String(img.mimeType || '');
+  if (!IMAGE_TYPES.includes(mimeType) || !data || !/^[A-Za-z0-9+/=]+$/.test(data)) {
+    throw new ApiError('The key visual must be a JPEG, PNG or WebP image.', 400);
+  }
+  if (data.length > MAX_IMAGE_BASE64) throw new ApiError('The key visual is too large; use an image under 3 MB.', 400);
+  return { data, mimeType };
+}
+
+// Key visual → style keywords → exact-name Qloo taste tags. Only ever a supplement.
+async function imageTags(image: InlineImage, trace?: Trace): Promise<QlooTag[]> {
+  const g0 = Date.now();
+  const input = 'The brand’s key visual: visible style keywords';
+  let keywords: string[];
+  try {
+    const key = `brand-image:${createHash('sha256').update(image.data).digest('hex')}`;
+    const r = await cachedAnswer(key, () => extractImageKeywords(image));
+    keywords = r.value.value;
+    trace?.add({
+      stage: 'brand',
+      tool: llmLabel(r.value),
+      input,
+      output: (keywords.length ? `Proposed ${keywords.join(', ')}` : 'Proposed none') + cachedNote(r.cached, r.at),
+      decision: 'Keywords are looked up as Qloo tags; only exact tag names are used',
+      cached: r.cached,
+      ms: Date.now() - g0,
+    });
+  } catch (e: any) {
+    trace?.add({ stage: 'brand', tool: `Gemini (${GEMINI_MODEL})`, input, output: `Failed: ${llmFailure(e)}`, decision: 'No image signal', ms: Date.now() - g0, ok: false });
+    return [];
+  }
+  const tags = await Promise.all(keywords.map((k) => findTag(k, trace && { trace, stage: 'brand' }).catch(() => null)));
+  return [...new Map(tags.filter((t): t is QlooTag => Boolean(t)).map((t) => [t.id, t])).values()].slice(0, 3);
+}
+
 // The brand's description, or the text of its web page → the LLM proposes the names it
 // explicitly mentions (same rules as for videos) → only exact Qloo matches are kept.
 async function describedEntities(description: string, trace?: Trace): Promise<{ entities: QlooEntity[] } | DescriptionError> {
@@ -166,6 +218,44 @@ async function describedEntities(description: string, trace?: Trace): Promise<{ 
   return { entities: [...new Map(resolved.filter((e): e is QlooEntity => Boolean(e)).map((e) => [e.id, e])).values()] };
 }
 
+type FoundBrand = Extract<BrandLookup, { found: true }>;
+
+// Why the brand side only approximates the brand's audience, or null when it is the brand
+// itself: reference brands, entities from a description, or tags from a key visual.
+export function approximation(b: Pick<FoundBrand, 'basis' | 'signal' | 'imageTags'>): string | null {
+  const names = b.signal.map((e) => e.name).join(', ');
+  const parts: string[] = [];
+  if (b.basis === 'reference') parts.push(`reference brands stand in for the brand (${names})`);
+  if (b.basis === 'description') parts.push(`entities named in its description stand in for it (${names})`);
+  if (b.imageTags.length) parts.push(`tags inferred from the key visual are included (${b.imageTags.map((t) => t.name).join(', ')})`);
+  return parts.length ? parts.join('; ') : null;
+}
+
+// One level less sure whenever the brand side is approximated. Used by both modes, so a
+// reference brand or a key visual costs the same confidence everywhere.
+export function brandConfidence(
+  c: Compatibility,
+  brand: Pick<FoundBrand, 'basis' | 'signal' | 'imageTags'>,
+  trace?: Trace,
+  label = ''
+): Compatibility {
+  const why = approximation(brand);
+  if (!why || !c.confidence) return c;
+  const before: ConfidenceLevel = c.confidence;
+  const after = lowerConfidence(before);
+  trace?.add({
+    stage: 'score',
+    tool: 'Rule',
+    input: `${label}The brand side is approximated: ${why}`,
+    output: before === 'Low' ? 'Confidence Low (already the lowest level)' : `Confidence ${before} → ${after}`,
+    decision:
+      before === 'Low'
+        ? 'Stays Low: these approximate the brand’s audience, they aren’t it'
+        : 'Lower confidence one level: these approximate the brand’s audience, they aren’t it',
+  });
+  return { ...c, confidence: after };
+}
+
 // Qloo brands whose name starts with the input: Qloo names often carry a suffix the user
 // doesn't type ("Le Labo" is "Le Labo Fragrances", with no aliases).
 async function suggestionsFor(name: string): Promise<string[]> {
@@ -197,7 +287,8 @@ export type BrandLookup =
       brand: { name: string; category: string | null; entity: QlooEntity | null };
       basis: BrandBasis;
       signal: QlooEntity[]; // brand-side signal sent to Qloo: the brand, or the reference brands
-      tags: QlooTag[];
+      tags: QlooTag[]; // every tag in the signal, from the description and the key visual
+      imageTags: QlooTag[]; // the ones from the key visual
       entities: QlooEntity[]; // cultural proxies of that signal
       warnings: string[];
     };
@@ -205,6 +296,8 @@ export type BrandLookup =
 export interface BrandFallback {
   referenceBrands?: unknown; // 1–3 brand names in Qloo with a similar audience
   description?: unknown; // a short description of the brand, or its https:// web page
+  image?: unknown; // { data: base64, mimeType }: the brand's key visual, a weak supplement
+  proxies?: boolean; // false: skip the brand's cultural proxies (Find creators doesn't use them)
 }
 
 // Trimmed, non-empty, without duplicates ("Le Labo" = "lelabo").
@@ -228,6 +321,7 @@ export async function lookupBrand(
   if (references.length > MAX_REFERENCE_BRANDS) throw new ApiError(`Name at most ${MAX_REFERENCE_BRANDS} reference brands.`, 400);
   const description = String(fallback.description || '').trim();
   if (description.length > MAX_DESCRIPTION) throw new ApiError(`Keep the description under ${MAX_DESCRIPTION} characters.`, 400);
+  const image = parseImage(fallback.image);
 
   const resolveBrand = async (q: string, prefer?: (r: any) => boolean) => {
     try {
@@ -347,9 +441,23 @@ export async function lookupBrand(
     });
   }
 
+  // The key visual adds tags on any brand side, but never builds one on its own.
+  let fromImage: QlooTag[] = [];
+  if (image) {
+    fromImage = (await imageTags(image, trace)).filter((t) => !tags.some((x) => x.id === t.id));
+    trace?.add({
+      stage: 'brand',
+      tool: 'Rule',
+      input: 'Key visual as a supplementary signal',
+      output: fromImage.length ? `${fromImage.length} Qloo tag${fromImage.length === 1 ? '' : 's'}: ${fromImage.map((t) => `${t.name} (${t.id})`).join(', ')}` : 'No exact Qloo tags',
+      decision: fromImage.length ? 'Add them to the brand-side signal; confidence drops one level' : 'Continue without an image signal',
+    });
+    tags = [...tags, ...fromImage];
+  }
+
   const warnings: string[] = [];
   const batches = await Promise.all(
-    PROXY_TYPES.map(async (type) => {
+    (fallback.proxies === false ? [] : PROXY_TYPES).map(async (type) => {
       try {
         return await getInsights(signal, type, PROXIES_PER_TYPE, trace && { trace, stage: 'brand' }, tags);
       } catch (e: any) {
@@ -358,10 +466,10 @@ export async function lookupBrand(
       }
     })
   );
-  if (warnings.length === PROXY_TYPES.length) throw new ApiError('Every Qloo insights request failed.', 502, { warnings });
+  if (batches.length && warnings.length === batches.length) throw new ApiError('Every Qloo insights request failed.', 502, { warnings });
 
   const seen = new Set(signal.map((e) => e.id));
   const entities = batches.flat().filter((e) => !seen.has(e.id) && seen.add(e.id));
 
-  return { found: true, brand: { name, category: category || null, entity }, basis, signal, tags, entities, warnings };
+  return { found: true, brand: { name, category: category || null, entity }, basis, signal, tags, imageTags: fromImage, entities, warnings };
 }

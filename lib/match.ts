@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { BrandBasis, MissingReference, lookupBrand } from '@/lib/brand';
+import { BrandBasis, MissingReference, brandConfidence, lookupBrand } from '@/lib/brand';
 import { CreatorTaste, getCreatorTaste } from '@/lib/creator';
 import { ApiError } from '@/lib/errors';
 import { PROXY_TYPES, QlooEntity, QlooTag, getInsights, scoreEntities } from '@/lib/qloo';
@@ -16,7 +16,6 @@ import {
   ScoredEntity,
   computeCompatibility,
   dimensionOf,
-  lowerConfidence,
 } from '@/lib/scoring';
 import { bypassCache } from '@/lib/request-context';
 import type { OnStage } from '@/lib/stages';
@@ -46,6 +45,7 @@ export interface Match {
     basis?: BrandBasis;
     signal?: QlooEntity[];
     tags?: QlooTag[];
+    imageTags?: QlooTag[]; // the tags inferred from a key visual
     referenceBrands?: string[]; // as the user typed them
     description?: string; // the brand description or web page URL the user gave
     missingReferences?: MissingReference[];
@@ -166,6 +166,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     basis: brand.basis,
     signal: brand.signal,
     tags: brand.tags,
+    imageTags: brand.imageTags,
     ...(brand.basis === 'reference' ? { referenceBrands } : {}),
     ...(brand.basis !== 'brand' && description ? { description } : {}),
   };
@@ -286,20 +287,8 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
         : ''),
     decision: `Verdict: ${VERDICT_LABELS[compatibility.verdict]} (80+ strong, 60–79 moderate, 40–59 weak, below 40 no fit)`,
   });
-  // Reference brands or a description only approximate the brand's audience, so the result is less certain.
-  if (brand.basis !== 'brand') {
-    compatibility = { ...compatibility, confidence: lowerConfidence(evidenceLevel) };
-    trace.add({
-      stage: 'score',
-      tool: 'Rule',
-      input: `“${brandName}” is not in Qloo; scored against ${brand.basis === 'reference' ? 'reference brands' : 'entities named in its description'}: ${brandSignal.map((e) => e.name).join(', ')}`,
-      output: evidenceLevel === 'Low' ? 'Confidence Low (already the lowest level)' : `Confidence ${evidenceLevel} → ${compatibility.confidence}`,
-      decision:
-        evidenceLevel === 'Low'
-          ? 'Stays Low: these approximate the brand’s audience, they aren’t it'
-          : 'Lower confidence one level: these approximate the brand’s audience, they aren’t it',
-    });
-  }
+  // Reference brands, a description or a key visual only approximate the brand's audience.
+  compatibility = brandConfidence(compatibility, brand, trace);
 
   const brandProxyIds = new Set(brand.entities.map((e) => e.id));
   const sharedEntities = items.filter((e) => brandProxyIds.has(e.id));

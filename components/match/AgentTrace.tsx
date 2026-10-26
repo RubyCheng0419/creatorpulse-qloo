@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { STAGE_LABELS, isLlm, llmName, summarizeTrace, type TraceStage, type TraceStep } from '@/lib/trace';
 
-const STAGE_ORDER: TraceStage[] = ['youtube', 'creator', 'brand', 'expand', 'score', 'report'];
+const STAGE_ORDER: TraceStage[] = ['youtube', 'creator', 'brand', 'candidates', 'profile', 'expand', 'score', 'report'];
 
 function toolStyle(tool: string): string {
   if (tool.startsWith('YouTube')) return 'bg-rose-50 text-rose-800 ring-rose-200';

@@ -21,12 +21,24 @@ export const VERDICT_LABELS: Record<Verdict, string> = {
 
 // What the brand side was built from, when it isn't the brand itself. Shown on the result
 // page (and so in the PDF) and in the Markdown export.
-export function brandBasisNote(brand: { basis?: string; signal?: { name: string }[]; tags?: { name: string }[] }): string | null {
+export function brandBasisNote(brand: {
+  basis?: string;
+  signal?: { name: string }[];
+  tags?: { id: string; name: string }[];
+  imageTags?: { id: string; name: string }[];
+}): string | null {
   const names = (brand.signal ?? []).map((e) => e.name).join(', ');
-  const tags = brand.tags?.length ? ` Includes tag-based signal: ${brand.tags.map((t) => t.name).join(', ')}.` : '';
-  if (brand.basis === 'reference') return `Your brand isn’t in Qloo. Scored against your reference brands: ${names}.${tags}`;
-  if (brand.basis === 'description') return `Scored from your brand description: the Qloo entities it names (${names}).${tags}`;
-  return null;
+  const fromImage = new Set((brand.imageTags ?? []).map((t) => t.id));
+  const textTags = (brand.tags ?? []).filter((t) => !fromImage.has(t.id));
+  const notes = [
+    textTags.length ? `Includes tag-based signal: ${textTags.map((t) => t.name).join(', ')}.` : '',
+    fromImage.size ? `Includes tags inferred from your key visual: ${(brand.imageTags ?? []).map((t) => t.name).join(', ')}.` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  if (brand.basis === 'reference') return `Your brand isn’t in Qloo. Scored against your reference brands: ${names}.${notes ? ` ${notes}` : ''}`;
+  if (brand.basis === 'description') return `Scored from your brand description: the Qloo entities it names (${names}).${notes ? ` ${notes}` : ''}`;
+  return notes || null;
 }
 
 const fmt = (a: number) => a.toFixed(2);

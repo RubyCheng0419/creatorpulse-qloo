@@ -9,7 +9,9 @@ export type NoDataReason =
   | 'description-too-few-names' // the description names fewer than 3 Qloo entities
   | 'llm-unavailable' // no LLM could propose names (Gemini and Groq both failed)
   | 'too-few-creator-entities' // the videos name fewer than 3 Qloo entities
-  | 'no-affinity'; // Qloo scored none of the creator's entities against the brand
+  | 'no-affinity' // Qloo scored none of the creator's entities against the brand
+  | 'no-candidates' // Find creators: Qloo returned no creators for this brand and type
+  | 'too-few-profile-entities'; // Find creators: too little of a creator's audience taste was scored
 
 // For each cause: what the user can do next. Shown under the "insufficient data" message.
 export const NO_DATA_NEXT_STEPS: Record<NoDataReason, string[]> = {
@@ -27,4 +29,6 @@ export const NO_DATA_NEXT_STEPS: Record<NoDataReason, string[]> = {
     'Pick videos whose titles or descriptions name brands, products, shows or people.',
   ],
   'no-affinity': ['Try a different creator or brand; Qloo has no affinity data for this pair.'],
+  'no-candidates': ['Choose “Any YouTuber” as the creator type, or a broader one.'],
+  'too-few-profile-entities': ['Analyze this creator’s videos instead, which adds what the creator talks about.'],
 };

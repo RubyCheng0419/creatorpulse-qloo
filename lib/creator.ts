@@ -1,5 +1,5 @@
 import { ApiError } from '@/lib/errors';
-import { GEMINI_MODEL, geminiJson, hasGemini } from '@/lib/gemini';
+import { GEMINI_MODEL, InlineImage, geminiJson, hasGemini } from '@/lib/gemini';
 import { GROQ_MODEL, groqJson, hasGroq } from '@/lib/groq';
 import { QlooEntity, resolveEntity, searchEntities } from '@/lib/qloo';
 import { bypassCache } from '@/lib/request-context';
@@ -15,7 +15,7 @@ const VIDEO_CACHE_MS = 24 * 60 * 60 * 1000;
 
 const videoCache = new Map<string, { at: number; item: any }>();
 
-async function youtube(path: string, params: Record<string, string>, key: string): Promise<any> {
+export async function youtube(path: string, params: Record<string, string>, key: string): Promise<any> {
   const u = new URL(`${YT_BASE}/${path}`);
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
   u.searchParams.set('key', key);
@@ -212,6 +212,25 @@ export function extractBrandKeywords(text: string): Promise<LlmAnswer<string[]>>
       .filter((k) => k.length > 1 && !seen.has(k) && seen.add(k))
       .slice(0, 5);
   });
+}
+
+// A brand's key visual → style keywords, looked up as Qloo tags like the ones above.
+// Weaker evidence than text: an image rarely shows anything Qloo knows by name.
+const IMAGE_PROMPT = `This image is a brand's key visual. List up to 5 taste keywords that describe its clearly visible style, aesthetic or culture (e.g. minimalism, streetwear, vintage, anime, surfing).
+Rules:
+- One or two words each, lowercase, in English.
+- Only what is clearly visible. Never guess the brand, its products or its audience.
+- Skip product categories (perfume, shoes), generic words (photo, product, logo, model) and colours.`;
+
+// Gemini only: Groq's fallback model doesn't read images. A failure leaves out the image signal.
+export async function extractImageKeywords(image: InlineImage): Promise<LlmAnswer<string[]>> {
+  const d = await geminiJson<{ keywords: string[] }>(IMAGE_PROMPT, 'List the keywords for this key visual.', KEYWORD_SCHEMA, 0, image);
+  const seen = new Set<string>();
+  const value = (d.keywords || [])
+    .map((k) => String(k || '').trim().toLocaleLowerCase())
+    .filter((k) => k.length > 1 && !seen.has(k) && seen.add(k))
+    .slice(0, 5);
+  return { value, llm: 'gemini', model: GEMINI_MODEL };
 }
 
 async function namedEntities(prompt: string, text: string, json: JsonCall): Promise<Mentions> {
