@@ -46,7 +46,9 @@ export interface CreatorCandidate {
   status: 'scored' | 'insufficient-data';
   noDataReason?: NoDataReason;
   compatibility: Compatibility;
-  profile: { entities: number; scored: number; failedTypes: string[] };
+  // failedTypes: Qloo failed to answer (transient); unsupportedTypes: Qloo answered that this
+  // creator can't be a signal for the type (400), which a retry won't change.
+  profile: { entities: number; scored: number; failedTypes: string[]; unsupportedTypes: string[] };
   channel: YouTubeChannel | null;
 }
 
@@ -186,10 +188,12 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
   // 3. Each candidate's audience taste: the creator as signal, top 5 per type. A failed
   //    query is recorded and asked once more after the rest, never treated as "this
   //    creator has no taste": a partial profile would move the creator in the ranking.
-  const profileOf = (c: QlooEntity, type: string) => getInsights([c], type, PROFILE_PER_TYPE, { trace, stage: 'profile' });
-  const lists = await Promise.all(
-    candidates.map((c) => Promise.all(PROXY_TYPES.map((type) => profileOf(c, type).catch(() => null))))
-  );
+  // Some Qloo people are not valid signals for some types (400 "signal.interests.entities
+  // were invalid"); that is Qloo's data, not a failure, so it isn't retried.
+  const UNSUPPORTED = 'unsupported' as const;
+  const profileOf = (c: QlooEntity, type: string) =>
+    getInsights([c], type, PROFILE_PER_TYPE, { trace, stage: 'profile' }).catch((e: any) => (e?.status === 400 ? UNSUPPORTED : null));
+  const lists = await Promise.all(candidates.map((c) => Promise.all(PROXY_TYPES.map((type) => profileOf(c, type)))));
   const failed = lists.flatMap((l, i) => l.map((x, j) => (x === null ? [i, j] : null)).filter((x): x is number[] => x !== null));
   if (failed.length) {
     await new Promise((res) => setTimeout(res, 1000));
@@ -203,11 +207,16 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
       decision: still ? 'The missing parts are reported for each creator, not treated as empty' : 'Profiles complete',
     });
   }
+  const typesWhere = (i: number, test: (x: unknown) => boolean) =>
+    PROXY_TYPES.filter((_, j) => test(lists[i][j])).map((t) => t.replace('urn:entity:', ''));
   const profiles = candidates.map((c, i) => {
-    const failedTypes = PROXY_TYPES.filter((_, j) => lists[i][j] === null).map((t) => t.replace('urn:entity:', ''));
+    const failedTypes = typesWhere(i, (x) => x === null);
+    const unsupportedTypes = typesWhere(i, (x) => x === UNSUPPORTED);
     const seen = new Set<string>();
-    const entities = lists[i].flatMap((x) => x ?? []).filter((e) => !brandIds.has(e.id) && !seen.has(e.id) && seen.add(e.id));
-    return { candidate: c, entities, failedTypes };
+    const entities = lists[i]
+      .flatMap((x) => (Array.isArray(x) ? x : []))
+      .filter((e) => !brandIds.has(e.id) && !seen.has(e.id) && seen.add(e.id));
+    return { candidate: c, entities, failedTypes, unsupportedTypes };
   });
   for (const p of profiles) {
     if (p.failedTypes.length) warnings.push(`${p.candidate.name}: Qloo failed to return ${p.failedTypes.join(', ')}; that part of the profile is missing.`);
@@ -223,7 +232,7 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
   }
 
   // 5. Same formula as a match, per creator.
-  const scoredCandidates = profiles.map(({ candidate, entities, failedTypes }): Omit<CreatorCandidate, 'rank' | 'channel'> => {
+  const scoredCandidates = profiles.map(({ candidate, entities, failedTypes, unsupportedTypes }): Omit<CreatorCandidate, 'rank' | 'channel'> => {
     const items: ScoredEntity[] = [];
     for (const e of entities) {
       const brandAffinity = affinities.get(e.id);
@@ -235,7 +244,7 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
       name: candidate.name,
       description: candidate.description ?? null,
       audienceOverlap: candidate.affinity,
-      profile: { entities: entities.length, scored: items.length, failedTypes },
+      profile: { entities: entities.length, scored: items.length, failedTypes, unsupportedTypes },
     };
     if (items.length < MIN_PROFILE_ENTITIES) {
       return { ...common, status: 'insufficient-data', noDataReason: 'too-few-profile-entities', compatibility: NO_SCORE };

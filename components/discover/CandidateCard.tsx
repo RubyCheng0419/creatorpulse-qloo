@@ -39,7 +39,8 @@ export function CandidateCard({ c, deepDiveHref }: { c: CreatorCandidate; deepDi
           <p className="mt-1 text-xs text-slate-500">
             Audience overlap {c.audienceOverlap !== null ? c.audienceOverlap.toFixed(2) : '—'} (how strongly the brand’s audience likes this
             creator) · {c.profile.scored} audience-taste entities scored
-            {c.profile.failedTypes.length ? ` · missing from Qloo this time: ${c.profile.failedTypes.join(', ')}` : ''}
+            {c.profile.unsupportedTypes?.length ? ` · Qloo has no audience-taste data for: ${c.profile.unsupportedTypes.join(', ')}` : ''}
+            {c.profile.failedTypes.length ? ` · Qloo didn’t answer this time for: ${c.profile.failedTypes.join(', ')}` : ''}
           </p>
         </div>
         <div className="text-right">

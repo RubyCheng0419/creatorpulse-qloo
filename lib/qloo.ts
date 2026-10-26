@@ -254,7 +254,10 @@ async function failTraced<T>(ctx: TraceCtx | undefined, tool: string, input: str
       tool,
       input,
       output: `Failed: ${e?.message || e}`,
-      decision: 'Query failed; this is missing data, not an empty result',
+      decision:
+        e?.status === 400
+          ? 'Qloo rejected this query; not retried, since the same query gets the same answer'
+          : 'Query failed; this is missing data, not an empty result',
       http: e?.http || 'no response',
       ms: Date.now() - t0,
       ok: false,
