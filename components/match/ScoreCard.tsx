@@ -49,6 +49,13 @@ export function ScoreCard({ match }: { match: Match }) {
           {basisNote} <span className="font-normal">Confidence is one level lower than the evidence alone would give.</span>
         </p>
       )}
+      {match.scoreBasis === 'audience' && match.creator.qlooPerson && (
+        <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
+          <span className="font-semibold">Scored from {match.creator.qlooPerson.name}’s audience taste in Qloo.</span> The videos named only{' '}
+          {match.creator.entities.length} Qloo {match.creator.entities.length === 1 ? 'entity' : 'entities'}, fewer than 3, so this score
+          rests on what Qloo infers the creator’s audience likes, not on what the videos say. Confidence is at most Medium.
+        </p>
+      )}
       <p className="text-sm text-slate-500">Cultural compatibility due diligence</p>
       <h2 className="mt-1 text-xl font-semibold text-slate-900">
         {brand} × {creator}
@@ -85,6 +92,12 @@ export function ScoreCard({ match }: { match: Match }) {
           <span className="font-semibold">The creator already features {brand} in these videos.</span> That mention is not part of the
           score, because a brand can’t be scored against itself. The Fit Score measures how {brand}’s audience relates to everything else
           the creator covers.
+        </p>
+      )}
+      {match.creator.qlooPerson && typeof match.creator.audienceOverlap === 'number' && (
+        <p className="mt-4 text-sm text-slate-600">
+          <span className="font-medium text-slate-800">Audience overlap {match.creator.audienceOverlap.toFixed(2)}</span>: how strongly{' '}
+          {brand}’s audience likes {match.creator.qlooPerson.name} in Qloo. Shown, not part of the score.
         </p>
       )}
       {lowConfidence && <p className="mt-4 text-sm font-medium text-amber-800">Low confidence: indicative only.</p>}

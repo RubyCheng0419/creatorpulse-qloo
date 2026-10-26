@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { MIN_PROFILE_ENTITIES, PROFILE_PER_TYPE, audienceProfiles, scoreProfile } from '@/lib/audience';
 import { approximation, brandConfidence, lookupBrand } from '@/lib/brand';
 import { CREATOR_CATEGORIES, CreatorCategory, isCreatorCategory } from '@/lib/creator-categories';
 import { ApiError } from '@/lib/errors';
@@ -6,17 +7,7 @@ import type { Match } from '@/lib/match';
 import type { NoDataReason } from '@/lib/no-data';
 import { PROXY_TYPES, QlooEntity, getInsights, scoreEntities } from '@/lib/qloo';
 import { bypassCache } from '@/lib/request-context';
-import {
-  AFFINITY_FLOOR,
-  Compatibility,
-  ConfidenceLevel,
-  DIVERGENCE_MAX,
-  INTERSECTION_MIN,
-  PROXY_WEIGHT,
-  ScoredEntity,
-  computeCompatibility,
-  dimensionOf,
-} from '@/lib/scoring';
+import { AFFINITY_FLOOR, Compatibility, DIVERGENCE_MAX, INTERSECTION_MIN, PROXY_WEIGHT } from '@/lib/scoring';
 import { Trace, type TraceStep } from '@/lib/trace';
 import { YouTubeChannel, findChannel } from '@/lib/youtube-channel';
 
@@ -32,10 +23,6 @@ import { YouTubeChannel, findChannel } from '@/lib/youtube-channel';
 //    ("audience overlap") is shown but not scored, so the same evidence isn't counted twice.
 
 export const CANDIDATES = 10;
-const PROFILE_PER_TYPE = 5;
-const MIN_PROFILE_ENTITIES = 10; // fewer scored profile entities → no score for that creator
-const MEDIUM_PROFILE_ENTITIES = 20;
-const MEDIUM_PROFILE_DIMENSIONS = 4;
 
 export interface CreatorCandidate {
   rank: number;
@@ -87,11 +74,6 @@ function discoveryId(input: DiscoverInput, category: CreatorCategory): string {
     (input.image as any)?.data ? createHash('sha256').update(String((input.image as any).data)).digest('hex') : null,
   ]);
   return `discover_${createHash('sha256').update(key).digest('hex').slice(0, 12)}`;
-}
-
-// Only audience-taste evidence: Medium at best, Low with thin or narrow evidence.
-function profileConfidence(scored: number, dimensions: number): ConfidenceLevel {
-  return scored >= MEDIUM_PROFILE_ENTITIES && dimensions >= MEDIUM_PROFILE_DIMENSIONS ? 'Medium' : 'Low';
 }
 
 export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
@@ -185,39 +167,8 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
   const key = process.env.YOUTUBE_API_KEY;
   const channelsPromise = Promise.all(candidates.map((c) => findChannel(c.id, c.name, key, trace).catch(() => null)));
 
-  // 3. Each candidate's audience taste: the creator as signal, top 5 per type. A failed
-  //    query is recorded and asked once more after the rest, never treated as "this
-  //    creator has no taste": a partial profile would move the creator in the ranking.
-  // Some Qloo people are not valid signals for some types (400 "signal.interests.entities
-  // were invalid"); that is Qloo's data, not a failure, so it isn't retried.
-  const UNSUPPORTED = 'unsupported' as const;
-  const profileOf = (c: QlooEntity, type: string) =>
-    getInsights([c], type, PROFILE_PER_TYPE, { trace, stage: 'profile' }).catch((e: any) => (e?.status === 400 ? UNSUPPORTED : null));
-  const lists = await Promise.all(candidates.map((c) => Promise.all(PROXY_TYPES.map((type) => profileOf(c, type)))));
-  const failed = lists.flatMap((l, i) => l.map((x, j) => (x === null ? [i, j] : null)).filter((x): x is number[] => x !== null));
-  if (failed.length) {
-    await new Promise((res) => setTimeout(res, 1000));
-    for (const [i, j] of failed) lists[i][j] = await profileOf(candidates[i], PROXY_TYPES[j]).catch(() => null);
-    const still = failed.filter(([i, j]) => lists[i][j] === null).length;
-    trace.add({
-      stage: 'profile',
-      tool: 'Rule',
-      input: `${failed.length} profile quer${failed.length === 1 ? 'y' : 'ies'} failed on the first pass`,
-      output: still ? `${failed.length - still} recovered on a second pass, ${still} still failed` : 'All recovered on a second pass',
-      decision: still ? 'The missing parts are reported for each creator, not treated as empty' : 'Profiles complete',
-    });
-  }
-  const typesWhere = (i: number, test: (x: unknown) => boolean) =>
-    PROXY_TYPES.filter((_, j) => test(lists[i][j])).map((t) => t.replace('urn:entity:', ''));
-  const profiles = candidates.map((c, i) => {
-    const failedTypes = typesWhere(i, (x) => x === null);
-    const unsupportedTypes = typesWhere(i, (x) => x === UNSUPPORTED);
-    const seen = new Set<string>();
-    const entities = lists[i]
-      .flatMap((x) => (Array.isArray(x) ? x : []))
-      .filter((e) => !brandIds.has(e.id) && !seen.has(e.id) && seen.add(e.id));
-    return { candidate: c, entities, failedTypes, unsupportedTypes };
-  });
+  // 3. Each candidate's audience taste (lib/audience), with failed queries asked again.
+  const profiles = (await audienceProfiles(candidates, brandIds, trace)).map((p) => ({ ...p, candidate: p.person }));
   for (const p of profiles) {
     if (p.failedTypes.length) warnings.push(`${p.candidate.name}: Qloo failed to return ${p.failedTypes.join(', ')}; that part of the profile is missing.`);
   }
@@ -233,12 +184,7 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
 
   // 5. Same formula as a match, per creator.
   const scoredCandidates = profiles.map(({ candidate, entities, failedTypes, unsupportedTypes }): Omit<CreatorCandidate, 'rank' | 'channel'> => {
-    const items: ScoredEntity[] = [];
-    for (const e of entities) {
-      const brandAffinity = affinities.get(e.id);
-      if (brandAffinity === undefined) continue;
-      items.push({ ...e, side: 'proxy', weight: PROXY_WEIGHT, brandAffinity, dimension: dimensionOf(e) });
-    }
+    const { items, compatibility } = scoreProfile(entities, affinities);
     const common = {
       qlooId: candidate.id,
       name: candidate.name,
@@ -246,13 +192,8 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
       audienceOverlap: candidate.affinity,
       profile: { entities: entities.length, scored: items.length, failedTypes, unsupportedTypes },
     };
-    if (items.length < MIN_PROFILE_ENTITIES) {
-      return { ...common, status: 'insufficient-data', noDataReason: 'too-few-profile-entities', compatibility: NO_SCORE };
-    }
-    const c = computeCompatibility(items);
-    const dims = c.dimensions.filter((d) => d.score !== null).length;
-    const own: Compatibility = { ...c, confidence: profileConfidence(items.length, dims), confidenceBasis: { entities: items.length, dimensions: dims } };
-    return { ...common, status: 'scored', compatibility: brandConfidence(own, brand) };
+    if (!compatibility) return { ...common, status: 'insufficient-data', noDataReason: 'too-few-profile-entities', compatibility: NO_SCORE };
+    return { ...common, status: 'scored', compatibility: brandConfidence(compatibility, brand) };
   });
 
   const ranked = scoredCandidates.sort(
@@ -267,7 +208,7 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
     tool: 'Rule',
     input: `Per creator: up to ${PROXY_TYPES.length * PROFILE_PER_TYPE} audience-taste entities at weight ${PROXY_WEIGHT}, sorted into dimensions; affinity rescaled from [${AFFINITY_FLOOR}, 1] to [0, 100]; shared taste ≥ ${INTERSECTION_MIN}, clash < ${DIVERGENCE_MAX}`,
     output: ranked.map((c) => `${c.name} ${c.compatibility.fitScore ?? 'no score'}`).join(' · '),
-    decision: `Ranked by Fit Score, then audience overlap. Confidence: Medium with ${MEDIUM_PROFILE_ENTITIES}+ scored entities across ${MEDIUM_PROFILE_DIMENSIONS}+ dimensions, otherwise Low; fewer than ${MIN_PROFILE_ENTITIES} gets no score (${ranked.length - scoredCount} here)`,
+    decision: `Ranked by Fit Score, then audience overlap. Confidence: Medium with 20+ scored entities across 4+ dimensions, otherwise Low; fewer than ${MIN_PROFILE_ENTITIES} gets no score (${ranked.length - scoredCount} here)`,
   });
   // The brand-side approximation, once for the whole list (each score already carries it).
   const why = approximation(brand);

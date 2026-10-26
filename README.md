@@ -18,6 +18,7 @@ Two modes, one scoring formula:
 
 - **Ten YouTubers from Qloo**, ranked, each with a Fit Score, confidence, the brand audience’s affinity for the creator (*audience overlap*), strongest and weakest dimension, shared taste and clashes, and the full evidence on demand
 - **A link into Check a creator** for each one whose YouTube channel could be matched, to add what the creator’s own videos say
+- **Projects** (`/projects`): save one campaign’s brand inputs and every ranking found with them (stored in the browser)
 
 **Check a creator**, for a brand name and 1–5 YouTube videos or one channel URL (its latest 15 videos):
 
@@ -85,7 +86,7 @@ The score is computed in [`lib/scoring.ts`](lib/scoring.ts); the same Qloo data 
 6. **Dimension score** = weighted mean; **Fit Score** = equal-weight mean of the dimensions that have data. Dimensions without data are excluded, never counted as zero.
 7. **Confidence** is a level, not a number, and only counts evidence: **High** with 10 or more confirmed entities named in the videos and data in all five dimensions, **Medium** with 5–9, **Low** with fewer than 5. The result page states what it is based on (“Confidence based on N confirmed entities across M dimensions”). Earlier numeric formulas either saturated at 100 or looked more precise than they were.
 
-Below 3 creator entities, or when no brand side can be built from Qloo (see below), there is no score.
+When the videos name fewer than 3 Qloo entities (or no LLM can extract names), Check a creator falls back to the creator’s own Qloo entity, if the channel’s title or handle is that person’s exact name or alias and Qloo tags them as a creator: the score then comes from their audience’s taste, as in Find creators, labelled “Scored from X’s audience taste in Qloo”, with confidence at most Medium. Without such a person, or when no brand side can be built from Qloo (see below), there is no score. Whenever the person is found, the brand audience’s affinity for them is shown as *audience overlap*, not scored.
 
 ### Find creators: scoring from audience taste
 
@@ -136,6 +137,18 @@ If neither answers, **no score is given.** An earlier rule-based keyword fallbac
 
 More detail, including verified request/response shapes: [docs/QLOO_INTEGRATION.md](docs/QLOO_INTEGRATION.md).
 
+### How often there is no score
+
+Measured on 2026-10-27 with ten channels of different kinds (cooking, kids, food travel, fitness, classical music, beauty, gaming, two Taiwanese channels with Chinese titles) against one brand:
+
+| Input | No score |
+|---|---|
+| The latest 5 videos (the original input) | 3 of 10 |
+| The channel URL (latest 15 videos) | 2 of 10 |
+| The channel URL, with the creator’s Qloo entity as fallback | 1 of 10 |
+
+The two channels the fallback recovered (a beauty channel and a Taiwanese one) named only 0–1 Qloo entities in 15 videos. The remaining one was a run where neither Gemini nor Groq answered; the same channel scored on the run before. Every no-score result carries a reason category, so this can be re-measured.
+
 ## Run it locally
 
 Requirements: Node.js 20+, and API keys for YouTube Data API v3, the Qloo hackathon API and Google Gemini.
@@ -176,7 +189,7 @@ Regenerate it with `node scripts/save-demo-snapshot.mjs` while the dev server ru
 
 ## Known limitations
 
-- **Check a creator: taste comes from what the videos name.** Topics that are not Qloo entities (an air fryer, a cheesecake) cannot be matched. A channel URL reads 15 videos instead of 5, which helps: a cooking channel that named too little in five videos confirmed 7 entities from its channel. CreatorPulse uses no audience personal data.
+- **Check a creator: taste comes mainly from what the videos name.** Topics that are not Qloo entities (an air fryer, a cheesecake) cannot be matched. A channel URL reads 15 videos instead of 5, which helps: a cooking channel that named too little in five videos confirmed 7 entities from its channel. CreatorPulse uses no audience personal data.
 - **Find creators only knows Qloo’s YouTubers**: about 900, mostly well known, English- and Spanish-speaking. Only two are tagged as Taiwanese YouTubers. Creator types come from Wikipedia categories, so coverage is uneven, and there is no family category.
 - **Not every creator has a matched channel.** Qloo has no YouTube links; a channel is accepted only if its title is the person’s name and it has an audience, so some creators (e.g. Cole LaBrant, whose channel is “The LaBrant Fam”) have a score but no video deep dive.
 - **Scores measure cultural fit only**, not brand safety, past controversies or audience size.

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { audienceProfiles, findCreatorPerson, scoreProfile } from '@/lib/audience';
 import { BrandBasis, MissingReference, brandConfidence, lookupBrand } from '@/lib/brand';
 import { CreatorTaste, getCreatorTaste } from '@/lib/creator';
 import { ApiError } from '@/lib/errors';
@@ -63,7 +64,12 @@ export interface Match {
     geminiAt?: string;
     entities: QlooEntity[]; // Qloo entities named in the videos (before cross-domain expansion)
     unmatched: string[];
+    qlooPerson?: { id: string; name: string }; // the creator's own Qloo entity, when one matches the channel
+    audienceOverlap?: number | null; // the brand audience's affinity for that person (shown, not scored)
   };
+  // 'videos': scored from what the videos name (the usual case). 'audience': the videos named
+  // too little, so the score comes from the creator's audience taste in Qloo (lib/audience).
+  scoreBasis?: 'videos' | 'audience';
   compatibility: Compatibility;
   mentionsBrand: boolean; // the creator's videos name the brand itself (not scored: circular)
   sharedEntities: ScoredEntity[];
@@ -130,7 +136,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
       geminiAt: creator.geminiAt,
       entities: creator.entities,
       unmatched: creator.unmatched,
-    },
+    } as Match['creator'],
     mentionsBrand: false,
     sharedEntities: [],
     trace: trace.steps,
@@ -176,29 +182,67 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   const brandIds = new Set(brandSignal.map((e) => e.id));
   const brandLabel = brand.brand.entity?.name || brandName;
 
-  if (creator.extractionError) {
-    return insufficient(
-      'llm-unavailable',
-      `Couldn’t extract the names mentioned in the videos (${creator.extractionError}). No score is given rather than one built on guessed keywords. Please try again later.`,
-      brandSide
-    );
-  }
+  // The creator's own Qloo entity: for the audience overlap, and as the fallback evidence
+  // when the videos name too little.
+  const person = channel ? await findCreatorPerson(channel.title, channel.handle, trace) : null;
+  if (person) base.creator = { ...base.creator, qlooPerson: { id: person.id, name: person.name } };
 
   const direct = creator.entities;
-  const enough = direct.length >= MIN_DIRECT_ENTITIES;
+  const enough = !creator.extractionError && direct.length >= MIN_DIRECT_ENTITIES;
   trace.add({
     stage: 'creator',
     tool: 'Rule',
     input: `Evidence threshold: at least ${MIN_DIRECT_ENTITIES} Qloo-confirmed entities from the videos`,
-    output: `${direct.length} confirmed: ${direct.map((e) => e.name).join(', ') || 'none'}`,
-    decision: enough ? 'Continue' : 'Stop: not enough evidence, no score is given',
+    output: creator.extractionError
+      ? `No names extracted: ${creator.extractionError}`
+      : `${direct.length} confirmed: ${direct.map((e) => e.name).join(', ') || 'none'}`,
+    decision: enough
+      ? 'Continue'
+      : person
+        ? `Not enough from the videos: score from ${person.name}’s audience taste in Qloo instead`
+        : 'Stop: not enough evidence, no score is given',
   });
   if (!enough) {
-    return insufficient(
-      'too-few-creator-entities',
-      `Qloo matched only ${direct.length} taste entities from the videos, below the scoring minimum of ${MIN_DIRECT_ENTITIES}.`,
-      brandSide
-    );
+    const why: [NoDataReason, string] = creator.extractionError
+      ? ['llm-unavailable', `Couldn’t extract the names mentioned in the videos (${creator.extractionError}). No score is given rather than one built on guessed keywords. Please try again later.`]
+      : ['too-few-creator-entities', `Qloo matched only ${direct.length} taste entities from the videos, below the scoring minimum of ${MIN_DIRECT_ENTITIES}.`];
+    if (!person) return insufficient(why[0], why[1], brandSide);
+
+    // Fallback: the creator's audience taste, scored like a Find creators candidate.
+    const [profile] = await audienceProfiles([person], brandIds, trace);
+    let aff: Map<string, number>;
+    try {
+      aff = await scoreEntities(brandSignal, [...profile.entities, person], { trace, stage: 'score' }, brandTags);
+    } catch (e: any) {
+      throw new ApiError(`Qloo scoring request failed: ${e.message}`, 502, { warnings });
+    }
+    base.creator = { ...base.creator, audienceOverlap: aff.get(person.id) ?? null };
+    const { items: profileItems, compatibility: fromAudience } = scoreProfile(profile.entities, aff);
+    trace.add({
+      stage: 'score',
+      tool: 'Rule',
+      input: `${person.name}’s audience taste: ${profileItems.length} Qloo entities scored at weight ${PROXY_WEIGHT}, same formula; confidence at most Medium`,
+      output: fromAudience ? `Fit Score ${fromAudience.fitScore}, confidence ${fromAudience.confidence}` : `Only ${profileItems.length} scored, below 10`,
+      decision: fromAudience ? 'Scored from audience taste; labelled as such' : 'Stop: not enough audience-taste evidence either',
+    });
+    onStage?.('score');
+    if (!fromAudience) return insufficient(why[0], `${why[1]} ${person.name}’s audience taste in Qloo was too thin to score as well.`, brandSide);
+    const audienceCompat = brandConfidence(fromAudience, brand, trace);
+    const proxyIds = new Set(brand.entities.map((e) => e.id));
+    const shared = profileItems.filter((e) => proxyIds.has(e.id));
+    const audienceReport = buildReport(brandLabel, base.creator.channelName || person.name, audienceCompat, profileItems, shared, false);
+    onStage?.('report');
+    return {
+      ...base,
+      status: 'completed',
+      scoreBasis: 'audience',
+      mentionsBrand: false,
+      brand: brandSide,
+      compatibility: audienceCompat,
+      sharedEntities: shared,
+      report: audienceReport,
+      warnings: [...warnings, ...(profile.failedTypes.length ? [`Qloo failed to return ${profile.failedTypes.join(', ')} for ${person.name}.`] : [])],
+    };
   }
 
   // 2. Expand the creator's taste across domains. The brand itself is left out of the
@@ -236,11 +280,12 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   // 3. Ask Qloo how the brand's audience relates to each creator entity.
   let affinities: Map<string, number>;
   try {
-    affinities = await scoreEntities(brandSignal, [...signal, ...proxies], { trace, stage: 'score' }, brandTags);
+    affinities = await scoreEntities(brandSignal, [...signal, ...proxies, ...(person ? [person] : [])], { trace, stage: 'score' }, brandTags);
   } catch (e: any) {
     throw new ApiError(`Qloo scoring request failed: ${e.message}`, 502, { warnings });
   }
 
+  if (person) base.creator = { ...base.creator, audienceOverlap: affinities.get(person.id) ?? null };
   const items: ScoredEntity[] = [];
   for (const [side, list] of [['direct', signal], ['proxy', proxies]] as const) {
     for (const e of list) {
@@ -308,5 +353,5 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   });
   onStage?.('report');
 
-  return { ...base, status: 'completed', mentionsBrand, brand: brandSide, compatibility, sharedEntities, report, warnings };
+  return { ...base, status: 'completed', scoreBasis: 'videos', mentionsBrand, brand: brandSide, compatibility, sharedEntities, report, warnings };
 }

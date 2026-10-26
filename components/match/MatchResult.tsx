@@ -72,7 +72,10 @@ export function MatchResult({
 
       {match.status === 'completed' && match.report ? (
         <>
-          <TasteComparison dimensions={match.compatibility.dimensions} />
+          <TasteComparison
+            dimensions={match.compatibility.dimensions}
+            proxyLabel={match.scoreBasis === 'audience' ? 'Audience taste in Qloo' : 'Cross-domain expansion'}
+          />
           <ReportDetails report={match.report} />
         </>
       ) : (
