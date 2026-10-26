@@ -288,8 +288,11 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
       stage: 'score',
       tool: 'Rule',
       input: `“${brandName}” is not in Qloo; scored against ${brand.basis === 'reference' ? 'reference brands' : 'entities named in its description'}: ${brandSignal.map((e) => e.name).join(', ')}`,
-      output: `Confidence ${evidenceLevel} → ${compatibility.confidence}`,
-      decision: 'Lower confidence one level: these approximate the brand’s audience, they aren’t it',
+      output: evidenceLevel === 'Low' ? 'Confidence Low (already the lowest level)' : `Confidence ${evidenceLevel} → ${compatibility.confidence}`,
+      decision:
+        evidenceLevel === 'Low'
+          ? 'Stays Low: these approximate the brand’s audience, they aren’t it'
+          : 'Lower confidence one level: these approximate the brand’s audience, they aren’t it',
     });
   }
 

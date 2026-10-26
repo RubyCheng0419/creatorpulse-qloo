@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { KIND_TYPES, cachedAnswer, cachedNote, extractBrandKeywords, extractBrandMentions, geminiError } from '@/lib/creator';
+import { KIND_TYPES, LlmAnswer, cachedAnswer, cachedNote, extractBrandKeywords, extractBrandMentions, llmFailure, llmLabel } from '@/lib/creator';
 import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL } from '@/lib/gemini';
 import { fetchPageText } from '@/lib/web-page';
@@ -79,38 +79,53 @@ async function descriptionText(description: string, trace?: Trace): Promise<{ te
   return { text };
 }
 
-// Tag signal, only to supplement fewer than MIN_DESCRIPTION_ENTITIES entities: Gemini
+// When Groq answered because Gemini failed, the trace shows the Gemini failure first. A
+// cached answer made no call this time, so it records none.
+function traceFallback(trace: Trace | undefined, input: string, answer: LlmAnswer<unknown>, cached: boolean) {
+  if (!answer.geminiFailure || cached) return;
+  trace?.add({
+    stage: 'brand',
+    tool: `Gemini (${GEMINI_MODEL})`,
+    input,
+    output: `Failed: ${answer.geminiFailure}`,
+    decision: 'Ask Groq once, with the same prompt and schema',
+    ok: false,
+  });
+}
+
+// Tag signal, only to supplement fewer than MIN_DESCRIPTION_ENTITIES entities: the LLM
 // proposes style keywords from the description, and only keywords that are exactly the
 // name of a Qloo tag are used, by tag id. Never free text.
 async function describedTags(description: string, trace?: Trace): Promise<{ tags: QlooTag[]; error?: string }> {
   const page = await descriptionText(description, trace);
   if ('error' in page) return { tags: [], error: page.error };
   const g0 = Date.now();
-  const tool = `Gemini (${GEMINI_MODEL})`;
+  const input = 'The brand’s description: style and culture keywords it states';
   let keywords: string[];
   try {
     const key = `brand-keywords:${createHash('sha256').update(page.text).digest('hex')}`;
     const r = await cachedAnswer(key, () => extractBrandKeywords(page.text));
-    keywords = r.value;
+    keywords = r.value.value;
+    traceFallback(trace, input, r.value, r.cached);
     trace?.add({
       stage: 'brand',
-      tool,
-      input: 'The brand’s description: style and culture keywords it states',
+      tool: llmLabel(r.value),
+      input,
       output: (keywords.length ? `Proposed ${keywords.join(', ')}` : 'Proposed none') + cachedNote(r.cached, r.at),
       decision: 'Keywords are looked up as Qloo tags; only exact tag names are used',
       cached: r.cached,
       ms: Date.now() - g0,
     });
   } catch (e: any) {
-    const error = geminiError(e);
-    trace?.add({ stage: 'brand', tool, input: 'The brand’s description: keywords', output: `Failed: ${error}`, decision: 'No tag signal', ms: Date.now() - g0, ok: false });
+    const error = llmFailure(e);
+    trace?.add({ stage: 'brand', tool: `Gemini (${GEMINI_MODEL})`, input, output: `Failed: ${error}`, decision: 'No tag signal', ms: Date.now() - g0, ok: false });
     return { tags: [], error: `Couldn’t extract keywords (${error})` };
   }
   const tags = await Promise.all(keywords.map((k) => findTag(k, trace && { trace, stage: 'brand' }).catch(() => null)));
   return { tags: [...new Map(tags.filter((t): t is QlooTag => Boolean(t)).map((t) => [t.id, t])).values()].slice(0, 3) };
 }
 
-// The brand's description, or the text of its web page → Gemini proposes the names it
+// The brand's description, or the text of its web page → the LLM proposes the names it
 // explicitly mentions (same rules as for videos) → only exact Qloo matches are kept.
 async function describedEntities(description: string, trace?: Trace): Promise<{ entities: QlooEntity[] } | { error: string }> {
   const page = await descriptionText(description, trace);
@@ -118,16 +133,17 @@ async function describedEntities(description: string, trace?: Trace): Promise<{ 
   const text = page.text;
 
   const g0 = Date.now();
-  const tool = `Gemini (${GEMINI_MODEL})`;
+  const input = 'The brand’s description: list names explicitly mentioned';
   let mentions: { name: string; kind: string }[];
   try {
     const key = `brand-desc:${createHash('sha256').update(text).digest('hex')}`;
     const r = await cachedAnswer(key, () => extractBrandMentions(text));
-    mentions = r.value;
+    mentions = r.value.value;
+    traceFallback(trace, input, r.value, r.cached);
     trace?.add({
       stage: 'brand',
-      tool,
-      input: 'The brand’s description: list names explicitly mentioned',
+      tool: llmLabel(r.value),
+      input,
       output:
         (mentions.length ? `Proposed ${mentions.length}: ${mentions.map((m) => `${m.name} (${m.kind})`).join(', ')}` : 'Proposed none') +
         cachedNote(r.cached, r.at),
@@ -136,8 +152,8 @@ async function describedEntities(description: string, trace?: Trace): Promise<{ 
       ms: Date.now() - g0,
     });
   } catch (e: any) {
-    const error = geminiError(e);
-    trace?.add({ stage: 'brand', tool, input: 'The brand’s description', output: `Failed: ${error}`, ms: Date.now() - g0, ok: false });
+    const error = llmFailure(e);
+    trace?.add({ stage: 'brand', tool: `Gemini (${GEMINI_MODEL})`, input, output: `Failed: ${error}`, ms: Date.now() - g0, ok: false });
     return { error: `Couldn’t extract names from the description (${error})` };
   }
 

@@ -113,15 +113,18 @@ export const cachedNote = (cached: boolean, at: number) => (cached ? ` (cached a
 
 type JsonCall = <T>(system: string, user: string, schema: object) => Promise<T>;
 
-interface Extraction {
-  mentions: { name: string; kind: string }[];
+// An LLM answer and which LLM gave it.
+export interface LlmAnswer<T> {
+  value: T;
   llm: 'gemini' | 'groq';
   model: string;
   geminiFailure?: string; // why Groq answered instead of Gemini
 }
 
-// Thrown when no LLM could extract names; each part is already a readable sentence.
-class ExtractionFailed extends Error {
+export const llmLabel = (a: { llm: 'gemini' | 'groq'; model: string }) => `${a.llm === 'groq' ? 'Groq' : 'Gemini'} (${a.model})`;
+
+// Thrown when no LLM could answer; each part is already a readable sentence.
+export class ExtractionFailed extends Error {
   geminiFailure: string | undefined;
   groqFailure: string | undefined;
   noFallback: string | undefined; // why Groq wasn't asked
@@ -141,18 +144,12 @@ function quotaOrOverload(e: any): boolean {
 
 // Gemini first. Only when it is over quota (429) or overloaded (503) is Groq asked, once,
 // with the same prompt and schema; other Gemini errors would not be fixed by another model.
-async function extractMentions(videos: any[]): Promise<Extraction> {
-  const text = videos
-    .map((v, i) => {
-      const s = v.snippet || {};
-      return `Video ${i + 1}\nTitle: ${s.title || ''}\nTags: ${(s.tags || []).join(', ')}\nDescription: ${String(s.description || '').slice(0, 1500)}`;
-    })
-    .join('\n\n');
-
+// Used for every LLM step, so a Gemini outage never stops one step while another goes on.
+async function withFallback<T>(ask: (json: JsonCall) => Promise<T>): Promise<LlmAnswer<T>> {
   let geminiFailure: string | undefined;
   if (hasGemini()) {
     try {
-      return { mentions: await namedEntities(MENTION_PROMPT, text), llm: 'gemini', model: GEMINI_MODEL };
+      return { value: await ask(geminiJson), llm: 'gemini', model: GEMINI_MODEL };
     } catch (e: any) {
       geminiFailure = geminiError(e);
       if (!quotaOrOverload(e)) throw new ExtractionFailed(geminiFailure, undefined, 'only quota and overload errors fall back');
@@ -163,15 +160,30 @@ async function extractMentions(videos: any[]): Promise<Extraction> {
     if (!hasGroq()) throw new ExtractionFailed(geminiFailure, undefined, 'GROQ_API_KEY is not set');
   }
   try {
-    return { mentions: await namedEntities(MENTION_PROMPT, text, groqJson), llm: 'groq', model: GROQ_MODEL, geminiFailure };
+    return { value: await ask(groqJson), llm: 'groq', model: GROQ_MODEL, geminiFailure };
   } catch (e: any) {
     throw new ExtractionFailed(geminiFailure, llmError(e, 'Groq'));
   }
 }
 
+// A readable reason for any LLM failure, with or without the fallback.
+export const llmFailure = (e: any) => (e instanceof ExtractionFailed ? e.message : geminiError(e));
+
+type Mentions = { name: string; kind: string }[];
+
+function extractMentions(videos: any[]): Promise<LlmAnswer<Mentions>> {
+  const text = videos
+    .map((v, i) => {
+      const s = v.snippet || {};
+      return `Video ${i + 1}\nTitle: ${s.title || ''}\nTags: ${(s.tags || []).join(', ')}\nDescription: ${String(s.description || '').slice(0, 1500)}`;
+    })
+    .join('\n\n');
+  return withFallback((json) => namedEntities(MENTION_PROMPT, text, json));
+}
+
 // Names explicitly mentioned in a brand's description or website text (same rules).
-export function extractBrandMentions(text: string): Promise<{ name: string; kind: string }[]> {
-  return namedEntities(BRAND_MENTION_PROMPT, text);
+export function extractBrandMentions(text: string): Promise<LlmAnswer<Mentions>> {
+  return withFallback((json) => namedEntities(BRAND_MENTION_PROMPT, text, json));
 }
 
 // Style and culture keywords a brand states about itself. They are only looked up as Qloo
@@ -188,16 +200,18 @@ const KEYWORD_SCHEMA = {
   required: ['keywords'],
 };
 
-export async function extractBrandKeywords(text: string): Promise<string[]> {
-  const d = await geminiJson<{ keywords: string[] }>(KEYWORD_PROMPT, text, KEYWORD_SCHEMA);
-  const seen = new Set<string>();
-  return (d.keywords || [])
-    .map((k) => String(k || '').trim().toLocaleLowerCase())
-    .filter((k) => k.length > 1 && !seen.has(k) && seen.add(k))
-    .slice(0, 5);
+export function extractBrandKeywords(text: string): Promise<LlmAnswer<string[]>> {
+  return withFallback(async (json) => {
+    const d = await json<{ keywords: string[] }>(KEYWORD_PROMPT, text, KEYWORD_SCHEMA);
+    const seen = new Set<string>();
+    return (d.keywords || [])
+      .map((k) => String(k || '').trim().toLocaleLowerCase())
+      .filter((k) => k.length > 1 && !seen.has(k) && seen.add(k))
+      .slice(0, 5);
+  });
 }
 
-async function namedEntities(prompt: string, text: string, json: JsonCall = geminiJson): Promise<{ name: string; kind: string }[]> {
+async function namedEntities(prompt: string, text: string, json: JsonCall): Promise<Mentions> {
   const d = await json<{ entities: { name: string; kind: string }[] }>(prompt, text, MENTION_SCHEMA);
 
   const seen = new Set<string>();
@@ -250,7 +264,8 @@ async function retryUnmatched(
   if (!pending.length) return;
 
   const g0 = Date.now();
-  const tool = `Gemini retry decision (${GEMINI_MODEL})`;
+  // Named after the LLM that answered (Groq when Gemini fell back); Gemini until then.
+  let tool = `Gemini retry decision (${GEMINI_MODEL})`;
   const input = `${pending.length} name${pending.length === 1 ? '' : 's'} with no exact Qloo match, each with Qloo’s top results: is any result the same thing under another name?`;
   let decisions: { name: string; choice: number; reason: string }[];
   let retryCached = false;
@@ -268,14 +283,17 @@ async function retryUnmatched(
     // Keyed by the videos and the exact question (names and candidate ids), so a change
     // in Qloo's results asks Gemini again.
     const key = `retry:${videoKey}|${JSON.stringify(pending.map((p) => [p.row.keyword, p.candidates.map((c) => c.entity_id)]))}`;
-    const r = await cachedAnswer(key, async () =>
-      (await geminiJson<{ decisions: typeof decisions }>(RETRY_PROMPT, JSON.stringify(payload), RETRY_SCHEMA)).decisions || []
+    const r = await cachedAnswer(key, () =>
+      withFallback(
+        async (json) => (await json<{ decisions: typeof decisions }>(RETRY_PROMPT, JSON.stringify(payload), RETRY_SCHEMA)).decisions || []
+      )
     );
-    decisions = r.value;
+    decisions = r.value.value;
+    tool = `${r.value.llm === 'groq' ? 'Groq' : 'Gemini'} retry decision (${r.value.model})`;
     retryCached = r.cached;
     retryAt = r.at;
   } catch (e: any) {
-    trace?.add({ stage: 'creator', tool, input, output: `Failed: ${geminiError(e)}`, decision: 'Keep the first-pass result', ms: Date.now() - g0, ok: false });
+    trace?.add({ stage: 'creator', tool, input, output: `Failed: ${llmFailure(e)}`, decision: 'Keep the first-pass result', ms: Date.now() - g0, ok: false });
     return;
   }
 
@@ -419,7 +437,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
     const g0 = Date.now();
     try {
       const r = await cachedAnswer(`mentions:${videoKey}`, () => extractMentions(videos));
-      const { mentions, llm, model, geminiFailure } = r.value;
+      const { value: mentions, llm, model, geminiFailure } = r.value;
       extractionModel = model;
       extractionFallback = geminiFailure;
       geminiCached = r.cached;
