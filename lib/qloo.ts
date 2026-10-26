@@ -78,11 +78,17 @@ async function throttle(): Promise<void> {
   if (wait) await new Promise((r) => setTimeout(r, wait));
 }
 
-export async function qlooFetch(url: string): Promise<any> {
+// Every attempt's outcome, joined: "200", "429 → 200 (retried)", "timeout → timeout (gave up after retry)".
+const attemptsLabel = (seen: string[], end?: string) =>
+  seen.join(' → ') + (end ? ` (${end})` : seen.length > 1 ? ' (retried)' : '');
+
+// Returns the data and how it was obtained; a thrown error carries `http` the same way.
+export async function qlooFetch(url: string): Promise<{ data: any; http: string }> {
   const key = process.env.QLOO_API_KEY;
   if (!key) throw Error('QLOO_API_KEY is not set. Check .env.local.');
 
   // Retry once on network errors, timeouts, 429 and 5xx (PRODUCT_SPEC §3.2).
+  const seen: string[] = [];
   for (let attempt = 0; ; attempt++) {
     await throttle();
     try {
@@ -90,17 +96,23 @@ export async function qlooFetch(url: string): Promise<any> {
         headers: { 'X-Api-Key': key, accept: 'application/json' },
         signal: AbortSignal.timeout(15000),
       });
+      seen.push(String(r.status));
       const d: any = await r.json().catch(() => ({}));
-      if (r.ok) return d;
+      if (r.ok) return { data: d, http: attemptsLabel(seen) };
       const detail = d?.errors?.map((x: any) => x.message).join('; ') || d?.message || `Qloo returned ${r.status}`;
       const retryable = r.status === 429 || r.status >= 500;
-      if (!retryable || attempt > 0) throw Object.assign(Error(detail), { final: true, status: r.status });
+      if (!retryable || attempt > 0) {
+        const http = attemptsLabel(seen, retryable ? 'gave up after retry' : 'not retried');
+        throw Object.assign(Error(detail), { final: true, status: r.status, http });
+      }
       if (r.status === 429) {
         const reset = Number(r.headers.get('x-second-ratelimit-reset')) || 1;
         await new Promise((res) => setTimeout(res, reset * 1000));
       }
     } catch (e: any) {
-      if (e.final || attempt > 0) throw e;
+      if (e.final) throw e;
+      seen.push(/timeout|abort/i.test(`${e?.name} ${e?.message}`) ? 'timeout' : 'network error');
+      if (attempt > 0) throw Object.assign(e, { http: attemptsLabel(seen, 'gave up after retry') });
     }
   }
 }
@@ -141,7 +153,7 @@ async function insightsGet(
   signal: QlooEntity[],
   tags: QlooTag[],
   ctx?: TraceCtx
-): Promise<{ data: any; cached: boolean; tags: QlooTag[] }> {
+): Promise<{ data: any; cached: boolean; http: string; tags: QlooTag[] }> {
   const entities = { 'signal.interests.entities': signal.map((e) => e.id).join(',') };
   if (tags.length) {
     try {
@@ -154,6 +166,7 @@ async function insightsGet(
         input: `Tag signal for type ${params['filter.type'].replace('urn:entity:', '')}`,
         output: `Qloo rejected it: ${e.message}`,
         decision: 'Skip the tag signal for this type; use the entities alone',
+        http: e.http,
       });
     }
   }
@@ -168,7 +181,9 @@ const TASTE_TAG_KINDS = ['genre', 'subgenre', 'theme', 'keyword'];
 // is not accepted: "streetwear" finds only "Streetwear Culture Influence", which is not used.
 export async function findTag(keyword: string, ctx?: TraceCtx): Promise<QlooTag | null> {
   const t0 = Date.now();
-  const { data, cached } = await cachedGet('/v2/tags', { 'filter.query': keyword, take: '10' });
+  const { data, cached, http } = await failTraced(ctx, 'Qloo /v2/tags', `“${keyword}”`, () =>
+    cachedGet('/v2/tags', { 'filter.query': keyword, take: '10' })
+  );
   const all = (data?.results?.tags || []).filter((t: any) => t?.id && t?.name);
   const exact = all.filter((t: any) => compact(t.name) === compact(keyword) && TASTE_TAG_KINDS.includes(String(t.id).split(':')[2]));
   // Genre tags first: "Jazz" the music genre rather than the keyword tag of the same name.
@@ -184,6 +199,7 @@ export async function findTag(keyword: string, ctx?: TraceCtx): Promise<QlooTag 
         : 'No tags',
     decision: best ? 'Accepted as tag signal' : 'Rejected: no exact taste-tag match, not used',
     cached,
+    http,
     ms: Date.now() - t0,
   });
   return best ? { id: best.id, name: best.name, query: keyword } : null;
@@ -204,20 +220,41 @@ export interface TraceCtx {
 const typeLabel = (types: string[]) => types.map((t) => t.replace('urn:entity:', '')).join('/');
 const fmt = (a: number) => a.toFixed(2);
 
-async function cachedGet(path: string, params: Record<string, string>): Promise<{ data: any; cached: boolean }> {
+async function cachedGet(path: string, params: Record<string, string>): Promise<{ data: any; cached: boolean; http: string }> {
   const u = new URL(path, QLOO_BASE);
-  for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
+  for (const [k, v] of Object.entries(params)) if (v !== '') u.searchParams.set(k, v);
   const url = u.toString();
   const hit = bypassCache() ? undefined : responseCache.get(url);
-  if (hit && Date.now() - hit.at < CACHE_MS) return { data: hit.data, cached: true };
-  const data = await qlooFetch(url);
+  if (hit && Date.now() - hit.at < CACHE_MS) return { data: hit.data, cached: true, http: 'cache' };
+  const { data, http } = await qlooFetch(url);
   responseCache.set(url, { at: Date.now(), data });
-  return { data, cached: false };
+  return { data, cached: false, http };
 }
 
-async function search(query: string, types: string[], take: number): Promise<{ results: any[]; cached: boolean }> {
-  const { data, cached } = await cachedGet('/search', { query, take: String(take), types: types.join(',') });
-  return { results: Array.isArray(data.results) ? data.results : [], cached };
+// Records a Qloo query that failed (with its HTTP attempts) before passing the error on,
+// so a failure never looks like "Qloo returned nothing".
+async function failTraced<T>(ctx: TraceCtx | undefined, tool: string, input: string, run: () => Promise<T>): Promise<T> {
+  const t0 = Date.now();
+  try {
+    return await run();
+  } catch (e: any) {
+    ctx?.trace.add({
+      stage: ctx.stage,
+      tool,
+      input,
+      output: `Failed: ${e?.message || e}`,
+      decision: 'Query failed; this is missing data, not an empty result',
+      http: e?.http || 'no response',
+      ms: Date.now() - t0,
+      ok: false,
+    });
+    throw e;
+  }
+}
+
+async function search(query: string, types: string[], take: number): Promise<{ results: any[]; cached: boolean; http: string }> {
+  const { data, cached, http } = await cachedGet('/search', { query, take: String(take), types: types.join(',') });
+  return { results: Array.isArray(data.results) ? data.results : [], cached, http };
 }
 
 export async function searchEntities(query: string, types: string[] = TASTE_TYPES, take = 5): Promise<any[]> {
@@ -234,14 +271,14 @@ export async function resolveEntity(
   ctx?: TraceCtx
 ): Promise<QlooEntity | null> {
   const t0 = Date.now();
-  const { results, cached } = await search(query, types, 5);
+  const input = `“${query}” among ${typeLabel(types)}`;
+  const { results, cached, http } = await failTraced(ctx, 'Qloo /search', input, () => search(query, types, 5));
   const matches = results
     .filter((x) => x.entity_id && x.name && namesMatch(query, x))
     .sort((a, b) => Number(prefer(b)) - Number(prefer(a)) || (b.popularity ?? 0) - (a.popularity ?? 0));
   const best = matches[0];
 
   if (ctx) {
-    const input = `“${query}” among ${typeLabel(types)}`;
     if (best) {
       const how = compact(best.name) === compact(query) ? 'name' : 'Qloo alias';
       ctx.trace.add({
@@ -251,6 +288,7 @@ export async function resolveEntity(
         output: `${best.name} (${best.entity_id}), exact ${how} match`,
         decision: matches.length > 1 ? `Accepted: most popular of ${matches.length} exact matches` : 'Accepted as evidence',
         cached,
+        http,
         ms: Date.now() - t0,
       });
     } else {
@@ -261,6 +299,7 @@ export async function resolveEntity(
         output: results.length ? `${results.length} results, none named “${query}”: ${results.slice(0, 3).map((x) => x.name).join(', ')}` : 'No results',
         decision: 'Rejected: no exact name or alias match, not used',
         cached,
+        http,
         ms: Date.now() - t0,
       });
     }
@@ -286,10 +325,14 @@ export async function getInsights(
   type: string,
   take = 5,
   ctx?: TraceCtx,
-  tags: QlooTag[] = []
+  tags: QlooTag[] = [],
+  extra: Record<string, string> = {} // more /v2/insights parameters, e.g. filter.tags
 ): Promise<QlooEntity[]> {
   const t0 = Date.now();
-  const { data, cached, tags: used } = await insightsGet({ 'filter.type': type, take: String(take) }, signal, tags, ctx);
+  const label = `Signal: ${signalLabel(signal, tags)} · type ${typeLabel([type])}`;
+  const { data, cached, http, tags: used } = await failTraced(ctx, 'Qloo /v2/insights', label, () =>
+    insightsGet({ 'filter.type': type, take: String(take), ...extra }, signal, tags, ctx)
+  );
   const via = signal.map((e) => e.name).join(', ');
   const entities: QlooEntity[] = (data?.results?.entities || [])
     .filter((x: any) => x.entity_id && x.name)
@@ -312,6 +355,7 @@ export async function getInsights(
       ? `${entities.length} entities: ${entities.slice(0, 3).map((e) => `${e.name}${e.affinity !== null ? ` ${fmt(e.affinity)}` : ''}`).join(', ')}${entities.length > 3 ? '…' : ''}`
       : 'No entities',
     cached,
+    http,
     ms: Date.now() - t0,
   });
   return entities;
@@ -334,11 +378,9 @@ export async function scoreEntities(
     [...byType].map(async ([type, group]) => {
       const t0 = Date.now();
       const ids = [...new Set(group.map((t) => t.id))];
-      const { data, cached, tags: used } = await insightsGet(
-        { 'filter.type': type, 'filter.results.entities': ids.join(','), take: String(ids.length) },
-        signal,
-        tags,
-        ctx
+      const label = `Signal: ${signalLabel(signal, tags)} · affinity of ${ids.length} creator ${typeLabel([type])} entities (filter.results.entities)`;
+      const { data, cached, http, tags: used } = await failTraced(ctx, 'Qloo /v2/insights', label, () =>
+        insightsGet({ 'filter.type': type, 'filter.results.entities': ids.join(','), take: String(ids.length) }, signal, tags, ctx)
       );
       const scored: { name: string; a: number }[] = [];
       for (const x of data?.results?.entities || []) {
@@ -355,6 +397,7 @@ export async function scoreEntities(
         output: `${scored.length}/${ids.length} scored: ${scored.slice(0, 4).map((s) => `${s.name} ${fmt(s.a)}`).join(', ')}${scored.length > 4 ? '…' : ''}`,
         decision: scored.length < ids.length ? `${ids.length - scored.length} not scored by Qloo, left out` : undefined,
         cached,
+        http,
         ms: Date.now() - t0,
       });
     })

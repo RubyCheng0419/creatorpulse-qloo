@@ -28,6 +28,15 @@ function Step({ s }: { s: TraceStep }) {
             {s.cached ? 'cached' : 'live'}
           </span>
         )}
+        {/* Qloo HTTP attempts; anything other than a plain 200 is highlighted. */}
+        {s.http && s.http !== 'cache' && (
+          <span
+            className={`rounded px-1.5 py-0.5 text-xs tabular-nums ${s.http === '200' ? 'text-slate-500' : 'bg-orange-100 font-medium text-orange-900'}`}
+            title="HTTP status of each attempt"
+          >
+            HTTP {s.http}
+          </span>
+        )}
         <span className="ml-auto text-xs tabular-nums text-slate-400">
           {s.ms !== undefined && `${s.ms} ms · `}t+{(s.t / 1000).toFixed(1)}s
         </span>

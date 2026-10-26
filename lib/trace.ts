@@ -13,6 +13,10 @@ export interface TraceStep {
   decision?: string;
   ms?: number; // duration of the call
   cached?: boolean; // Qloo, YouTube or Gemini response served from this server's cache
+  // Qloo only: every HTTP attempt and what happened, e.g. "200", "429 → 200 (retried)",
+  // "500 → 500 (gave up after retry)", "400 (not retried)". A failed query is recorded as
+  // failed, never as an empty result.
+  http?: string;
   ok: boolean;
 }
 
