@@ -10,6 +10,25 @@ export function hasGroq(): boolean {
   return Boolean(process.env.GROQ_API_KEY);
 }
 
+// For /api/health: is the key accepted, and is the configured model available? Lists
+// models (GET /models), which uses no tokens. Never returns the key.
+export async function checkGroq(): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return 'not configured';
+  try {
+    const r = await fetch(`${GROQ_BASE}/models`, {
+      headers: { authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) return `rejected (${r.status})`;
+    const d: any = await r.json().catch(() => ({}));
+    const ids: string[] = (d?.data || []).map((m: any) => m?.id);
+    return ids.includes(GROQ_MODEL) ? 'ok' : `key accepted, but model ${GROQ_MODEL} is not available`;
+  } catch {
+    return 'unreachable';
+  }
+}
+
 // Same contract as geminiJson: parsed JSON matching `schema`, or a thrown error that
 // carries the HTTP status. One attempt only; the caller already tried Gemini.
 export async function groqJson<T>(system: string, user: string, schema: object, temperature = 0): Promise<T> {
