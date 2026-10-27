@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Match } from '@/lib/match';
 import { VERDICT_LABELS, brandBasisNote } from '@/lib/report';
 import type { Compatibility, Verdict } from '@/lib/scoring';
@@ -70,7 +71,12 @@ export function ScoreCard({ match }: { match: Match }) {
           rests on what Qloo infers the creator’s audience likes, not on what the videos say. Confidence is at most Medium.
         </p>
       )}
-      <p className="text-sm text-slate-500">Cultural compatibility due diligence</p>
+      <p className="flex flex-wrap items-baseline justify-between gap-x-4 text-sm text-slate-500">
+        Cultural compatibility due diligence
+        <Link href="/how-it-works" className="font-medium text-teal-700 hover:underline print:hidden">
+          How the score works
+        </Link>
+      </p>
       <h2 className="mt-1 text-xl font-semibold text-slate-900">
         {brand} × {creator}
         {match.creator.youtubeHandle && <span className="ml-2 text-base font-normal text-slate-500">{match.creator.youtubeHandle}</span>}

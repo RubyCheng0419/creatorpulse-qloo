@@ -31,8 +31,8 @@ export const PROXY_WEIGHT = 0.5; // entity Qloo associates with those, one step 
 export const MIN_DIRECT_ENTITIES = 3; // §3.2: fewer than this → no score
 // Confidence: High needs this many named entities and data in all five dimensions;
 // Medium needs MEDIUM_CONFIDENCE_ENTITIES; anything less is Low.
-const HIGH_CONFIDENCE_ENTITIES = 10;
-const MEDIUM_CONFIDENCE_ENTITIES = 5;
+export const HIGH_CONFIDENCE_ENTITIES = 10;
+export const MEDIUM_CONFIDENCE_ENTITIES = 5;
 
 const TYPE_DIMENSION: Record<string, Dimension> = {
   'urn:entity:artist': 'music',
