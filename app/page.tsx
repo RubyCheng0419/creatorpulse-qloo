@@ -34,13 +34,22 @@ export default function Page() {
 
 // "Analyze videos" from Find creators links here with ?videos=<channel>&brand=… (and the
 // brand fallback as refs=a|b and desc=…), which prefills the form and starts the match.
+// A shared report link (lib/share-link) uses the same parameters, with one videos= per video
+// and the brand's category.
 function linkedRequest(params: URLSearchParams): MatchRequest | null {
-  const videos = params.get('videos');
+  const videos = params.getAll('videos').filter(Boolean).slice(0, MAX_VIDEOS);
   const brand = params.get('brand');
-  if (!videos || !brand) return null;
+  if (!videos.length || !brand) return null;
   const refs = params.get('refs')?.split('|').filter(Boolean);
   const desc = params.get('desc');
-  return { videoUrls: [videos], brandName: brand, ...(refs?.length ? { referenceBrands: refs } : {}), ...(desc ? { brandDescription: desc } : {}) };
+  const category = params.get('category');
+  return {
+    videoUrls: videos,
+    brandName: brand,
+    ...(category ? { category } : {}),
+    ...(refs?.length ? { referenceBrands: refs } : {}),
+    ...(desc ? { brandDescription: desc } : {}),
+  };
 }
 
 function MatchPage() {

@@ -1,4 +1,4 @@
-import { VERDICT_STYLE, cardId, extremes } from '@/components/discover/CandidateCard';
+import { OPEN_CARD_EVENT, VERDICT_STYLE, cardId, extremes } from '@/components/discover/CandidateCard';
 import type { CreatorCandidate } from '@/lib/discover';
 import { VERDICT_LABELS } from '@/lib/report';
 
@@ -35,7 +35,19 @@ export function RankingOverview({ candidates, unverified = false }: { candidates
             const { best, worst } = extremes(c);
             const scored = c.status === 'scored';
             return (
-              <tr key={c.qlooId} className="transition-colors hover:bg-slate-50">
+              <tr
+                key={c.qlooId}
+                className="cursor-pointer transition-colors hover:bg-slate-50"
+                onClick={() => {
+                  // The whole row opens that creator's card with its evidence (CandidateCard listens).
+                  // The browser's own anchor jump does the scrolling; setting the hash it already
+                  // has wouldn't jump, so that case scrolls by hand.
+                  const id = cardId(c);
+                  if (window.location.hash === `#${id}`) document.getElementById(id)?.scrollIntoView({ block: 'start' });
+                  else window.location.hash = id;
+                  window.dispatchEvent(new CustomEvent(OPEN_CARD_EVENT, { detail: id }));
+                }}
+              >
                 <td className="py-2.5 pl-4 pr-1 tabular-nums text-slate-400">{c.rank}</td>
                 <td className="px-2 py-2.5">
                   <a href={`#${cardId(c)}`} className="font-medium text-slate-900 hover:text-teal-700 hover:underline">

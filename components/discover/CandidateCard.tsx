@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronDown, ExternalLink } from 'lucide-react';
 import { TasteComparison, formatAffinity } from '@/components/match/TasteComparison';
@@ -28,6 +28,7 @@ export function extremes(c: CreatorCandidate) {
 }
 
 export const cardId = (c: CreatorCandidate) => `creator-${c.rank}`;
+export const OPEN_CARD_EVENT = 'creatorpulse:open-card'; // detail: a cardId, from the ranking table
 
 // One ranked creator: the score, what it rests on, and the way into the video deep dive.
 // The main identity Qloo's description gives a creator, and the dimension that identity
@@ -94,6 +95,13 @@ export function CandidateCard({
   unverified?: boolean; // the ranking failed its controls: no fit verdict
 }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      if ((e as CustomEvent<string>).detail === cardId(c)) setOpen(true);
+    };
+    window.addEventListener(OPEN_CARD_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_CARD_EVENT, onOpen);
+  }, [c]);
   // Qloo's description lists every role ("singer, actor and YouTuber"): the person-level
   // profile then mixes the audiences of all of them.
   const roles = c.description ? c.description.split(/,|\band\b/).filter((s) => s.trim()).length : 0;

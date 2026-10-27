@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { shareLink } from '@/lib/share-link';
 import Link from 'next/link';
 import type { Match } from '@/lib/match';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ export function MatchResult({
           >
             Compare creators
           </Link>
+          <CopyLinkButton match={match} />
           {onReset && (
             <Button className="sm:ml-auto" onClick={onReset}>
               Run another match
@@ -80,7 +82,8 @@ export function MatchResult({
         </div>
         <p className="mt-2 text-xs text-slate-500">
           PDF opens the print dialog: choose “Save as PDF”. Both include the scores, every entity with its affinity, and the Agent Trace
-          summary.
+          summary. The share link carries this analysis’s inputs and re-runs it on any device (History stays in this browser), so a re-run
+          can land a few points away; a demo pair opens its saved result.
         </p>
       </div>
 
@@ -167,6 +170,26 @@ export function MatchResult({
         )}
       </div>
     </div>
+  );
+}
+
+function CopyLinkButton({ match }: { match: Match }) {
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  return (
+    <Button
+      variant="outline"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(shareLink(match, window.location.origin));
+          setState('copied');
+        } catch {
+          setState('failed'); // clipboard blocked: the link is still the page's own inputs
+        }
+        setTimeout(() => setState('idle'), 2500);
+      }}
+    >
+      {state === 'copied' ? 'Link copied' : state === 'failed' ? 'Copy failed' : 'Copy share link'}
+    </Button>
   );
 }
 
