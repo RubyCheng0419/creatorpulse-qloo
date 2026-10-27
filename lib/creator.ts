@@ -371,7 +371,16 @@ async function retryUnmatched(
 }
 
 export interface CreatorTaste {
-  videos: { videoId: string; title: string; channelId: string; channelTitle: string; categoryId: string; tags: string[] }[];
+  videos: {
+    videoId: string;
+    title: string;
+    channelId: string;
+    channelTitle: string;
+    categoryId: string;
+    tags: string[];
+    publishedAt?: string | null; // absent on results saved before it was read
+    viewCount?: number | null;
+  }[];
   channels: { channelId: string; title: string; handle: string; description: string }[];
   keywords: string[];
   // Which LLM proposed the names. 'groq' is the fallback when Gemini is over quota or
@@ -445,7 +454,8 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
     return true;
   });
   if (missing.length) {
-    const d = await youtube('videos', { part: 'snippet', id: missing.join(',') }, YOUTUBE_API_KEY);
+    // statistics for the view count shown in Sources; videos.list costs 1 quota unit either way.
+    const d = await youtube('videos', { part: 'snippet,statistics', id: missing.join(',') }, YOUTUBE_API_KEY);
     for (const item of d.items || []) {
       items.set(item.id, item);
       videoCache.set(item.id, { at: Date.now(), item });
@@ -615,6 +625,8 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
       channelTitle: v.snippet?.channelTitle || '',
       categoryId: v.snippet?.categoryId || '',
       tags: v.snippet?.tags || [],
+      publishedAt: v.snippet?.publishedAt || null,
+      viewCount: v.statistics?.viewCount !== undefined ? Number(v.statistics.viewCount) : null, // hidden by some channels
     })),
     channels,
     keywords,

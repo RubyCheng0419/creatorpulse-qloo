@@ -1,4 +1,15 @@
+import { findDemoPair } from '@/lib/demo-pair';
 import type { Match } from '@/lib/match';
+import { parseVideoId } from '@/lib/youtube-url';
+
+// How the videos were chosen: the latest uploads of a channel URL, the user's own picks,
+// or the demo's five (the latest five when the pair was chosen, docs/DEMO_PAIR.md).
+function selection(match: Match): string {
+  const urls = match.creator.videoUrls;
+  if (findDemoPair(urls, match.brand.name)) return 'The channel’s 5 most recent uploads when the demo pair was chosen (Oct 25, 2026); fixed since.';
+  if (urls.length === 1 && !parseVideoId(urls[0])) return `The channel’s ${match.creator.videos.length} most recent uploads at the time of this run.`;
+  return `Selected by the user (${urls.length} video${urls.length === 1 ? '' : 's'}), not necessarily the latest.`;
+}
 
 // The start of the evidence chain: which videos were read, which names were proposed,
 // and which of them Qloo confirmed as entities.
@@ -12,12 +23,20 @@ export function SourcesPanel({ match }: { match: Match }) {
       <div className="mt-3 grid gap-5 sm:grid-cols-2 print:grid-cols-2">
         <div>
           <h4 className="text-xs font-semibold tracking-wide text-slate-500">Videos read ({c.videos.length})</h4>
-          <ul className="mt-1 space-y-1 text-slate-700">
+          <p className="mt-0.5 text-xs text-slate-500">{selection(match)}</p>
+          <ul className="mt-1 space-y-1.5 text-slate-700">
             {c.videos.map((v) => (
               <li key={v.videoId}>
                 <a href={`https://www.youtube.com/watch?v=${v.videoId}`} target="_blank" rel="noreferrer" className="hover:text-teal-700 hover:underline">
                   {v.title}
                 </a>
+                {(v.publishedAt || typeof v.viewCount === 'number') && (
+                  <span className="block text-xs tabular-nums text-slate-500">
+                    {v.publishedAt && `Published ${new Date(v.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`}
+                    {v.publishedAt && typeof v.viewCount === 'number' && ' · '}
+                    {typeof v.viewCount === 'number' && `${v.viewCount.toLocaleString('en-US')} views`}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
