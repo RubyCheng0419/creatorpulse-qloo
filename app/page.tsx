@@ -52,6 +52,7 @@ function MatchPage() {
   const [brandName, setBrandName] = useState(linked?.brandName ?? '');
   const [category, setCategory] = useState('');
   const [done, setDone] = useState<MatchStage[]>([]);
+  const [doneAt, setDoneAt] = useState<Partial<Record<MatchStage, number>>>({}); // ms since the request started
   const [elapsed, setElapsed] = useState(0);
   const [match, setMatch] = useState<Match | null>(null);
   const [error, setError] = useState<{ message: string; backTo: Step; invalid?: string[] } | null>(null);
@@ -79,13 +80,22 @@ function MatchPage() {
     const controller = new AbortController();
     abortRef.current = controller;
     setDone([]);
+    setDoneAt({});
+    const startedAt = Date.now();
     setElapsed(0);
     setError(null);
     setMatch(null);
     setStep(3);
 
     try {
-      const outcome = await requestMatch(input, (s) => setDone((d) => [...d, s]), controller.signal);
+      const outcome = await requestMatch(
+        input,
+        (s) => {
+          setDone((d) => [...d, s]);
+          setDoneAt((t) => ({ ...t, [s]: Date.now() - startedAt }));
+        },
+        controller.signal
+      );
       if (outcome.ok) {
         saveMatch(outcome.match);
         setMatch(outcome.match);
@@ -289,6 +299,7 @@ function MatchPage() {
           <ProgressPanel
             title={`${brandName || 'brand'} × ${channel ? channelLabel(channel) : `${lines.length} video${lines.length === 1 ? '' : 's'}`}`}
             done={done}
+            doneAt={doneAt}
             elapsed={elapsed}
             onCancel={cancel}
           />
