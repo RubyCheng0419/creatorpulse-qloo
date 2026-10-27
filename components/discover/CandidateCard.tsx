@@ -38,6 +38,10 @@ export function CandidateCard({ c, deepDiveHref }: { c: CreatorCandidate; deepDi
   const shared = all.filter((e) => comp.dimensions.some((d) => d.intersection.includes(e))).sort((a, b) => b.brandAffinity - a.brandAffinity).slice(0, 3);
   const clashes = all.filter((e) => comp.dimensions.some((d) => d.divergence.includes(e))).sort((a, b) => a.brandAffinity - b.brandAffinity).slice(0, 3);
   const scored = c.status === 'scored';
+  const taste =
+    `Audience overlap ${c.audienceOverlap !== null ? c.audienceOverlap.toFixed(2) : '—'} · ${c.profile.scored} audience-taste entities scored` +
+    (c.profile.unsupportedTypes?.length ? ` · Qloo has no audience-taste data for: ${c.profile.unsupportedTypes.join(', ')}` : '') +
+    (c.profile.failedTypes.length ? ` · Qloo didn’t answer this time for: ${c.profile.failedTypes.join(', ')}` : '');
 
   return (
     <li id={cardId(c)} className="scroll-mt-6 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
@@ -46,6 +50,7 @@ export function CandidateCard({ c, deepDiveHref }: { c: CreatorCandidate; deepDi
         <div className="min-w-0 flex-1">
           <h3 className="text-lg font-semibold leading-snug text-slate-900">{c.name}</h3>
           {c.description && <p className="text-sm text-slate-500">{c.description}</p>}
+          <p className="mt-1 hidden text-xs tabular-nums text-slate-500 sm:block">{taste}</p>
         </div>
         <div className="shrink-0 text-right">
           <p className="text-3xl font-bold tabular-nums leading-none text-slate-900 sm:text-4xl">
@@ -60,12 +65,8 @@ export function CandidateCard({ c, deepDiveHref }: { c: CreatorCandidate; deepDi
           <p className="mt-1 text-xs text-slate-500">{comp.confidence ?? '—'} confidence</p>
         </div>
       </div>
-      {/* Full width under the header row, so a phone doesn't squeeze it beside the score. */}
-      <p className="mt-2 text-xs tabular-nums text-slate-500 sm:-mt-1 sm:pl-14">
-        Audience overlap {c.audienceOverlap !== null ? c.audienceOverlap.toFixed(2) : '—'} · {c.profile.scored} audience-taste entities scored
-        {c.profile.unsupportedTypes?.length ? ` · Qloo has no audience-taste data for: ${c.profile.unsupportedTypes.join(', ')}` : ''}
-        {c.profile.failedTypes.length ? ` · Qloo didn’t answer this time for: ${c.profile.failedTypes.join(', ')}` : ''}
-      </p>
+      {/* On a phone it goes full width under the header row, so the score doesn't squeeze it. */}
+      <p className="mt-2 text-xs tabular-nums text-slate-500 sm:hidden">{taste}</p>
 
       {scored ? (
         <dl className="mt-4 grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[8rem_1fr] sm:gap-y-1.5 sm:pl-14">
