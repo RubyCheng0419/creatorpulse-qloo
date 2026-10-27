@@ -30,7 +30,8 @@ export async function findChannel(qlooId: string, name: string, key: string | un
 
   const t0 = Date.now();
   // The same entity through /search, which (unlike /v2/insights) carries external ids and aliases.
-  const result = (await searchEntities(name, ['urn:entity:person'], 5).catch(() => [])).find((x) => x.entity_id === qlooId);
+  const found = await searchEntities(name, ['urn:entity:person'], 5, trace && { trace, stage: 'candidates' }, 'external ids for the channel lookup').catch(() => []);
+  const result = found.find((x) => x.entity_id === qlooId);
   const names = new Set([name, ...(result?.properties?.akas || []).map((a: any) => a?.value)].filter(Boolean).map((n: string) => compact(n)));
   const external = result?.properties?.external || {};
   const handles = [...new Set([external.instagram?.id, external.twitter?.id, compact(name)].filter((h): h is string => typeof h === 'string' && /^[\w.-]{3,30}$/.test(h)))];

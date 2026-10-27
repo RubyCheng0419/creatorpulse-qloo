@@ -3,7 +3,18 @@ import { audienceProfiles, findCreatorPerson, scoreProfile } from '@/lib/audienc
 import { BrandBasis, MissingReference, brandConfidence, lookupBrand } from '@/lib/brand';
 import { CreatorTaste, getCreatorTaste } from '@/lib/creator';
 import { ApiError } from '@/lib/errors';
-import { PROXY_TYPES, QlooEntity, QlooTag, getInsights, scoreEntities } from '@/lib/qloo';
+import {
+  EXPANSION_POPULARITY_MIN,
+  PROXY_TYPES,
+  QlooEntity,
+  QlooTag,
+  TagComparison,
+  compareTags,
+  expansionParams,
+  getInsights,
+  scoreEntities,
+  verifyEntities,
+} from '@/lib/qloo';
 import type { NoDataReason } from '@/lib/no-data';
 import { Report, VERDICT_LABELS, buildReport } from '@/lib/report';
 import {
@@ -78,6 +89,11 @@ export interface Match {
   trace: TraceStep[];
   liveRun?: boolean; // "Run live": every Qloo, YouTube and Gemini call bypassed the cache
   cachedAt?: string; // set when a stored demo snapshot is served instead of a live run
+  // GET /v2/analysis/compare of the brand side and the creator's confirmed entities: an
+  // independent cross-check shown next to the Fit Score, never part of it.
+  crossCheck?: TagComparison | { skipped: string };
+  // How cross-domain entities were gathered, for the report.
+  expansion?: { popularityMin: number; excludesBrand: boolean };
 }
 
 // Same videos + same brand side → same id, so a re-run is recognisably the same match.
@@ -184,10 +200,17 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
 
   // The creator's own Qloo entity: for the audience overlap, and as the fallback evidence
   // when the videos name too little.
-  const person = channel ? await findCreatorPerson(channel.title, channel.handle, trace) : null;
+  const found = channel ? await findCreatorPerson(channel.title, channel.handle, trace) : null;
+
+  // Every /search-confirmed creator entity is re-checked against Qloo's own record (GET /entities),
+  // in one call; one that no longer matches by name or alias is dropped before counting.
+  const { kept } = await verifyEntities([...creator.entities, ...(found ? [found] : [])], { trace, stage: 'creator' });
+  const keptIds = new Map(kept.map((e) => [e.id, e]));
+  const person = found ? (keptIds.get(found.id) ?? null) : null;
   if (person) base.creator = { ...base.creator, qlooPerson: { id: person.id, name: person.name } };
 
-  const direct = creator.entities;
+  const direct = creator.entities.filter((e) => keptIds.has(e.id)).map((e) => keptIds.get(e.id)!);
+  base.creator = { ...base.creator, entities: direct };
   const enough = !creator.extractionError && direct.length >= MIN_DIRECT_ENTITIES;
   trace.add({
     stage: 'creator',
@@ -267,7 +290,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   if (signal.length) {
     const batches = await Promise.all(
       PROXY_TYPES.map((type) =>
-        getInsights(signal, type, CREATOR_PROXIES_PER_TYPE, { trace, stage: 'expand' }).catch((e) => {
+        getInsights(signal, type, CREATOR_PROXIES_PER_TYPE, { trace, stage: 'expand' }, [], expansionParams([...brandIds])).catch((e) => {
           warnings.push(`Cross-domain expansion failed for ${type.replace('urn:entity:', '')}: ${e.message}`);
           return [] as QlooEntity[];
         })
@@ -302,6 +325,24 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   }
   const unscored = signal.length + proxies.length - items.length;
   if (unscored) warnings.push(`${unscored} creator entities got no affinity from Qloo with the brand as signal and were not scored.`);
+
+  // The evidence threshold again, on what Qloo actually scored: confirmed entities that got no
+  // affinity are not evidence, and cross-domain ones can't make up for them.
+  const directScored = items.filter((i) => i.side === 'direct').length;
+  trace.add({
+    stage: 'score',
+    tool: 'Rule',
+    input: `Evidence threshold after scoring: at least ${MIN_DIRECT_ENTITIES} named entities with a Qloo affinity`,
+    output: `${directScored} of ${signal.length} named entities scored`,
+    decision: directScored >= MIN_DIRECT_ENTITIES ? 'Continue' : 'Stop: not enough scored evidence, no score is given',
+  });
+  if (directScored < MIN_DIRECT_ENTITIES) {
+    return insufficient(
+      'too-few-creator-entities',
+      `Qloo gave an affinity for only ${directScored} of the entities named in the videos, below the scoring minimum of ${MIN_DIRECT_ENTITIES}.`,
+      brandSide
+    );
+  }
 
   // 4. Score by fixed formula, then write the report from the same evidence.
   let compatibility = computeCompatibility(items);
@@ -351,7 +392,33 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     input: 'Report template filled from the scored entities (no LLM)',
     output: `${report.recommendations.length} recommendations, ${report.risks.length} risks, ${sharedEntities.length} entities shared with the brand’s Qloo proxies`,
   });
+  // 5. Independent cross-check: Qloo compares the tags of the brand side (A) and the
+  //    creator's confirmed entities (B). Reported beside the Fit Score; it never changes it.
+  let crossCheck: Match['crossCheck'];
+  if (!brandSignal.length) {
+    crossCheck = { skipped: 'The brand side is Qloo tags only, with no entities to compare.' };
+  } else {
+    try {
+      crossCheck = await compareTags(brandSignal, signal, { trace, stage: 'report' });
+    } catch (e) {
+      crossCheck = { skipped: `Qloo’s comparison failed (${(e as Error).message}).` }; // already traced with its HTTP attempts
+    }
+  }
+  if ('skipped' in crossCheck)
+    trace.add({ stage: 'report', tool: 'Rule', input: 'Cross-check with GET /v2/analysis/compare', output: crossCheck.skipped, decision: 'Skip the cross-check; the Fit Score is unaffected' });
   onStage?.('report');
 
-  return { ...base, status: 'completed', scoreBasis: 'videos', mentionsBrand, brand: brandSide, compatibility, sharedEntities, report, warnings };
+  return {
+    ...base,
+    status: 'completed',
+    scoreBasis: 'videos',
+    mentionsBrand,
+    brand: brandSide,
+    compatibility,
+    sharedEntities,
+    report,
+    warnings,
+    crossCheck,
+    expansion: { popularityMin: EXPANSION_POPULARITY_MIN, excludesBrand: brandIds.size > 0 },
+  };
 }

@@ -288,8 +288,22 @@ async function search(query: string, types: string[], take: number): Promise<{ r
   return { results: Array.isArray(data.results) ? data.results : [], cached, http };
 }
 
-export async function searchEntities(query: string, types: string[] = TASTE_TYPES, take = 5): Promise<any[]> {
-  return (await search(query, types, take)).results;
+// Raw /search results. With a trace, the call is recorded with its HTTP attempts (a failure
+// through failTraced, then passed on for the caller to skip), like every other Qloo call.
+export async function searchEntities(query: string, types: string[] = TASTE_TYPES, take = 5, ctx?: TraceCtx, why = ''): Promise<any[]> {
+  const t0 = Date.now();
+  const input = `“${query}” among ${typeLabel(types)}${why ? ` (${why})` : ''}`;
+  const { results, cached, http } = await failTraced(ctx, 'Qloo /search', input, () => search(query, types, take));
+  ctx?.trace.add({
+    stage: ctx.stage,
+    tool: 'Qloo /search',
+    input,
+    output: results.length ? `${results.length} results: ${results.slice(0, 3).map((x) => x.name).join(', ')}` : 'No results',
+    cached,
+    http,
+    ms: Date.now() - t0,
+  });
+  return results;
 }
 
 // Resolve a keyword to one Qloo entity, or null when nothing matches by name.
@@ -350,6 +364,138 @@ export async function resolveEntity(
   };
 }
 
+// GET /entities: Qloo's own record of the entities /search confirmed. The name or an alias
+// must still equal the keyword that found it (the same exact rule, against the canonical
+// record), and its popularity replaces the search result's. If the call fails, the /search
+// matches stand and the trace says they are unverified: missing data, not a mismatch.
+// The parts of Qloo's raw JSON that the functions below read.
+interface RawEntity {
+  entity_id?: string;
+  name?: string;
+  popularity?: number;
+  properties?: { akas?: { value?: string }[] };
+  query?: { affinity?: number; explainability?: Record<string, { entity_id?: string; score?: number }[]> };
+}
+interface RawTag {
+  tag_id?: string;
+  name?: string;
+  query?: { score?: number; count?: string | number };
+}
+
+export async function verifyEntities(entities: QlooEntity[], ctx?: TraceCtx): Promise<{ kept: QlooEntity[]; dropped: QlooEntity[] }> {
+  if (!entities.length) return { kept: entities, dropped: [] };
+  const ids = [...new Set(entities.map((e) => e.id))];
+  const input = `Re-check ${ids.length} /search-confirmed entit${ids.length === 1 ? 'y' : 'ies'}: ${entities.map((e) => e.name).join(', ')}`;
+  const t0 = Date.now();
+  let got: Awaited<ReturnType<typeof cachedGet>>;
+  try {
+    got = await failTraced(ctx, 'Qloo /entities', input, () => cachedGet('/entities', { entity_ids: ids.join(',') }));
+  } catch {
+    ctx?.trace.add({ stage: ctx.stage, tool: 'Rule', input, output: 'GET /entities failed', decision: 'Keep the /search matches, unverified' });
+    return { kept: entities, dropped: [] };
+  }
+  const results: RawEntity[] = Array.isArray(got.data?.results) ? got.data.results : [];
+  const byId = new Map(results.filter((x) => x?.entity_id).map((x) => [x.entity_id!, x]));
+  const kept: QlooEntity[] = [];
+  const dropped: QlooEntity[] = [];
+  const absent: string[] = [];
+  for (const e of entities) {
+    const x = byId.get(e.id);
+    if (!x) {
+      absent.push(e.name);
+      kept.push(e);
+    } else if (!namesMatch(e.query, x)) dropped.push(e);
+    else kept.push({ ...e, popularity: typeof x.popularity === 'number' ? x.popularity : e.popularity });
+  }
+  ctx?.trace.add({
+    stage: ctx.stage,
+    tool: 'Qloo /entities',
+    input,
+    output:
+      `${kept.length - absent.length} re-verified by exact name or alias · popularity ${kept
+        .filter((e) => e.popularity !== null)
+        .map((e) => `${e.name} ${e.popularity!.toFixed(3)}`)
+        .join(', ')}` + (absent.length ? ` · not returned: ${absent.join(', ')}` : ''),
+    decision: dropped.length
+      ? `Drop ${dropped.map((e) => `${e.name} (“${e.query}”)`).join(', ')}: Qloo’s record doesn’t match the keyword by name or alias`
+      : absent.length
+        ? 'Keep the ones not returned on the strength of /search, unverified'
+        : 'All kept',
+    cached: got.cached,
+    http: got.http,
+    ms: Date.now() - t0,
+  });
+  return { kept, dropped };
+}
+
+// Discovery-style /v2/insights calls (a creator's cross-domain expansion, a creator's audience
+// taste, the brand's cultural proxies) leave out entities below this Qloo popularity:
+// destinations came back as obscure as 0.009 (checked 2026-10-27). Never applied when scoring
+// (filter.results.entities), where it would drop entities the videos named.
+export const EXPANSION_POPULARITY_MIN = 0.5;
+
+// Parameters for those calls. Checked on 2026-10-27 for every filter.type CreatorPulse uses
+// (brand, artist, movie, TV show, destination, place, person): each took effect, none was
+// silently ignored.
+export function expansionParams(exclude: string[] = []): Record<string, string> {
+  return {
+    'filter.popularity.min': String(EXPANSION_POPULARITY_MIN),
+    'feature.explainability': 'true',
+    ...(exclude.length ? { 'filter.exclude.entities': [...new Set(exclude)].join(',') } : {}),
+  };
+}
+
+// The trace's account of the extra parameters, so the run shows what was filtered.
+function extraLabel(extra: Record<string, string>): string {
+  const parts: string[] = [];
+  if (extra['filter.popularity.min']) parts.push(`popularity ≥ ${extra['filter.popularity.min']}`);
+  if (extra['filter.exclude.entities']) parts.push(`excluding ${extra['filter.exclude.entities'].split(',').length} brand-side`);
+  if (extra['feature.explainability']) parts.push('explainability');
+  return parts.length ? ` · ${parts.join(' · ')}` : '';
+}
+
+// GET /v2/analysis/compare between the brand side (A) and the creator's confirmed entities
+// (B). Qloo compares the two sides' tags; it returns no affinity, so it is reported next to
+// the Fit Score as an independent cross-check and never feeds it.
+export interface TagComparison {
+  brandEntities: string[];
+  creatorEntities: string[];
+  shared: { id: string; name: string; score: number }[]; // tags both sides carry, with Qloo's score
+  brandTags: { id: string; name: string; count: number }[];
+  creatorTags: { id: string; name: string; count: number }[];
+}
+
+export async function compareTags(a: QlooEntity[], b: QlooEntity[], ctx?: TraceCtx): Promise<TagComparison> {
+  const t0 = Date.now();
+  const input = `A (brand side): ${a.map((e) => e.name).join(', ')} · B (creator): ${b.length} confirmed entities`;
+  const { data, cached, http } = await failTraced(ctx, 'Qloo /v2/analysis/compare', input, () =>
+    cachedGet('/v2/analysis/compare', {
+      'a.signal.interests.entities': a.map((e) => e.id).join(','),
+      'b.signal.interests.entities': b.map((e) => e.id).join(','),
+    })
+  );
+  const r: { tags?: RawTag[]; a?: RawTag[]; b?: RawTag[] } = data?.results || {};
+  const tagOf = (x: RawTag) => ({ id: String(x.tag_id || ''), name: String(x.name || '') });
+  const shared = (r.tags || [])
+    .filter((x) => x?.tag_id && typeof x.query?.score === 'number')
+    .map((x) => ({ ...tagOf(x), score: x.query!.score! }))
+    .sort((p, q) => q.score - p.score)
+    .slice(0, 6);
+  const side = (list: RawTag[] = []) => list.filter((x) => x?.tag_id).map((x) => ({ ...tagOf(x), count: Number(x.query?.count) || 0 })).slice(0, 6);
+  const out: TagComparison = { brandEntities: a.map((e) => e.name), creatorEntities: b.map((e) => e.name), shared, brandTags: side(r.a), creatorTags: side(r.b) };
+  ctx?.trace.add({
+    stage: ctx.stage,
+    tool: 'Qloo /v2/analysis/compare',
+    input,
+    output: shared.length ? `${shared.length} shared tags: ${shared.map((t) => `${t.name} ${fmt(t.score)}`).join(', ')}` : 'No shared tags',
+    decision: 'Reported as an independent cross-check; not part of the Fit Score',
+    cached,
+    http,
+    ms: Date.now() - t0,
+  });
+  return out;
+}
+
 // Cross-domain entities Qloo associates with the signal entities, with affinity.
 export async function getInsights(
   signal: QlooEntity[],
@@ -360,11 +506,24 @@ export async function getInsights(
   extra: Record<string, string> = {} // more /v2/insights parameters, e.g. filter.tags
 ): Promise<QlooEntity[]> {
   const t0 = Date.now();
-  const label = `Signal: ${signalLabel(signal, tags)} · type ${typeLabel([type])}`;
+  const label = `Signal: ${signalLabel(signal, tags)} · type ${typeLabel([type])}${extraLabel(extra)}`;
   const { data, cached, http, tags: used } = await failTraced(ctx, 'Qloo /v2/insights', label, () =>
     insightsGet({ 'filter.type': type, take: String(take), ...extra }, signal, tags, ctx)
   );
   const via = signal.map((e) => e.name).join(', ');
+  // With feature.explainability, Qloo scores how much each signal entity contributed; the
+  // evidence chain then names the strongest contributors first instead of the whole signal.
+  const nameOf = new Map(signal.map((e) => [e.id, e.name]));
+  const drivers = (x: RawEntity): string => {
+    const ex = x.query?.explainability?.['signal.interests.entities'];
+    if (signal.length < 2 || !Array.isArray(ex) || !ex.length) return via;
+    const names = [...ex]
+      .sort((p, q) => (q?.score ?? 0) - (p?.score ?? 0))
+      .map((s) => nameOf.get(s?.entity_id ?? ''))
+      .filter(Boolean)
+      .slice(0, 3);
+    return names.length ? names.join(', ') : via;
+  };
   const entities: QlooEntity[] = (data?.results?.entities || [])
     .filter((x: any) => x.entity_id && x.name)
     .map((x: any) => ({
@@ -375,14 +534,14 @@ export async function getInsights(
       affinity: typeof x.query?.affinity === 'number' ? x.query.affinity : null,
       source: 'qloo' as const,
       via: 'insights' as const,
-      query: via,
+      query: drivers(x),
       genres: genresOf(x),
       description: shortDescription(x),
     }));
   ctx?.trace.add({
     stage: ctx.stage,
     tool: 'Qloo /v2/insights',
-    input: `Signal: ${signalLabel(signal, used)} · type ${typeLabel([type])}`,
+    input: `Signal: ${signalLabel(signal, used)} · type ${typeLabel([type])}${extraLabel(extra)}`,
     output: entities.length
       ? `${entities.length} entities: ${entities.slice(0, 3).map((e) => `${e.name}${e.affinity !== null ? ` ${fmt(e.affinity)}` : ''}`).join(', ')}${entities.length > 3 ? '…' : ''}`
       : 'No entities',

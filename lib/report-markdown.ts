@@ -78,6 +78,23 @@ export function matchToMarkdown(match: Match): string {
       ...r.risks.map((x) => `- ${x}`),
       ''
     );
+    const cross = match.crossCheck;
+    if (cross) {
+      lines.push('## Cross-check: Qloo tag comparison (GET /v2/analysis/compare; not part of the Fit Score)', '');
+      if ('skipped' in cross) lines.push(`Not run: ${cross.skipped}`, '');
+      else
+        lines.push(
+          `- **Shared tags:** ${cross.shared.length ? cross.shared.map((t) => `${t.name} ${t.score.toFixed(2)}`).join(', ') : 'none'}`,
+          `- **${cross.brandEntities.join(', ')}:** ${cross.brandTags.map((t) => t.name).join(', ') || 'none'}`,
+          `- **Creator (${cross.creatorEntities.length} confirmed entities):** ${cross.creatorTags.map((t) => t.name).join(', ') || 'none'}`,
+          ''
+        );
+    }
+    if (match.expansion)
+      lines.push(
+        `_Related-by-Qloo entities: Qloo popularity ≥ ${match.expansion.popularityMin} (filter.popularity.min)${match.expansion.excludesBrand ? ', brand side excluded (filter.exclude.entities)' : ''}, contributors from feature.explainability. Scoring applies no popularity filter._`,
+        ''
+      );
   }
 
   const trace = match.trace ?? [];

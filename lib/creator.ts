@@ -1,3 +1,4 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL, InlineImage, geminiJson, hasGemini } from '@/lib/gemini';
 import { GROQ_MODEL, groqJson, hasGroq } from '@/lib/groq';
@@ -100,12 +101,20 @@ export const geminiError = (e: any) => llmError(e, 'Gemini');
 // marks every LLM step live or cached.
 const llmCache = new Map<string, { at: number; value: unknown }>();
 
+// Regression runs only (never set in production): LLM_CACHE_FILE keeps the answers on disk,
+// with no expiry, so a code change can be compared on the very same names across restarts.
+const LLM_CACHE_FILE = process.env.LLM_CACHE_FILE;
+if (LLM_CACHE_FILE && existsSync(LLM_CACHE_FILE)) {
+  for (const [k, v] of Object.entries(JSON.parse(readFileSync(LLM_CACHE_FILE, 'utf8')))) llmCache.set(k, v as { at: number; value: unknown });
+}
+
 export async function cachedAnswer<T>(key: string, call: () => Promise<T>): Promise<{ value: T; cached: boolean; at: number }> {
   const hit = bypassCache() ? undefined : llmCache.get(key);
-  if (hit && Date.now() - hit.at < VIDEO_CACHE_MS) return { value: hit.value as T, cached: true, at: hit.at };
+  if (hit && (LLM_CACHE_FILE || Date.now() - hit.at < VIDEO_CACHE_MS)) return { value: hit.value as T, cached: true, at: hit.at };
   const value = await call();
   const at = Date.now();
   llmCache.set(key, { at, value });
+  if (LLM_CACHE_FILE) writeFileSync(LLM_CACHE_FILE, JSON.stringify(Object.fromEntries(llmCache)));
   return { value, cached: false, at };
 }
 
@@ -286,7 +295,8 @@ async function retryUnmatched(
   for (const row of resolved) {
     if (row.entity || row.error) continue;
     const types = queries.find((q) => q.keyword === row.keyword)!.types;
-    const candidates = (await searchEntities(row.keyword, types)).filter((x) => x.entity_id && x.name).slice(0, 5);
+    const found = await searchEntities(row.keyword, types, 5, trace && { trace, stage: 'creator' }, 'candidates for the retry decision').catch(() => []);
+    const candidates = found.filter((x) => x.entity_id && x.name).slice(0, 5);
     if (candidates.length) pending.push({ row, types, candidates });
   }
   if (!pending.length) return;
@@ -560,7 +570,15 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
       try {
         return { keyword: k, entity: await resolveEntity(k, types, undefined, trace && { trace, stage: 'creator' }) };
       } catch (e: any) {
-        trace?.add({ stage: 'creator', tool: 'Qloo /search', input: `“${k}”`, output: `Failed: ${e.message}`, ok: false });
+        trace?.add({
+          stage: 'creator',
+          tool: 'Qloo /search',
+          input: `“${k}”`,
+          output: `Failed: ${e.message}`,
+          decision: 'Skip this name: missing data, not a confirmed non-match',
+          http: e?.http || 'no response',
+          ok: false,
+        });
         return { keyword: k, entity: null, error: e.message as string };
       }
     })

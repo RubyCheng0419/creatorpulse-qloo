@@ -42,6 +42,10 @@ Remove Qloo and there is no score. Every number comes from Qloo:
 | Expand across domains | `GET /v2/insights` with the creator’s entities as signal | Music, film, TV, places and brands that audience also likes |
 | Brand cultural proxies | `GET /v2/insights` with the brand as signal | What the brand’s audience likes, per domain |
 | **Score** | `GET /v2/insights` with the brand as signal and `filter.results.entities` = the creator’s entities | **How strongly the brand’s audience relates to each creator entity (affinity)** |
+| Re-check the evidence | `GET /entities` | Every `/search`-confirmed entity (both sides) re-checked against Qloo’s own record by the same exact name/alias rule; its popularity, shown as “top X%” |
+| Cross-check | `GET /v2/analysis/compare` (A = brand side, B = the creator’s confirmed entities) | The tags both sides share, with Qloo’s score: an independent second opinion shown beside the Fit Score, never part of it |
+
+The cross-domain calls (expansion, a creator’s audience taste, the brand’s proxies) also send `filter.exclude.entities` (the brand side, so it never comes back as its own evidence), `filter.popularity.min=0.5` (obscure entities left out; destinations came back as low as 0.009) and `feature.explainability` (which signal entities each result came from, strongest first). Each was checked on 2026-10-27 to take effect for every `filter.type` used, since Qloo ignores unsupported parameters silently. The scoring call never gets a popularity filter: it would drop entities the videos named.
 
 Find creators adds three Qloo calls: `/v2/insights` for people with `filter.tags=urn:tag:genre:person:youtuber` (or a category such as `technology_youtubers`) and the brand as signal, to rank candidates; `/v2/insights` with each candidate as signal, to read their audience’s taste per domain; and the same scoring call as above, batched for all candidates.
 
@@ -100,7 +104,7 @@ When the videos name fewer than 3 Qloo entities (or no LLM can extract names), C
 6. **Audience overlap** (the brand audience’s affinity for the creator) is shown but not scored, so the same evidence isn’t counted twice; it only breaks ties.
 7. Queries that fail (timeouts, dropped connections, 429) are asked again after the rest and reported per creator; a creator Qloo can’t use as a signal for a type (400) is reported as having no data there, not retried.
 
-Checked on 2026-10-27: two live runs per brand gave identical rankings, and for common-sense controls the creator type that should fit scored higher on average in all four cases (Razer: gaming 71 vs beauty 55; Fenty Beauty: beauty 74 vs gaming 57; Apple: technology 64 vs beauty 58; Huggies: lifestyle 53 vs gaming 51, the weakest, since Qloo has no family category).
+Checked on 2026-10-27: two live runs per brand gave identical rankings, and for common-sense controls the creator type that should fit scored higher on average in all four cases (re-checked after the popularity filter: Razer: gaming 71 vs beauty 56; Fenty Beauty: beauty 74 vs gaming 57; Apple: technology 64 vs beauty 58; Huggies: lifestyle 53 vs gaming 51, the weakest, since Qloo has no family category).
 
 ### When the brand isn’t in Qloo
 

@@ -1,4 +1,4 @@
-import { PROXY_TYPES, QlooEntity, getInsights, namesMatch, searchEntities } from '@/lib/qloo';
+import { PROXY_TYPES, QlooEntity, expansionParams, getInsights, namesMatch, searchEntities } from '@/lib/qloo';
 import { Compatibility, ConfidenceLevel, PROXY_WEIGHT, ScoredEntity, computeCompatibility, dimensionOf } from '@/lib/scoring';
 import type { Trace } from '@/lib/trace';
 
@@ -28,7 +28,9 @@ export interface AudienceProfile {
 export async function audienceProfiles(people: QlooEntity[], exclude: Set<string>, trace?: Trace): Promise<AudienceProfile[]> {
   const UNSUPPORTED = 'unsupported' as const;
   const profileOf = (c: QlooEntity, type: string) =>
-    getInsights([c], type, PROFILE_PER_TYPE, trace && { trace, stage: 'profile' }).catch((e: any) => (e?.status === 400 ? UNSUPPORTED : null));
+    getInsights([c], type, PROFILE_PER_TYPE, trace && { trace, stage: 'profile' }, [], expansionParams([...exclude])).catch((e: any) =>
+      e?.status === 400 ? UNSUPPORTED : null
+    );
   const lists = await Promise.all(people.map((c) => Promise.all(PROXY_TYPES.map((type) => profileOf(c, type)))));
   const failed = lists.flatMap((l, i) => l.map((x, j) => (x === null ? [i, j] : null)).filter((x): x is number[] => x !== null));
   if (failed.length) {
@@ -91,7 +93,8 @@ export async function findCreatorPerson(title: string, handle: string, trace?: T
   let used = '';
   const seen: string[] = [];
   for (const query of queries) {
-    const results = await searchEntities(query, ['urn:entity:person'], 5).catch(() => []);
+    // A failed query is in the trace (with its HTTP attempts) and skipped: no person, not "none".
+    const results = await searchEntities(query, ['urn:entity:person'], 5, trace && { trace, stage: 'creator' }, 'the creator’s own entity').catch(() => []);
     const exact = results.filter((r) => r?.entity_id && r?.name && namesMatch(query, r));
     seen.push(`“${query}”: ${exact.length ? exact.map((r) => `${r.name}${isCreator(r) ? ' (creator)' : ''}`).join(', ') : 'no exact match'}`);
     chosen = exact.find(isCreator) ?? null;
@@ -102,7 +105,7 @@ export async function findCreatorPerson(title: string, handle: string, trace?: T
   }
   trace?.add({
     stage: 'creator',
-    tool: 'Qloo /search',
+    tool: 'Rule',
     input: `The creator in Qloo: a person named like the channel, tagged as a creator`,
     output: seen.join(' · ') || 'Nothing to search for',
     decision: chosen ? `Use ${chosen.name} (${chosen.entity_id}) for audience overlap and audience taste` : 'No creator-tagged person with this exact name; no audience-taste evidence',

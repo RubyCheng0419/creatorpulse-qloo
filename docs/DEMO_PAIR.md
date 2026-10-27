@@ -51,9 +51,11 @@ Checked on 2026-10-27:
 
 | Brand | Top of the ranking |
 |---|---|
-| Apple | Marques Brownlee 79, then tech and gaming creators (Logan Paul, DjMaRiiO, Dakotaz…) |
-| Huggies | Sandra Lee 65, Cole LaBrant 64, then family and beauty creators (Elle Fowler, LadBaby…) |
-| Le Labo Fragrances | Alexis Alford 64, Michael Greenfield 63, then beauty creators (Sylvia Jade, Ingrid Nilsen, Wayne Goss…) |
+| Apple | Marques Brownlee 79, then tech and gaming creators (Logan Paul 69, Dakotaz 68, TheGrefg, DjMaRiiO…) |
+| Huggies | Sandra Lee 65, LadBaby 59, Elle Fowler 59, Cole LaBrant 58, then beauty creators (Laura Lee, Tati Westbrook…) |
+| Le Labo Fragrances | Alexis Alford 65, Michael Greenfield 63, then beauty creators (Ingrid Nilsen, Sylvia Jade, Wayne Goss…) |
+
+Re-checked on 2026-10-27 after `filter.popularity.min=0.5` was added to the audience-taste calls: Huggies’ order changed (Cole LaBrant 64 → 58), the other two barely moved.
 
 - [x] Two live runs per brand (every cache bypassed) gave identical rankings
 - [x] Common-sense controls passed 4/4: for Razer, Fenty Beauty, Apple and Huggies, the creator type that should fit scored higher on average than one that shouldn’t (see the README)

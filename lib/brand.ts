@@ -14,7 +14,18 @@ import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL, InlineImage } from '@/lib/gemini';
 import { bypassCache } from '@/lib/request-context';
 import { fetchPageText } from '@/lib/web-page';
-import { PROXY_TYPES, QlooEntity, QlooTag, compact, findTag, getInsights, resolveEntity, searchEntities } from '@/lib/qloo';
+import {
+  PROXY_TYPES,
+  QlooEntity,
+  QlooTag,
+  compact,
+  expansionParams,
+  findTag,
+  getInsights,
+  resolveEntity,
+  searchEntities,
+  verifyEntities,
+} from '@/lib/qloo';
 import type { NoDataReason } from '@/lib/no-data';
 import { Compatibility, ConfidenceLevel, lowerConfidence } from '@/lib/scoring';
 import type { Trace } from '@/lib/trace';
@@ -277,10 +288,11 @@ export function brandConfidence(
 
 // Qloo brands whose name starts with the input: Qloo names often carry a suffix the user
 // doesn't type ("Le Labo" is "Le Labo Fragrances", with no aliases).
-async function suggestionsFor(name: string): Promise<string[]> {
+async function suggestionsFor(name: string, trace?: Trace): Promise<string[]> {
   const q = compact(name);
   if (q.length < 3) return [];
-  return (await searchEntities(name, ['urn:entity:brand']))
+  const found = await searchEntities(name, ['urn:entity:brand'], 5, trace && { trace, stage: 'brand' }, 'names starting with it').catch(() => []);
+  return found
     .map((r) => String(r.name || ''))
     .filter((n) => n && compact(n).startsWith(q))
     .slice(0, 3);
@@ -420,7 +432,7 @@ export async function lookupBrand(
   } else if (!references.length) {
     // Never fall back to a similar-looking brand (PRODUCT_SPEC §3.2): offer names that
     // start with the input, or reference brands, for the user to choose.
-    const suggestions = await suggestionsFor(name);
+    const suggestions = await suggestionsFor(name, trace);
     trace?.add({
       stage: 'brand',
       tool: 'Rule',
@@ -454,7 +466,7 @@ export async function lookupBrand(
         : 'Use the reference brands together as the brand-side signal',
     });
     if (missing.length) {
-      const missingReferences = await Promise.all(missing.map(async (m) => ({ name: m, suggestions: await suggestionsFor(m) })));
+      const missingReferences = await Promise.all(missing.map(async (m) => ({ name: m, suggestions: await suggestionsFor(m, trace) })));
       return notFound(
         'reference-not-in-qloo',
         `Qloo has no brand named exactly ${missing.map((m) => `“${m}”`).join(', ')}. Replace ${missing.length === 1 ? 'it' : 'them'} with a reference brand Qloo has.`,
@@ -465,6 +477,18 @@ export async function lookupBrand(
     basis = 'reference';
     signal = verified;
   }
+
+  // The brand-side entities, re-checked against Qloo's own record (GET /entities) like the
+  // creator's. One that no longer matches its name stops the run instead of being dropped
+  // silently: the user named it, so the user decides what replaces it.
+  const { kept, dropped } = await verifyEntities(signal, trace && { trace, stage: 'brand' });
+  if (dropped.length) {
+    return notFound(
+      'brand-name-mismatch',
+      `Qloo’s record for ${dropped.map((e) => `“${e.name}”`).join(', ')} doesn’t match ${dropped.map((e) => `“${e.query}”`).join(', ')} by name or alias, so it isn’t used.`
+    );
+  }
+  signal = kept;
 
   // Tags only supplement a thin brand side (fewer than MIN_DESCRIPTION_ENTITIES reference
   // brands) and only when the user also described the brand. Never for the brand itself.
@@ -501,7 +525,7 @@ export async function lookupBrand(
   const batches = await Promise.all(
     (fallback.proxies === false ? [] : PROXY_TYPES).map(async (type) => {
       try {
-        return await getInsights(signal, type, PROXIES_PER_TYPE, trace && { trace, stage: 'brand' }, tags);
+        return await getInsights(signal, type, PROXIES_PER_TYPE, trace && { trace, stage: 'brand' }, tags, expansionParams(signal.map((e) => e.id)));
       } catch (e: any) {
         warnings.push(`Cultural proxy lookup failed for ${type.replace('urn:entity:', '')}: ${e.message}`);
         return [] as QlooEntity[];
@@ -513,5 +537,6 @@ export async function lookupBrand(
   const seen = new Set(signal.map((e) => e.id));
   const entities = batches.flat().filter((e) => !seen.has(e.id) && seen.add(e.id));
 
-  return { found: true, brand: { name, category: category || null, entity }, basis, signal, tags, imageTags: fromImage, entities, warnings };
+  const checked = entity ? (signal.find((e) => e.id === entity.id) ?? entity) : null; // with /entities popularity
+  return { found: true, brand: { name, category: category || null, entity: checked }, basis, signal, tags, imageTags: fromImage, entities, warnings };
 }

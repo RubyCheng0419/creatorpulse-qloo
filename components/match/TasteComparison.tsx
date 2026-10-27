@@ -42,6 +42,13 @@ export function formatAffinity(a: number): string {
   return (Math.floor(a * 1e4) / 1e4).toFixed(4); // truncated, so it can't round up across
 }
 
+// Qloo popularity is a 0–1 percentile: 0.9992 → "top 0.1%", 0.87 → "top 13%".
+export function popularityLabel(p: number | null | undefined): string | null {
+  if (typeof p !== 'number') return null;
+  const top = (1 - p) * 100;
+  return `top ${top < 0.1 ? '0.1' : top < 10 ? top.toFixed(1).replace(/\.0$/, '') : Math.round(top)}%`;
+}
+
 // Same thresholds as the verdict (lib/scoring.ts verdictOf), in words.
 function feeling(score: number): string {
   if (score >= 80) return 'loves';
@@ -60,12 +67,21 @@ function takeaway(d: DimensionScore, audience: string, basis: CreatorBasis): str
 
 function EntityRow({ e, basis, sources }: { e: ScoredEntity; basis: CreatorBasis; sources: boolean }) {
   const origin = e.side === 'direct' ? 'In the videos' : basis === 'audience' ? 'Audience taste' : 'Related by Qloo';
+  const popularity = popularityLabel(e.popularity);
   return (
     <li className="py-2 text-sm print:py-1">
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0 font-medium text-slate-900">
           {e.name}
-          <span className="ml-1.5 text-xs font-normal text-slate-500">{TYPE_LABELS[e.type] || e.type}</span>
+          <span className="ml-1.5 text-xs font-normal text-slate-500">
+            {TYPE_LABELS[e.type] || e.type}
+            {popularity && (
+              <span title={`Qloo popularity ${e.popularity!.toFixed(3)} (0–1, from GET /entities or /v2/insights)`}>
+                {' '}
+                · {popularity} popularity
+              </span>
+            )}
+          </span>
         </span>
         <span className="shrink-0 tabular-nums text-slate-700">{formatAffinity(e.brandAffinity)}</span>
       </div>

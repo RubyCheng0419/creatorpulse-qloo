@@ -9,6 +9,7 @@ import { downloadMarkdown } from '@/lib/report-markdown';
 import { summarizeTrace } from '@/lib/trace';
 import { AgentTrace } from './AgentTrace';
 import { BrandFallbackForm, type BrandFallbackInput } from './BrandFallbackForm';
+import { CrossCheck } from './CrossCheck';
 import { ReportDetails } from './ReportDetails';
 import { ScoreCard } from './ScoreCard';
 import { SourcesPanel } from './SourcesPanel';
@@ -84,6 +85,7 @@ export function MatchResult({
             basis={match.scoreBasis === 'audience' ? 'audience' : 'content'}
           />
           <ReportDetails report={match.report} />
+          <CrossCheck match={match} />
         </>
       ) : (
         <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
