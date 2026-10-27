@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
 import { CandidateCard } from '@/components/discover/CandidateCard';
+import { RankingOverview } from '@/components/discover/RankingOverview';
 import { AgentTrace } from '@/components/match/AgentTrace';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -369,7 +370,8 @@ function DiscoverPage() {
             </Button>
           </section>
 
-          <aside className="rounded-xl border border-teal-200 bg-teal-50 p-6">
+          {/* First on a phone: the demo is what most first-time visitors are here for. */}
+          <aside className="order-first rounded-xl border border-teal-200 bg-teal-50 p-4 sm:p-6 lg:order-none">
             <h2 className="text-base font-semibold text-teal-900">Try the demo</h2>
             <p className="mt-2 text-sm text-teal-900">Three very different brands. Each click runs Qloo live; the rankings should differ.</p>
             {DEMOS.map((d) => (
@@ -417,13 +419,26 @@ function DiscoverPage() {
 
             {result.status === 'completed' ? (
               <>
-                <p className="text-sm text-slate-600">
-                  <span className="font-medium text-slate-800">Fit Score</span>: how the brand’s audience relates to the brands, music, films,
-                  shows and places this creator’s audience likes, all from Qloo, with the same formula as a creator check.{' '}
-                  <span className="font-medium text-slate-800">Audience overlap</span>: how strongly the brand’s audience likes the creator
-                  themselves; shown, not scored. Confidence is at most Medium here: it is the audience’s inferred taste, not what the creator
-                  says. Analyze a creator’s videos to add that.
-                </p>
+                <RankingOverview candidates={result.candidates} />
+                <dl className="grid gap-x-6 gap-y-3 px-1 text-sm sm:grid-cols-3">
+                  <div>
+                    <dt className="font-medium text-slate-900">Fit Score</dt>
+                    <dd className="mt-0.5 text-slate-600">
+                      How the brand’s audience relates to the brands, music, films, shows and places this creator’s audience likes, all from
+                      Qloo, with the same formula as a creator check.
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-slate-900">Audience overlap</dt>
+                    <dd className="mt-0.5 text-slate-600">How strongly the brand’s audience likes the creator themselves. Shown, not scored.</dd>
+                  </div>
+                  <div>
+                    <dt className="font-medium text-slate-900">Confidence</dt>
+                    <dd className="mt-0.5 text-slate-600">
+                      At most Medium here: it is the audience’s inferred taste, not what the creator says. Analyze a creator’s videos to add that.
+                    </dd>
+                  </div>
+                </dl>
                 <ol className="space-y-3">
                   {result.candidates.map((c) => (
                     <CandidateCard key={c.qlooId} c={c} deepDiveHref={deepDive(c)} />

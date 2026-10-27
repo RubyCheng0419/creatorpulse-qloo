@@ -56,13 +56,19 @@ export function MatchResult({
       <ScoreCard match={match} />
 
       <div className="print:hidden">
-        <div className="flex flex-wrap gap-3">
-          <Button size="lg" onClick={() => printMatch(match)}>
+        {/* Reading the result comes first; downloads and the next match sit in one quiet row. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={() => printMatch(match)}>
             Download report (PDF)
           </Button>
-          <Button size="lg" variant="outline" onClick={() => downloadMarkdown(match)}>
+          <Button variant="outline" onClick={() => downloadMarkdown(match)}>
             Download as Markdown
           </Button>
+          {onReset && (
+            <Button className="sm:ml-auto" onClick={onReset}>
+              Run another match
+            </Button>
+          )}
         </div>
         <p className="mt-2 text-xs text-slate-500">
           PDF opens the print dialog: choose “Save as PDF”. Both include the scores, every entity with its affinity, and the Agent Trace

@@ -209,7 +209,8 @@ function MatchPage() {
               </Button>
             </section>
 
-            <aside className="rounded-xl border border-teal-200 bg-teal-50 p-6">
+            {/* First on a phone: the demo is what most first-time visitors are here for. */}
+            <aside className="order-first rounded-xl border border-teal-200 bg-teal-50 p-4 sm:p-6 lg:order-none">
               <h2 className="text-base font-semibold text-teal-900">Try the demo</h2>
               <p className="mt-2 text-sm text-teal-900">
                 The same {DEMO_PAIRS[0].creatorLabel} videos against two brands. Each click runs the full pipeline live.
