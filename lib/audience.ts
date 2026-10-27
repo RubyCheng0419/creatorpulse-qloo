@@ -25,15 +25,43 @@ export interface AudienceProfile {
 // never treated as "this creator has no taste": a partial profile would move the creator in
 // a ranking. Some Qloo people are not valid signals for some types (400 "signal.interests.
 // entities were invalid"); that is Qloo's data, not a failure, so it isn't retried.
-export async function audienceProfiles(people: QlooEntity[], exclude: Set<string>, trace?: Trace): Promise<AudienceProfile[]> {
+// `control: true` is for ranking controls: no second pass, and each query is given up after
+// CONTROL_DEADLINE_MS. Jeremy Fragrance's places time out twice (30 s), which would push Find
+// creators past the 60 s function limit; a control missing a type is marked incomplete instead.
+const CONTROL_DEADLINE_MS = 12_000;
+
+export async function audienceProfiles(people: QlooEntity[], exclude: Set<string>, trace?: Trace, control = false): Promise<AudienceProfile[]> {
   const UNSUPPORTED = 'unsupported' as const;
-  const profileOf = (c: QlooEntity, type: string) =>
-    getInsights([c], type, PROFILE_PER_TYPE, trace && { trace, stage: 'profile' }, [], expansionParams([...exclude])).catch((e: any) =>
+  const abandoned: string[] = [];
+  const profileOf = (c: QlooEntity, type: string) => {
+    const call = getInsights([c], type, PROFILE_PER_TYPE, trace && { trace, stage: 'profile' }, [], expansionParams([...exclude])).catch((e: any) =>
       e?.status === 400 ? UNSUPPORTED : null
     );
+    if (!control) return call;
+    let timer: ReturnType<typeof setTimeout>;
+    const deadline = new Promise<null>((res) => {
+      timer = setTimeout(() => {
+        abandoned.push(`${c.name} · ${type.replace('urn:entity:', '')}`);
+        res(null);
+      }, CONTROL_DEADLINE_MS);
+    });
+    return Promise.race([call.finally(() => clearTimeout(timer)), deadline]);
+  };
   const lists = await Promise.all(people.map((c) => Promise.all(PROXY_TYPES.map((type) => profileOf(c, type)))));
   const failed = lists.flatMap((l, i) => l.map((x, j) => (x === null ? [i, j] : null)).filter((x): x is number[] => x !== null));
-  if (failed.length) {
+  if (control && failed.length) {
+    trace?.add({
+      stage: 'profile',
+      tool: 'Qloo /v2/insights',
+      input: `${failed.length} ranking-control profile quer${failed.length === 1 ? 'y' : 'ies'} failed or didn’t answer within ${CONTROL_DEADLINE_MS / 1000} s${abandoned.length ? `: ${abandoned.join(', ')}` : ''}`,
+      output: abandoned.length ? `${abandoned.length} given up while still waiting` : 'Failed (see the steps above)',
+      decision: 'Not asked again, to stay within the time limit; the control is marked incomplete and can’t validate the ranking',
+      http: abandoned.length ? `no response within ${CONTROL_DEADLINE_MS / 1000} s (abandoned)` : 'see above',
+      ok: false,
+    });
+  }
+  const retry = !control;
+  if (failed.length && retry) {
     await new Promise((res) => setTimeout(res, 1000));
     for (const [i, j] of failed) lists[i][j] = await profileOf(people[i], PROXY_TYPES[j]);
     const still = failed.filter(([i, j]) => lists[i][j] === null).length;

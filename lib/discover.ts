@@ -183,9 +183,14 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
     : [];
   const extra = controlPeople.flatMap((c) => (c.person && !candidates.some((x) => x.id === c.person!.id) ? [c.person] : []));
 
-  // 3. Each candidate's audience taste (lib/audience), with failed queries asked again.
-  const allProfiles = await audienceProfiles([...candidates, ...extra], brandIds, trace);
-  const profiles = allProfiles.slice(0, candidates.length).map((p) => ({ ...p, candidate: p.person }));
+  // 3. Each candidate's audience taste (lib/audience), with failed queries asked again; the
+  //    controls' alongside, in parallel and without that second pass (see audienceProfiles).
+  const [candidateProfiles, extraProfiles] = await Promise.all([
+    audienceProfiles(candidates, brandIds, trace),
+    extra.length ? audienceProfiles(extra, brandIds, trace, true) : Promise.resolve([]),
+  ]);
+  const allProfiles = [...candidateProfiles, ...extraProfiles];
+  const profiles = candidateProfiles.map((p) => ({ ...p, candidate: p.person }));
   const controlProfiles = new Map(allProfiles.map((p) => [p.person.id, p]));
   for (const p of profiles) {
     if (p.failedTypes.length) warnings.push(`${p.candidate.name}: Qloo failed to return ${p.failedTypes.join(', ')}; that part of the profile is missing.`);
