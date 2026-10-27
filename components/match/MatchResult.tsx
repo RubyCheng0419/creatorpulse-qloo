@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import type { Match } from '@/lib/match';
 import { Button } from '@/components/ui/button';
-import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
+import { NO_DATA_NEXT_STEPS, noDataCause } from '@/lib/no-data';
 import { parseVideoId } from '@/lib/youtube-url';
 import { downloadMarkdown } from '@/lib/report-markdown';
 import { summarizeTrace } from '@/lib/trace';
@@ -118,13 +118,25 @@ export function MatchResult({
             </dl>
           )}
           {match.noDataReason && (
-            <div className="mt-3">
-              <p className="font-medium">What you can do</p>
-              <ul className="mt-1 list-disc pl-5 text-amber-800">
-                {nextSteps(match).map((s) => (
-                  <li key={s}>{s}</li>
-                ))}
-              </ul>
+            <div className="mt-3 space-y-2">
+              <p>
+                <span className="font-semibold">Cause:</span> {noDataCause(match.noDataReason, match.creator)}
+              </p>
+              <p className="rounded-md bg-white/70 px-3 py-2 ring-1 ring-amber-200">
+                <span className="font-semibold">Next step:</span> {nextSteps(match)[0]}
+              </p>
+              {nextSteps(match).length > 1 && (
+                <div>
+                  <p className="text-xs font-medium text-amber-900">Other options</p>
+                  <ul className="mt-0.5 list-disc pl-5 text-amber-800">
+                    {nextSteps(match)
+                      .slice(1)
+                      .map((s) => (
+                        <li key={s}>{s}</li>
+                      ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
           {brandProblem && onBrandFallback && (
@@ -158,8 +170,8 @@ function nextSteps(match: Match): string[] {
   const fromChannel = match.creator.videoUrls.length === 1 && !parseVideoId(match.creator.videoUrls[0]);
   if (match.noDataReason !== 'too-few-creator-entities' || !fromChannel) return steps;
   return [
-    'This channel’s latest videos name too few brands, works or people that Qloo knows.',
-    'Find creators scores creators from their audience’s taste in Qloo, which doesn’t depend on what the videos name.',
+    'Paste 2–3 of this creator’s videos that explicitly name brands, products or topics: the latest 15 named too few.',
+    'Or use Find creators, which scores creators from their audience’s taste in Qloo and doesn’t depend on what the videos name.',
   ];
 }
 

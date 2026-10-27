@@ -446,7 +446,7 @@ export async function lookupBrand(
       suggestions.length ? 'brand-name-mismatch' : 'brand-not-in-qloo',
       suggestions.length
         ? `Qloo has no brand named exactly “${name}”. Did you mean ${suggestions.map((s) => `“${s}”`).join(' or ')}?`
-        : `Your brand isn’t in Qloo. Enter 1–${MAX_REFERENCE_BRANDS} reference brands with a similar audience that are in Qloo.`,
+        : `Your brand isn’t in Qloo. Describe it (or paste its web page), or enter 1–${MAX_REFERENCE_BRANDS} reference brands with a similar audience that are in Qloo.`,
       suggestions
     );
   } else {

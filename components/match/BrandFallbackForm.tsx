@@ -13,7 +13,7 @@ export type BrandFallbackInput = { referenceBrands?: string[]; brandDescription?
 // Shown when the brand isn't in Qloo. First choice: 1–3 reference brands with a similar
 // audience that are in Qloo; the server verifies each by exact name, and any it can't find
 // come back marked here, with Qloo's names that start with them. Otherwise: a short
-// description or the brand's web page, whose named entities must match Qloo exactly.
+// description or the brand's web page: its named entities, or its style words as Qloo tags.
 export function BrandFallbackForm({ match, onSubmit }: { match: Match; onSubmit: (fallback: BrandFallbackInput) => void }) {
   const previous = match.brand.referenceBrands ?? [];
   const [names, setNames] = useState<string[]>(() => Array.from({ length: MAX }, (_, i) => previous[i] ?? ''));
@@ -76,8 +76,9 @@ export function BrandFallbackForm({ match, onSubmit }: { match: Match; onSubmit:
           {filled.length ? 'Brand description (optional)' : 'Or: describe your brand'}
         </label>
         <p className="mt-1 text-sm text-slate-600">
-          Paste a short description or your brand’s https:// web page. Only names it explicitly mentions (brands, artists, shows,
-          places…) count, and at least 3 must match Qloo exactly; slogans and adjectives don’t.
+          Paste a short description or your brand’s https:// web page. Names it explicitly mentions (brands, artists, shows,
+          places…) count when they match Qloo exactly, and at least 3 are needed; with fewer, its style words are matched to Qloo
+          taste tags instead (confidence Low).
         </p>
         <Textarea
           id="brand-description"
