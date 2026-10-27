@@ -64,7 +64,8 @@ Only two, both `GET` with parameters in the query string and the header `X-Api-K
 ```
 
 - One of `filter.query`, `filter.tags`, `filter.tag.types`, `filter.parents.types`, `filter.popularity.min/max` or `filter.results.tags` is required; plain `query` returns 400.
-- Matching is broad: “perfume” returns place categories (*Perfume store*) and an occupation tag named exactly *Perfume*; “streetwear” returns only *Streetwear Culture Influence* (an ambience tag). → Only tags whose name equals the keyword **and** whose kind is genre, subgenre, theme or keyword are used.
+- Matching is broad: “perfume” returns place categories (*Perfume store*) and an occupation tag named exactly *Perfume*; “streetwear” returns only *Streetwear Culture Influence* (an ambience tag). → Only tags whose name equals the keyword **and** whose kind is keyword, theme, style, genre or subgenre are used.
+- Genre tags belong to one domain (`genre:music:*`, `genre:media:*` for books, `genre:brand:*`), and a style word often names one: “cute” and “kawaii” exactly name only music genres (plus place ambience and decor tags). For a brand, only genres attached to brands count (checked 2026-10-27); keyword, theme, style and subgenre tags are Qloo’s cross-domain vocabulary and always count.
 
 ### Rate limits
 

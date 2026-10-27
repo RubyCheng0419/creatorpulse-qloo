@@ -200,10 +200,20 @@ export async function findTag(keyword: string, ctx?: TraceCtx, forType?: string)
     cachedGet('/v2/tags', { 'filter.query': keyword, take: '20' })
   );
   const all = (data?.results?.tags || []).filter((t: any) => t?.id && t?.name);
-  const exact = all.filter((t: any) => compact(t.name) === compact(keyword) && TASTE_TAG_KINDS.includes(String(t.id).split(':')[2]));
-  const kind = (t: any) => TASTE_TAG_KINDS.indexOf(String(t.id).split(':')[2]);
+  const kind = (t: any) => String(t.id).split(':')[2];
   const forIt = (t: any) => (forType && (t.parents || []).some((p: any) => p?.type === forType) ? 0 : 1);
-  const best = [...exact].sort((a: any, b: any) => forIt(a) - forIt(b) || kind(a) - kind(b))[0];
+  // Genre tags belong to one domain: "cute" is also urn:tag:genre:music:cute, a kind of
+  // music, not a look. With `forType`, only that type's genres count; keyword, theme, style
+  // and subgenre tags are Qloo's own cross-domain vocabulary.
+  const exact = all.filter(
+    (t: any) =>
+      compact(t.name) === compact(keyword) && TASTE_TAG_KINDS.includes(kind(t)) && (kind(t) !== 'genre' || !forType || forIt(t) === 0)
+  );
+  const best = [...exact].sort(
+    (a: any, b: any) => forIt(a) - forIt(b) || TASTE_TAG_KINDS.indexOf(kind(a)) - TASTE_TAG_KINDS.indexOf(kind(b))
+  )[0];
+  // "genre:music" rather than "genre", so a rejected genre shows which domain it belongs to.
+  const label = (t: { id: string }) => (kind(t) === 'genre' ? String(t.id).split(':').slice(2, 4).join(':') : kind(t));
   ctx?.trace.add({
     stage: ctx.stage,
     tool: 'Qloo /v2/tags',
@@ -211,7 +221,7 @@ export async function findTag(keyword: string, ctx?: TraceCtx, forType?: string)
     output: best
       ? `${best.name} (${best.id}), exact name match`
       : all.length
-        ? `${all.length} tags, no taste tag named “${keyword}”: ${all.slice(0, 3).map((t: any) => `${t.name} (${String(t.id).split(':')[2]})`).join(', ')}`
+        ? `${all.length} tags, no taste tag named “${keyword}”: ${all.slice(0, 3).map((t: any) => `${t.name} (${label(t)})`).join(', ')}`
         : 'No tags',
     decision: best ? 'Accepted as tag signal' : 'Rejected: no exact taste-tag match, not used',
     cached,
