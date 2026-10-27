@@ -38,6 +38,11 @@ export function brandBasisNote(brand: {
     .join(' ');
   if (brand.basis === 'reference') return `Your brand isn’t in Qloo. Scored against your reference brands: ${names}.${notes ? ` ${notes}` : ''}`;
   if (brand.basis === 'description') return `Scored from your brand description: the Qloo entities it names (${names}).${notes ? ` ${notes}` : ''}`;
+  if (brand.basis === 'style') {
+    const style = textTags.map((t) => t.name).join(', ');
+    const image = fromImage.size ? ` Includes tags inferred from your key visual: ${(brand.imageTags ?? []).map((t) => t.name).join(', ')}.` : '';
+    return `Your brand isn’t in Qloo. Scored from your brand’s style, as Qloo taste tags: ${style}${names ? `, with ${names}` : ''}.${image}`;
+  }
   return notes || null;
 }
 

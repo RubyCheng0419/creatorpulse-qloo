@@ -186,19 +186,24 @@ async function insightsGet(
 
 // Tag kinds that describe taste. Others are not used even when the name matches:
 // "perfume" exactly names urn:tag:occupation:wikidata:perfume, and place amenities abound.
-const TASTE_TAG_KINDS = ['genre', 'subgenre', 'theme', 'keyword'];
+// In order of preference for a brand's style word: Qloo's own keyword and theme tags are
+// the most general ("cats" → keyword:qloo:cats rather than genre:media:cats).
+const TASTE_TAG_KINDS = ['keyword', 'theme', 'style', 'genre', 'subgenre'];
 
 // A Qloo taste tag whose name is exactly the keyword, or null. Like entities, a near match
 // is not accepted: "streetwear" finds only "Streetwear Culture Influence", which is not used.
-export async function findTag(keyword: string, ctx?: TraceCtx): Promise<QlooTag | null> {
+// `forType` prefers tags Qloo attaches to that entity type (its `parents`): for a brand,
+// "casual" is genre:brand:fashion:casual, not the place-ambience or podcast tag of that name.
+export async function findTag(keyword: string, ctx?: TraceCtx, forType?: string): Promise<QlooTag | null> {
   const t0 = Date.now();
   const { data, cached, http } = await failTraced(ctx, 'Qloo /v2/tags', `“${keyword}”`, () =>
-    cachedGet('/v2/tags', { 'filter.query': keyword, take: '10' })
+    cachedGet('/v2/tags', { 'filter.query': keyword, take: '20' })
   );
   const all = (data?.results?.tags || []).filter((t: any) => t?.id && t?.name);
   const exact = all.filter((t: any) => compact(t.name) === compact(keyword) && TASTE_TAG_KINDS.includes(String(t.id).split(':')[2]));
-  // Genre tags first: "Jazz" the music genre rather than the keyword tag of the same name.
-  const best = exact.find((t: any) => String(t.id).startsWith('urn:tag:genre:')) || exact[0];
+  const kind = (t: any) => TASTE_TAG_KINDS.indexOf(String(t.id).split(':')[2]);
+  const forIt = (t: any) => (forType && (t.parents || []).some((p: any) => p?.type === forType) ? 0 : 1);
+  const best = [...exact].sort((a: any, b: any) => forIt(a) - forIt(b) || kind(a) - kind(b))[0];
   ctx?.trace.add({
     stage: ctx.stage,
     tool: 'Qloo /v2/tags',
@@ -219,7 +224,9 @@ export async function findTag(keyword: string, ctx?: TraceCtx): Promise<QlooTag 
 function signalLabel(signal: QlooEntity[], tags: QlooTag[]): string {
   const names = signal.map((e) => e.name);
   const entities = names.length > 3 ? `${names.length} entities (${names.slice(0, 3).join(', ')}…)` : names.join(', ');
-  return tags.length ? `${entities} + tags ${tags.map((t) => t.name).join(', ')}` : entities;
+  const tagList = `tags ${tags.map((t) => t.name).join(', ')}`;
+  if (!tags.length) return entities;
+  return entities ? `${entities} + ${tagList}` : tagList;
 }
 
 // Where a traced call belongs in the Agent Trace.
@@ -378,7 +385,9 @@ export async function getInsights(
 
 // Affinity of specific target entities given the signal entities, e.g. "how much does
 // Apple's audience like Tesla?". Qloo requires filter.type, so targets go per type.
-// Targets Qloo does not score are absent from the returned map.
+// Targets Qloo does not score are absent from the returned map. One type failing (a timeout)
+// leaves that type's targets unscored and recorded, instead of sinking the whole score;
+// only when every type fails is the error passed on.
 export async function scoreEntities(
   signal: QlooEntity[],
   targets: QlooEntity[],
@@ -387,10 +396,25 @@ export async function scoreEntities(
 ): Promise<Map<string, number>> {
   const byType = new Map<string, QlooEntity[]>();
   for (const t of targets) byType.set(t.type, [...(byType.get(t.type) || []), t]);
+  // With tags alone as signal, Qloo takes about 15 s to score places (brands, artists and
+  // destinations take under half a second; measured 2026-10-27), which is the request
+  // timeout. Places are left out then, and the trace says so.
+  if (!signal.length && tags.length && byType.has('urn:entity:place')) {
+    ctx?.trace.add({
+      stage: ctx.stage,
+      tool: 'Rule',
+      input: `${byType.get('urn:entity:place')!.length} place entities to score against a tags-only signal`,
+      output: 'Qloo takes about 15 seconds per request for this combination',
+      decision: 'Leave places out; Food & Travel is scored from destinations',
+    });
+    byType.delete('urn:entity:place');
+  }
 
   const scores = new Map<string, number>();
+  const failures: Error[] = [];
   await Promise.all(
     [...byType].map(async ([type, group]) => {
+      try {
       const t0 = Date.now();
       const ids = [...new Set(group.map((t) => t.id))];
       const label = `Signal: ${signalLabel(signal, tags)} · affinity of ${ids.length} creator ${typeLabel([type])} entities (filter.results.entities)`;
@@ -415,7 +439,11 @@ export async function scoreEntities(
         http,
         ms: Date.now() - t0,
       });
+      } catch (e: any) {
+        failures.push(e); // already in the trace (failTraced), with its HTTP attempts
+      }
     })
   );
+  if (byType.size && failures.length === byType.size) throw failures[0];
   return scores;
 }

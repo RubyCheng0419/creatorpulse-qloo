@@ -136,14 +136,19 @@ export class ExtractionFailed extends Error {
   }
 }
 
-// Over quota or overloaded. The status is checked first; the message covers errors that
-// arrive without one ("RESOURCE_EXHAUSTED", "UNAVAILABLE").
+// Over quota, overloaded or too slow: another model can answer these. The status is
+// checked first; the message covers errors that arrive without one ("RESOURCE_EXHAUSTED",
+// "UNAVAILABLE", an aborted request). Bad requests and other errors would fail on Groq too.
 function quotaOrOverload(e: any): boolean {
-  return e?.status === 429 || e?.status === 503 || /quota|RESOURCE_EXHAUSTED|UNAVAILABLE|overloaded/i.test(String(e?.message || ''));
+  return (
+    e?.status === 429 ||
+    e?.status === 503 ||
+    /quota|RESOURCE_EXHAUSTED|UNAVAILABLE|overloaded|abort|timeout|timed out/i.test(`${e?.name || ''} ${e?.message || ''}`)
+  );
 }
 
-// Gemini first. Only when it is over quota (429) or overloaded (503) is Groq asked, once,
-// with the same prompt and schema; other Gemini errors would not be fixed by another model.
+// Gemini first. Only when it is over quota (429), overloaded (503) or doesn't answer in time
+// is Groq asked, once, with the same prompt and schema.
 // Used for every LLM step, so a Gemini outage never stops one step while another goes on.
 async function withFallback<T>(ask: (json: JsonCall) => Promise<T>): Promise<LlmAnswer<T>> {
   let geminiFailure: string | undefined;
@@ -152,7 +157,7 @@ async function withFallback<T>(ask: (json: JsonCall) => Promise<T>): Promise<Llm
       return { value: await ask(geminiJson), llm: 'gemini', model: GEMINI_MODEL };
     } catch (e: any) {
       geminiFailure = geminiError(e);
-      if (!quotaOrOverload(e)) throw new ExtractionFailed(geminiFailure, undefined, 'only quota and overload errors fall back');
+      if (!quotaOrOverload(e)) throw new ExtractionFailed(geminiFailure, undefined, 'only quota, overload and timeout errors fall back');
       if (!hasGroq()) throw new ExtractionFailed(geminiFailure, undefined, 'GROQ_API_KEY is not set');
     }
   } else {
@@ -191,11 +196,12 @@ export function extractBrandMentions(text: string): Promise<LlmAnswer<Mentions>>
 
 // Style and culture keywords a brand states about itself. They are only looked up as Qloo
 // tags; a keyword with no tag of exactly that name is dropped.
-const KEYWORD_PROMPT = `From a brand's own description or website text, list up to 5 taste keywords that the text explicitly states about the brand's style, aesthetic or culture (e.g. minimalism, streetwear, skateboarding, jazz, anime).
+const KEYWORD_PROMPT = `From a brand's own description, website text or product names, list up to 8 taste keywords for the brand's style, aesthetic, motifs or culture (e.g. minimalism, streetwear, whimsical, cats, cartoon, family, vintage, jazz, anime).
 Rules:
-- One or two words each, lowercase, in English.
-- Only words, or close forms of words, that appear in the text. Never infer.
-- Skip product categories (perfume, shoes, candles), quality claims and slogans (premium, sustainable, best, for everyone).`;
+- First the brand's broad field in one word (fashion, beauty, food, technology, travel…), then its style.
+- One or two words each, lowercase, in English; translate when the text is in another language (童趣 → whimsical, 貓 → cats).
+- Only what the text says or its product names clearly show. Never guess the brand's audience.
+- Skip product categories (shirt, perfume, shoes), quality claims and slogans (premium, sustainable, best, for everyone).`;
 
 const KEYWORD_SCHEMA = {
   type: 'object',
@@ -210,7 +216,7 @@ export function extractBrandKeywords(text: string): Promise<LlmAnswer<string[]>>
     return (d.keywords || [])
       .map((k) => String(k || '').trim().toLocaleLowerCase())
       .filter((k) => k.length > 1 && !seen.has(k) && seen.add(k))
-      .slice(0, 5);
+      .slice(0, 8);
   });
 }
 

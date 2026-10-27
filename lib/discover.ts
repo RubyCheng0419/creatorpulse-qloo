@@ -182,6 +182,9 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
     throw new ApiError(`Qloo scoring request failed: ${e.message}`, 502, { warnings });
   }
 
+  const failedScoring = trace.steps.filter((x) => x.stage === 'score' && !x.ok).length;
+  if (failedScoring) warnings.push(`${failedScoring} scoring quer${failedScoring === 1 ? 'y' : 'ies'} failed; those entities are left out of every creator’s score.`);
+
   // 5. Same formula as a match, per creator.
   const scoredCandidates = profiles.map(({ candidate, entities, failedTypes, unsupportedTypes }): Omit<CreatorCandidate, 'rank' | 'channel'> => {
     const { items, compatibility } = scoreProfile(entities, affinities);

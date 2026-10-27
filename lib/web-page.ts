@@ -73,7 +73,59 @@ function pageText(html: string): string {
     .slice(0, MAX_PAGE_TEXT);
 }
 
-export async function fetchPageText(raw: string): Promise<{ url: string; text: string }> {
+// Shop platforms render their pages in the browser, so the HTML holds little more than the
+// menu (à la sha on 91APP: 231 characters). Their product data is public, though, and
+// product names describe a brand's style ("miao 貓 連帽外套", "Polala 圓點牛仔裙"). Only the
+// platform's own public endpoints are called; anything else keeps the plain page text.
+const NINETYONE_API = 'https://fts-api.91app.com/pythia-cdn/graphql';
+const SHOP_PRODUCTS = 40;
+
+async function getJson(url: string): Promise<any> {
+  const r = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), headers: { accept: 'application/json' } });
+  if (!r.ok) throw Error(`${new URL(url).hostname} returned ${r.status}`);
+  return r.json();
+}
+
+async function ninetyOne(shopId: string): Promise<{ text: string; note: string }> {
+  const gql = (query: string) => getJson(`${NINETYONE_API}?${new URLSearchParams({ shopId, lang: 'zh-TW', query })}`);
+  const cats: { id: number; name: string }[] = (await gql(`query{shopCategoryList(shopId:${shopId}){categoryList{id name}}}`))?.data?.shopCategoryList?.categoryList || [];
+  if (!cats.length) throw Error('no categories');
+  // The first category that lists products; usually "new arrivals" or "best sellers".
+  let titles: string[] = [];
+  for (const c of cats.slice(0, 3)) {
+    const d = await gql(`query{shopCategory(shopId:${shopId},categoryId:${c.id}){salePageList(startIndex:0,maxCount:${SHOP_PRODUCTS},orderBy:"Newest"){salePageList{title}}}}`);
+    titles = (d?.data?.shopCategory?.salePageList?.salePageList || []).map((x: any) => String(x?.title || '')).filter(Boolean);
+    if (titles.length) break;
+  }
+  return {
+    text: `Product categories: ${cats.map((c) => c.name).join(', ')}\nProducts: ${titles.join('; ')}`,
+    note: `91APP shop: ${cats.length} categories, ${titles.length} product names`,
+  };
+}
+
+async function shopify(origin: string): Promise<{ text: string; note: string }> {
+  const d = await getJson(`${origin}/products.json?limit=${SHOP_PRODUCTS}`);
+  const products: any[] = Array.isArray(d?.products) ? d.products : [];
+  if (!products.length) throw Error('no products');
+  const types = [...new Set(products.map((p) => p.product_type).filter(Boolean))];
+  return {
+    text: `Product types: ${types.join(', ')}\nProducts: ${products.map((p) => [p.title, ...(Array.isArray(p.tags) ? p.tags : [])].join(' ')).join('; ')}`,
+    note: `Shopify shop: ${products.length} product names`,
+  };
+}
+
+async function shopText(html: string, url: URL): Promise<{ text: string; note: string } | null> {
+  try {
+    const shopId = html.match(/91app/i) ? html.match(/shopId=(\d{2,9})/)?.[1] : undefined;
+    if (shopId) return await ninetyOne(shopId);
+    if (/cdn\.shopify\.com|Shopify\.shop/.test(html)) return await shopify(url.origin);
+  } catch {
+    // The page text alone is still used.
+  }
+  return null;
+}
+
+export async function fetchPageText(raw: string): Promise<{ url: string; text: string; note?: string }> {
   let url: URL;
   try {
     url = new URL(raw.trim());
@@ -117,6 +169,8 @@ export async function fetchPageText(raw: string): Promise<{ url: string; text: s
       }
     }
     const html = new TextDecoder().decode(Buffer.concat(chunks));
-    return { url: url.toString(), text: pageText(html) };
+    const shop = await shopText(html, url);
+    const text = shop ? `${pageText(html).slice(0, 1500)}\n${shop.text}`.slice(0, MAX_PAGE_TEXT) : pageText(html);
+    return { url: url.toString(), text, note: shop?.note };
   }
 }

@@ -12,6 +12,7 @@ import {
 } from '@/lib/creator';
 import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL, InlineImage } from '@/lib/gemini';
+import { bypassCache } from '@/lib/request-context';
 import { fetchPageText } from '@/lib/web-page';
 import { PROXY_TYPES, QlooEntity, QlooTag, compact, findTag, getInsights, resolveEntity, searchEntities } from '@/lib/qloo';
 import type { NoDataReason } from '@/lib/no-data';
@@ -58,7 +59,13 @@ function categoryMatcher(category: string): (result: any) => boolean {
 //   brand        the brand itself is in Qloo
 //   reference    it isn't; the user's reference brands stand in for its audience
 //   description  it isn't; Qloo entities named in the brand's own description or web page do
-export type BrandBasis = 'brand' | 'reference' | 'description';
+//   style        it isn't, and its description names too little that Qloo knows: the
+//                brand's own style words, as Qloo taste tags, stand in for its audience
+export type BrandBasis = 'brand' | 'reference' | 'description' | 'style';
+
+// A style-only brand side needs at least this many exact Qloo taste tags.
+const MIN_STYLE_TAGS = 2;
+const MAX_STYLE_TAGS = 5;
 
 // A description must name at least this many Qloo entities; generic copy ("premium,
 // sustainable, for everyone") names none and is not evidence.
@@ -70,18 +77,29 @@ const noPeriod = (s: string) => s.replace(/\.$/, '');
 // The description as given, or the visible text of the brand's web page.
 type DescriptionError = { error: string; kind: NoDataReason };
 
+// The same page is read for names and then for style keywords; read it once.
+const pageCache = new Map<string, { at: number; text: string }>();
+const PAGE_CACHE_MS = 10 * 60 * 1000;
+
 async function descriptionText(description: string, trace?: Trace): Promise<{ text: string } | DescriptionError> {
   let text = description;
   if (/^https?:\/\//i.test(description)) {
+    const hit = bypassCache() ? undefined : pageCache.get(description);
+    if (hit && Date.now() - hit.at < PAGE_CACHE_MS) return { text: hit.text };
     const t0 = Date.now();
     try {
       const page = await fetchPageText(description);
       text = page.text;
+      pageCache.set(description, { at: Date.now(), text });
       trace?.add({
         stage: 'brand',
         tool: 'Brand web page',
         input: description,
-        output: `${text.length} characters of visible text from ${page.url}`,
+        output: `${text.length} characters from ${page.url}${page.note ? ` (page text plus the ${page.note})` : ''}`,
+        decision:
+          text.length < 300 && !page.note
+            ? 'Very little text: the page probably loads its content in the browser; a pasted description would work better'
+            : undefined,
         ms: Date.now() - t0,
       });
     } catch (e: any) {
@@ -110,7 +128,7 @@ function traceFallback(trace: Trace | undefined, input: string, answer: LlmAnswe
 // Tag signal, only to supplement fewer than MIN_DESCRIPTION_ENTITIES entities: the LLM
 // proposes style keywords from the description, and only keywords that are exactly the
 // name of a Qloo tag are used, by tag id. Never free text.
-async function describedTags(description: string, trace?: Trace): Promise<{ tags: QlooTag[]; error?: string }> {
+async function describedTags(description: string, trace?: Trace, max = 3): Promise<{ tags: QlooTag[]; error?: string }> {
   const page = await descriptionText(description, trace);
   if ('error' in page) return { tags: [], error: page.error };
   const g0 = Date.now();
@@ -135,8 +153,8 @@ async function describedTags(description: string, trace?: Trace): Promise<{ tags
     trace?.add({ stage: 'brand', tool: `Gemini (${GEMINI_MODEL})`, input, output: `Failed: ${error}`, decision: 'No tag signal', ms: Date.now() - g0, ok: false });
     return { tags: [], error: `Couldn’t extract keywords (${error})` };
   }
-  const tags = await Promise.all(keywords.map((k) => findTag(k, trace && { trace, stage: 'brand' }).catch(() => null)));
-  return { tags: [...new Map(tags.filter((t): t is QlooTag => Boolean(t)).map((t) => [t.id, t])).values()].slice(0, 3) };
+  const tags = await Promise.all(keywords.map((k) => findTag(k, trace && { trace, stage: 'brand' }, 'urn:entity:brand').catch(() => null)));
+  return { tags: [...new Map(tags.filter((t): t is QlooTag => Boolean(t)).map((t) => [t.id, t])).values()].slice(0, max) };
 }
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -176,7 +194,7 @@ async function imageTags(image: InlineImage, trace?: Trace): Promise<QlooTag[]> 
     trace?.add({ stage: 'brand', tool: `Gemini (${GEMINI_MODEL})`, input, output: `Failed: ${llmFailure(e)}`, decision: 'No image signal', ms: Date.now() - g0, ok: false });
     return [];
   }
-  const tags = await Promise.all(keywords.map((k) => findTag(k, trace && { trace, stage: 'brand' }).catch(() => null)));
+  const tags = await Promise.all(keywords.map((k) => findTag(k, trace && { trace, stage: 'brand' }, 'urn:entity:brand').catch(() => null)));
   return [...new Map(tags.filter((t): t is QlooTag => Boolean(t)).map((t) => [t.id, t])).values()].slice(0, 3);
 }
 
@@ -222,11 +240,12 @@ type FoundBrand = Extract<BrandLookup, { found: true }>;
 
 // Why the brand side only approximates the brand's audience, or null when it is the brand
 // itself: reference brands, entities from a description, or tags from a key visual.
-export function approximation(b: Pick<FoundBrand, 'basis' | 'signal' | 'imageTags'>): string | null {
+export function approximation(b: Pick<FoundBrand, 'basis' | 'signal' | 'imageTags'> & { tags?: QlooTag[] }): string | null {
   const names = b.signal.map((e) => e.name).join(', ');
   const parts: string[] = [];
   if (b.basis === 'reference') parts.push(`reference brands stand in for the brand (${names})`);
   if (b.basis === 'description') parts.push(`entities named in its description stand in for it (${names})`);
+  if (b.basis === 'style') parts.push(`its style words, as Qloo taste tags, stand in for it${names ? `, with ${names}` : ''}`);
   if (b.imageTags.length) parts.push(`tags inferred from the key visual are included (${b.imageTags.map((t) => t.name).join(', ')})`);
   return parts.length ? parts.join('; ') : null;
 }
@@ -348,6 +367,7 @@ export async function lookupBrand(
   const entity = await resolveBrand(name, categoryMatcher(category));
   let basis: BrandBasis = 'brand';
   let signal: QlooEntity[];
+  let styleTags: QlooTag[] = [];
 
   if (entity) {
     signal = [entity];
@@ -363,18 +383,40 @@ export async function lookupBrand(
       output: 'error' in found ? found.error : `${verified.length} confirmed: ${verified.map((e) => e.name).join(', ') || 'none'}`,
       decision: enough
         ? 'Use them together as the brand-side signal'
-        : 'Stop: not enough evidence in the description; ask for reference brands instead',
+        : 'error' in found
+          ? 'Stop: ask for reference brands instead'
+          : `Too few named entities; try the brand’s style words as Qloo taste tags (at least ${MIN_STYLE_TAGS})`,
     });
-    if (!enough) {
+    let style: QlooTag[] = [];
+    if (!enough && !('error' in found)) {
+      const s = await describedTags(description, trace, MAX_STYLE_TAGS);
+      style = s.tags;
+      trace?.add({
+        stage: 'brand',
+        tool: 'Rule',
+        input: `The brand’s style as Qloo taste tags: at least ${MIN_STYLE_TAGS} needed`,
+        output: style.length ? `${style.length}: ${style.map((t) => `${t.name} (${t.id})`).join(', ')}` : s.error || 'No style word is exactly a Qloo taste tag',
+        decision:
+          style.length >= MIN_STYLE_TAGS
+            ? `Use them${verified.length ? `, with ${verified.map((e) => e.name).join(', ')},` : ''} as the brand-side signal`
+            : 'Stop: ask for reference brands instead',
+      });
+    }
+    if (!enough && style.length >= MIN_STYLE_TAGS) {
+      basis = 'style';
+      signal = verified;
+      styleTags = style;
+    } else if (!enough) {
       return notFound(
         'error' in found ? found.kind : 'description-too-few-names',
         'error' in found
           ? `${found.error}. Enter 1–${MAX_REFERENCE_BRANDS} reference brands with a similar audience that are in Qloo instead.`
-          : `Only ${verified.length} name${verified.length === 1 ? '' : 's'} in your description matched Qloo exactly${verified.length ? ` (${verified.map((e) => e.name).join(', ')})` : ''}; at least ${MIN_DESCRIPTION_ENTITIES} are needed. Enter 1–${MAX_REFERENCE_BRANDS} reference brands with a similar audience that are in Qloo instead.`
+          : `Your description names ${verified.length} thing${verified.length === 1 ? '' : 's'} Qloo knows (at least ${MIN_DESCRIPTION_ENTITIES} are needed), and fewer than ${MIN_STYLE_TAGS} of its style words are Qloo taste tags. Enter 1–${MAX_REFERENCE_BRANDS} reference brands with a similar audience that are in Qloo instead.`
       );
+    } else {
+      basis = 'description';
+      signal = verified;
     }
-    basis = 'description';
-    signal = verified;
   } else if (!references.length) {
     // Never fall back to a similar-looking brand (PRODUCT_SPEC §3.2): offer names that
     // start with the input, or reference brands, for the user to choose.
@@ -426,7 +468,7 @@ export async function lookupBrand(
 
   // Tags only supplement a thin brand side (fewer than MIN_DESCRIPTION_ENTITIES reference
   // brands) and only when the user also described the brand. Never for the brand itself.
-  let tags: QlooTag[] = [];
+  let tags: QlooTag[] = styleTags;
   if (basis === 'reference' && signal.length < MIN_DESCRIPTION_ENTITIES && description) {
     const found = await describedTags(description, trace);
     tags = found.tags;
