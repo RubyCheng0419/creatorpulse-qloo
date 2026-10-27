@@ -1,6 +1,6 @@
 {
   "id": "match_fd95e79c9adc",
-  "createdAt": "2026-10-27T14:12:49.292Z",
+  "createdAt": "2026-10-27T14:47:36.781Z",
   "creator": {
     "channelName": "Marques Brownlee",
     "youtubeHandle": "@mkbhd",
@@ -18,7 +18,9 @@
         "channelId": "UCBJycsmduvYEL83R_U4JriQ",
         "channelTitle": "Marques Brownlee",
         "categoryId": "28",
-        "tags": []
+        "tags": [],
+        "publishedAt": "2026-10-21T14:00:33Z",
+        "viewCount": 2214415
       },
       {
         "videoId": "ESABTN4VtrA",
@@ -29,7 +31,9 @@
         "tags": [
           "iPhone Duo",
           "iPhone duo review"
-        ]
+        ],
+        "publishedAt": "2026-10-21T12:00:52Z",
+        "viewCount": 12520133
       },
       {
         "videoId": "scwlR0QHGOk",
@@ -42,7 +46,9 @@
           "flying",
           "thrust",
           "rocket"
-        ]
+        ],
+        "publishedAt": "2026-10-17T02:09:23Z",
+        "viewCount": 12319210
       },
       {
         "videoId": "QVv3mQzlrN0",
@@ -50,7 +56,9 @@
         "channelId": "UCBJycsmduvYEL83R_U4JriQ",
         "channelTitle": "Marques Brownlee",
         "categoryId": "28",
-        "tags": []
+        "tags": [],
+        "publishedAt": "2026-10-13T22:42:38Z",
+        "viewCount": 10967191
       },
       {
         "videoId": "_0G4OG39XjI",
@@ -61,10 +69,13 @@
         "tags": [
           "Googlebook",
           "MKBHD"
-        ]
+        ],
+        "publishedAt": "2026-10-08T21:00:40Z",
+        "viewCount": 8956144
       }
     ],
     "keywords": [
+      "iPhone",
       "iPhone Duo",
       "Ridge",
       "dbrand",
@@ -76,17 +87,14 @@
       "Tesla",
       "Hagerty",
       "Apple Homeview",
-      "Googlebook",
       "Google",
-      "Asus Googlebook",
       "Asus",
-      "XPS Googlebook",
       "Dell"
     ],
     "keywordSource": "gemini",
     "extractionModel": "gemini-3.5-flash",
     "geminiCached": false,
-    "geminiAt": "2026-10-27T14:12:42.254Z",
+    "geminiAt": "2026-10-27T14:47:30.601Z",
     "entities": [
       {
         "id": "3180A68A-2853-4675-886E-CB05CDF3F63A",
@@ -240,12 +248,11 @@
       }
     ],
     "unmatched": [
+      "iPhone",
       "iPhone Duo",
+      "Ridge",
       "Tesla Roadster",
-      "Apple Homeview",
-      "Googlebook",
-      "Asus Googlebook",
-      "XPS Googlebook"
+      "Apple Homeview"
     ],
     "qlooPerson": {
       "id": "0E6F37E3-84C4-406B-BE34-D5C7CC7966A8",
@@ -365,9 +372,9 @@
       "input": "5 video IDs",
       "output": "5 readable: “ASMR iPhone Duo Unboxing”, “iPhone Duo Review: First Generation Fun!”, “The NEW Tesla Roadster: My Honest Reaction”, “Apple Homeview Impressions: Not Convinced!”, “WTF is a Googlebook?”",
       "cached": false,
-      "ms": 81,
+      "ms": 53,
       "ok": true,
-      "t": 81
+      "t": 53
     },
     {
       "stage": "youtube",
@@ -375,9 +382,9 @@
       "input": "1 channel ID",
       "output": "Marques Brownlee (@mkbhd)",
       "cached": false,
-      "ms": 52,
+      "ms": 35,
       "ok": true,
-      "t": 133
+      "t": 88
     },
     {
       "stage": "brand",
@@ -387,9 +394,9 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 813,
+      "ms": 789,
       "ok": true,
-      "t": 827
+      "t": 790
     },
     {
       "stage": "brand",
@@ -399,9 +406,9 @@
       "decision": "All kept",
       "cached": false,
       "http": "200",
-      "ms": 205,
+      "ms": 209,
       "ok": true,
-      "t": 1032
+      "t": 999
     },
     {
       "stage": "brand",
@@ -410,9 +417,9 @@
       "output": "5 entities: Mercedes-benz 0.94, Porsche 0.94, Bugatti 0.93…",
       "cached": false,
       "http": "200",
-      "ms": 369,
+      "ms": 361,
       "ok": true,
-      "t": 1401
+      "t": 1360
     },
     {
       "stage": "brand",
@@ -421,9 +428,9 @@
       "output": "5 entities: Halt and Catch Fire 0.98, For All Mankind 0.95, Humans 0.94…",
       "cached": false,
       "http": "200",
-      "ms": 810,
+      "ms": 793,
       "ok": true,
-      "t": 1842
+      "t": 1792
     },
     {
       "stage": "brand",
@@ -432,9 +439,9 @@
       "output": "5 entities: Abu Dhabi 0.96, Dubai 0.95, Manama 0.94…",
       "cached": false,
       "http": "200",
-      "ms": 1133,
+      "ms": 1128,
       "ok": true,
-      "t": 2165
+      "t": 2127
     },
     {
       "stage": "brand",
@@ -443,9 +450,9 @@
       "output": "5 entities: Avengers: Endgame 0.95, Avengers: Infinity War 0.94, Captain Marvel 0.94…",
       "cached": false,
       "http": "200",
-      "ms": 2221,
+      "ms": 2305,
       "ok": true,
-      "t": 3253
+      "t": 3304
     },
     {
       "stage": "brand",
@@ -454,9 +461,9 @@
       "output": "5 entities: Madame Brasserie 0.96, Swarovski Kristallwelten 0.96, Mouragio Maria 0.95…",
       "cached": false,
       "http": "200",
-      "ms": 2377,
+      "ms": 2329,
       "ok": true,
-      "t": 3409
+      "t": 3328
     },
     {
       "stage": "brand",
@@ -465,32 +472,32 @@
       "output": "5 entities: Marshmello 0.96, Post Malone 0.95, DJ Snake 0.95…",
       "cached": false,
       "http": "200",
-      "ms": 2637,
+      "ms": 2653,
       "ok": true,
-      "t": 3669
+      "t": 3652
     },
     {
       "stage": "creator",
       "tool": "Gemini (gemini-3.5-flash)",
       "input": "Titles, tags and descriptions of 5 videos: list names explicitly mentioned",
-      "output": "Proposed 18: iPhone Duo (product), Ridge (brand), dbrand (brand), Apple (brand), Twitter (brand), Instagram (brand), Facebook (brand), Tesla Roadster (product), Tesla (brand), Hagerty (brand), YouTube (brand), Apple Homeview (product), Googlebook (product), Google (brand), Asus Googlebook (product), Asus (brand), XPS Googlebook (product), Dell (brand)",
-      "decision": "Dropped YouTube (the channel itself or YouTube); 17 names go to Qloo as search terms",
+      "output": "Proposed 15: iPhone (product), iPhone Duo (product), Ridge (brand), dbrand (brand), Apple (brand), Twitter (brand), Instagram (brand), Facebook (brand), Tesla Roadster (product), Tesla (brand), Hagerty (brand), Apple Homeview (product), Google (brand), Asus (brand), Dell (brand)",
+      "decision": "15 names go to Qloo as search terms, not as evidence",
       "cached": false,
-      "ms": 9344,
+      "ms": 3577,
       "ok": true,
-      "t": 9477
+      "t": 3665
     },
     {
       "stage": "creator",
       "tool": "Qloo /search",
-      "input": "“Ridge” among brand",
-      "output": "4 results, none named “Ridge”: At Home, The Ridge, Juniper Ridge",
+      "input": "“iPhone” among brand",
+      "output": "1 results, none named “iPhone”: Strava",
       "decision": "Rejected: no exact name or alias match, not used",
       "cached": false,
       "http": "200",
-      "ms": 749,
+      "ms": 206,
       "ok": true,
-      "t": 10226
+      "t": 3871
     },
     {
       "stage": "creator",
@@ -500,9 +507,21 @@
       "decision": "Rejected: no exact name or alias match, not used",
       "cached": false,
       "http": "200",
-      "ms": 786,
+      "ms": 345,
       "ok": true,
-      "t": 10263
+      "t": 4010
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Ridge” among brand",
+      "output": "4 results, none named “Ridge”: At Home, The Ridge, Juniper Ridge",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "http": "200",
+      "ms": 460,
+      "ok": true,
+      "t": 4125
     },
     {
       "stage": "creator",
@@ -512,45 +531,9 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 868,
+      "ms": 587,
       "ok": true,
-      "t": 10345
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Facebook” among brand",
-      "output": "Facebook (AB361982-C4BC-414F-8344-8B401C6FDD41), exact name match",
-      "decision": "Accepted as evidence",
-      "cached": false,
-      "http": "200",
-      "ms": 973,
-      "ok": true,
-      "t": 10450
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Tesla Roadster” among brand",
-      "output": "2 results, none named “Tesla Roadster”: Tesla, The Roadster Life",
-      "decision": "Rejected: no exact name or alias match, not used",
-      "cached": false,
-      "http": "200",
-      "ms": 1097,
-      "ok": true,
-      "t": 10574
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Twitter” among brand",
-      "output": "X (Formerly Twitter) (ACDD1460-C453-4082-86D8-2789B4AC54C0), exact Qloo alias match",
-      "decision": "Accepted: most popular of 2 exact matches",
-      "cached": false,
-      "http": "200",
-      "ms": 1112,
-      "ok": true,
-      "t": 10589
+      "t": 4252
     },
     {
       "stage": "creator",
@@ -560,21 +543,21 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 1166,
+      "ms": 710,
       "ok": true,
-      "t": 10643
+      "t": 4375
     },
     {
       "stage": "creator",
       "tool": "Qloo /search",
-      "input": "“Tesla” among brand",
-      "output": "Tesla (29B49E3F-A0EC-42C6-A453-38B1C20D8374), exact name match",
-      "decision": "Accepted as evidence",
+      "input": "“Twitter” among brand",
+      "output": "X (Formerly Twitter) (ACDD1460-C453-4082-86D8-2789B4AC54C0), exact Qloo alias match",
+      "decision": "Accepted: most popular of 2 exact matches",
       "cached": false,
       "http": "200",
-      "ms": 1222,
+      "ms": 848,
       "ok": true,
-      "t": 10699
+      "t": 4513
     },
     {
       "stage": "creator",
@@ -584,9 +567,45 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 1244,
+      "ms": 971,
       "ok": true,
-      "t": 10721
+      "t": 4636
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Facebook” among brand",
+      "output": "Facebook (AB361982-C4BC-414F-8344-8B401C6FDD41), exact name match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "http": "200",
+      "ms": 1103,
+      "ok": true,
+      "t": 4768
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Tesla Roadster” among brand",
+      "output": "2 results, none named “Tesla Roadster”: Tesla, The Roadster Life",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "http": "200",
+      "ms": 1223,
+      "ok": true,
+      "t": 4888
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Tesla” among brand",
+      "output": "Tesla (29B49E3F-A0EC-42C6-A453-38B1C20D8374), exact name match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "http": "200",
+      "ms": 1346,
+      "ok": true,
+      "t": 5011
     },
     {
       "stage": "creator",
@@ -596,9 +615,21 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 1347,
+      "ms": 1474,
       "ok": true,
-      "t": 10824
+      "t": 5139
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Apple Homeview” among brand",
+      "output": "5 results, none named “Apple Homeview”: Apple Inc, Apple Music, Apple TV+",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "http": "200",
+      "ms": 1602,
+      "ok": true,
+      "t": 5267
     },
     {
       "stage": "creator",
@@ -608,21 +639,9 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 1726,
+      "ms": 1724,
       "ok": true,
-      "t": 11203
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Asus Googlebook” among brand",
-      "output": "1 results, none named “Asus Googlebook”: Asus",
-      "decision": "Rejected: no exact name or alias match, not used",
-      "cached": false,
-      "http": "200",
-      "ms": 1840,
-      "ok": true,
-      "t": 11317
+      "t": 5389
     },
     {
       "stage": "creator",
@@ -632,21 +651,9 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 1969,
+      "ms": 1843,
       "ok": true,
-      "t": 11446
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“XPS Googlebook” among brand",
-      "output": "No results",
-      "decision": "Rejected: no exact name or alias match, not used",
-      "cached": false,
-      "http": "200",
-      "ms": 2088,
-      "ok": true,
-      "t": 11565
+      "t": 5508
     },
     {
       "stage": "creator",
@@ -656,33 +663,20 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 2231,
+      "ms": 1972,
       "ok": true,
-      "t": 11709
+      "t": 5637
     },
     {
       "stage": "creator",
       "tool": "Qloo /search",
-      "input": "“Apple Homeview” among brand",
-      "output": "5 results, none named “Apple Homeview”: Apple Inc, Apple Music, Apple TV+",
-      "decision": "Rejected: no exact name or alias match, not used",
+      "input": "“iPhone” among brand (candidates for the retry decision)",
+      "output": "1 results: Strava",
       "cached": false,
-      "http": "429 → 200 (retried)",
-      "ms": 2340,
+      "http": "200",
+      "ms": 207,
       "ok": true,
-      "t": 11817
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Googlebook” among brand",
-      "output": "No results",
-      "decision": "Rejected: no exact name or alias match, not used",
-      "cached": false,
-      "http": "429 → 200 (retried)",
-      "ms": 2788,
-      "ok": true,
-      "t": 12265
+      "t": 5844
     },
     {
       "stage": "creator",
@@ -691,9 +685,9 @@
       "output": "5 results: Strava, Duo Security, Duolingo",
       "cached": false,
       "http": "200",
-      "ms": 220,
+      "ms": 213,
       "ok": true,
-      "t": 12486
+      "t": 6057
     },
     {
       "stage": "creator",
@@ -702,9 +696,9 @@
       "output": "4 results: At Home, The Ridge, Juniper Ridge",
       "cached": false,
       "http": "200",
-      "ms": 207,
+      "ms": 208,
       "ok": true,
-      "t": 12694
+      "t": 6265
     },
     {
       "stage": "creator",
@@ -713,9 +707,9 @@
       "output": "2 results: Tesla, The Roadster Life",
       "cached": false,
       "http": "200",
-      "ms": 210,
+      "ms": 209,
       "ok": true,
-      "t": 12904
+      "t": 6474
     },
     {
       "stage": "creator",
@@ -724,74 +718,20 @@
       "output": "5 results: Apple Inc, Apple Music, Apple TV+",
       "cached": false,
       "http": "200",
-      "ms": 212,
+      "ms": 213,
       "ok": true,
-      "t": 13116
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Googlebook” among brand (candidates for the retry decision)",
-      "output": "No results",
-      "cached": false,
-      "http": "200",
-      "ms": 205,
-      "ok": true,
-      "t": 13321
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Asus Googlebook” among brand (candidates for the retry decision)",
-      "output": "1 results: Asus",
-      "cached": false,
-      "http": "200",
-      "ms": 212,
-      "ok": true,
-      "t": 13533
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“XPS Googlebook” among brand (candidates for the retry decision)",
-      "output": "No results",
-      "cached": false,
-      "http": "200",
-      "ms": 208,
-      "ok": true,
-      "t": 13741
+      "t": 6687
     },
     {
       "stage": "creator",
       "tool": "Groq retry decision (openai/gpt-oss-120b)",
       "input": "5 names with no exact Qloo match, each with Qloo’s top results: is any result the same thing under another name?",
-      "output": "“iPhone Duo” → none (The iPhone Duo is a specific phone model, not the same as any listed brand such as Duo Security or Duolingo.) · “Ridge” → “The Ridge” (The term \"Ridge\" most directly matches the brand \"The Ridge\", which is known for wallets and accessories.) · “Tesla Roadster” → none (The Roadster is a product model, not the same entity as the brand Tesla.) · “Apple Homeview” → none (No candidate corresponds to a product or service named \"Apple Homeview\"; all candidates are distinct Apple brands.) · “Asus Googlebook” → none (This is a product name combining Asus and Google, not identical to the brand Asus alone.)",
-      "decision": "Re-query Qloo for “The Ridge”; it counts only if Qloo returns that same entity by exact name or alias",
+      "output": "“iPhone” → none (iPhone is a product, not the same as the brand Strava.) · “iPhone Duo” → none (No candidate matches the iPhone Duo product; the listed brands are unrelated.) · “Ridge” → none (Ridge is not exactly the same entity as any of the listed brand names.) · “Tesla Roadster” → none (Tesla Roadster is a product model, not the same as the maker Tesla.) · “Apple Homeview” → none (Apple Homeview is not identical to any of the Apple brand divisions listed.)",
+      "decision": "No re-query: none of the results is the same thing",
       "cached": false,
-      "ms": 2563,
+      "ms": 3158,
       "ok": true,
-      "t": 16304
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“The Ridge” among brand",
-      "output": "The Ridge (A926389A-C444-4052-A845-D592876F9CB7), exact name match",
-      "decision": "Accepted as evidence",
-      "cached": false,
-      "http": "200",
-      "ms": 210,
-      "ok": true,
-      "t": 16514
-    },
-    {
-      "stage": "creator",
-      "tool": "Rule",
-      "input": "Verify the Gemini retry for “Ridge”",
-      "output": "Qloo confirmed The Ridge (A926389A-C444-4052-A845-D592876F9CB7)",
-      "decision": "Accepted as evidence",
-      "ok": true,
-      "t": 16514
+      "t": 9845
     },
     {
       "stage": "creator",
@@ -800,9 +740,9 @@
       "output": "5 results: Marques Brownlee, Lukas Marques, Bruno Gagliasso",
       "cached": false,
       "http": "200",
-      "ms": 225,
+      "ms": 222,
       "ok": true,
-      "t": 16740
+      "t": 10067
     },
     {
       "stage": "creator",
@@ -810,21 +750,21 @@
       "input": "The creator in Qloo: a person named like the channel, tagged as a creator",
       "output": "“Marques Brownlee”: Marques Brownlee (creator)",
       "decision": "Use Marques Brownlee (0E6F37E3-84C4-406B-BE34-D5C7CC7966A8) for audience overlap and audience taste",
-      "ms": 225,
+      "ms": 222,
       "ok": true,
-      "t": 16740
+      "t": 10067
     },
     {
       "stage": "creator",
       "tool": "Qloo /entities",
-      "input": "Re-check 12 /search-confirmed entities: The Ridge, Dbrand, Apple Inc, X (Formerly Twitter), Instagram, Facebook, Tesla, Hagerty, Google, Asus, Dell Inc, Marques Brownlee",
+      "input": "Re-check 11 /search-confirmed entities: Dbrand, Apple Inc, X (Formerly Twitter), Instagram, Facebook, Tesla, Hagerty, Google, Asus, Dell Inc, Marques Brownlee",
       "output": "11 re-verified by exact name or alias · popularity Dbrand 0.988, Apple Inc 0.999, X (Formerly Twitter) 1.000, Instagram 1.000, Facebook 0.998, Tesla 0.999, Hagerty 0.870, Google 1.000, Asus 0.998, Dell Inc 0.990, Marques Brownlee 0.994",
-      "decision": "Drop The Ridge (“Ridge → The Ridge”): Qloo’s record doesn’t match the keyword by name or alias",
+      "decision": "All kept",
       "cached": false,
       "http": "200",
-      "ms": 410,
+      "ms": 218,
       "ok": true,
-      "t": 17151
+      "t": 10285
     },
     {
       "stage": "creator",
@@ -833,7 +773,7 @@
       "output": "10 confirmed: Dbrand, Apple Inc, X (Formerly Twitter), Instagram, Facebook, Tesla, Hagerty, Google, Asus, Dell Inc",
       "decision": "Continue",
       "ok": true,
-      "t": 17151
+      "t": 10285
     },
     {
       "stage": "expand",
@@ -842,7 +782,7 @@
       "output": "9 other entities form the expansion signal",
       "decision": "Leave Apple Inc out of the signal and out of scoring, so the brand side isn’t scored against itself; reported instead",
       "ok": true,
-      "t": 17151
+      "t": 10285
     },
     {
       "stage": "expand",
@@ -851,9 +791,9 @@
       "output": "5 entities: Sony 0.96, Google Maps 0.96, Microsoft 0.96…",
       "cached": false,
       "http": "200",
-      "ms": 375,
+      "ms": 368,
       "ok": true,
-      "t": 17527
+      "t": 10653
     },
     {
       "stage": "expand",
@@ -862,9 +802,9 @@
       "output": "5 entities: Halt and Catch Fire 0.95, Humans 0.95, Silicon Valley 0.95…",
       "cached": false,
       "http": "200",
-      "ms": 929,
+      "ms": 921,
       "ok": true,
-      "t": 18081
+      "t": 11206
     },
     {
       "stage": "expand",
@@ -873,9 +813,9 @@
       "output": "5 entities: Mysore 0.92, Hyderabad 0.92, Chennai 0.91…",
       "cached": false,
       "http": "200",
-      "ms": 1176,
+      "ms": 1156,
       "ok": true,
-      "t": 18328
+      "t": 11441
     },
     {
       "stage": "expand",
@@ -884,20 +824,9 @@
       "output": "5 entities: Venom 0.94, Deadpool 2 0.94, Captain Marvel 0.93…",
       "cached": false,
       "http": "200",
-      "ms": 2353,
+      "ms": 2520,
       "ok": true,
-      "t": 19505
-    },
-    {
-      "stage": "expand",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: 9 entities (Dbrand, X (Formerly Twitter), Instagram…) · type artist · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
-      "output": "5 entities: Avicii 0.94, David Guetta 0.92, Swedish House Mafia 0.92…",
-      "cached": false,
-      "http": "200",
-      "ms": 2386,
-      "ok": true,
-      "t": 19538
+      "t": 12805
     },
     {
       "stage": "expand",
@@ -906,9 +835,20 @@
       "output": "5 entities: My Spanishsteps Guest House Rome Italy 0.94, Old Bruges 0.94, Hampton by Hilton Amsterdam Centre East 0.93…",
       "cached": false,
       "http": "200",
-      "ms": 2531,
+      "ms": 2546,
       "ok": true,
-      "t": 19683
+      "t": 12831
+    },
+    {
+      "stage": "expand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: 9 entities (Dbrand, X (Formerly Twitter), Instagram…) · type artist · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Avicii 0.94, David Guetta 0.92, Swedish House Mafia 0.92…",
+      "cached": false,
+      "http": "200",
+      "ms": 2876,
+      "ok": true,
+      "t": 13161
     },
     {
       "stage": "score",
@@ -917,9 +857,9 @@
       "output": "14/14 scored: Tesla 0.93, Sony 0.92, Google 0.92, Unbox Therapy 0.91…",
       "cached": false,
       "http": "200",
-      "ms": 241,
+      "ms": 238,
       "ok": true,
-      "t": 19925
+      "t": 13399
     },
     {
       "stage": "score",
@@ -928,9 +868,9 @@
       "output": "5/5 scored: Zedd 0.92, Avicii 0.89, Jason Derülo 0.89, David Guetta 0.88…",
       "cached": false,
       "http": "200",
-      "ms": 371,
+      "ms": 367,
       "ok": true,
-      "t": 20055
+      "t": 13528
     },
     {
       "stage": "score",
@@ -939,20 +879,9 @@
       "output": "5/5 scored: Captain Marvel 0.94, Venom 0.93, Deadpool 2 0.93, Alita: Battle Angel 0.92…",
       "cached": false,
       "http": "200",
-      "ms": 507,
+      "ms": 496,
       "ok": true,
-      "t": 20191
-    },
-    {
-      "stage": "score",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: Apple Inc · affinity of 5 creator tv_show entities (filter.results.entities)",
-      "output": "5/5 scored: Halt and Catch Fire 0.98, Humans 0.94, UnREAL 0.93, You, Me and the Apocalypse 0.92…",
-      "cached": false,
-      "http": "200",
-      "ms": 629,
-      "ok": true,
-      "t": 20313
+      "t": 13657
     },
     {
       "stage": "score",
@@ -961,9 +890,9 @@
       "output": "5/5 scored: Munnar 0.87, Kochi 0.87, Hyderabad 0.87, Chennai 0.87…",
       "cached": false,
       "http": "200",
-      "ms": 724,
+      "ms": 738,
       "ok": true,
-      "t": 20408
+      "t": 13899
     },
     {
       "stage": "score",
@@ -972,9 +901,20 @@
       "output": "5/5 scored: My Spanishsteps Guest House Rome Italy 0.84, Hampton by Hilton Amsterdam Centre East 0.82, ANT Hostel Barcelona 0.82, Riad Cascades d'Ouzoud 0.81…",
       "cached": false,
       "http": "200",
-      "ms": 897,
+      "ms": 907,
       "ok": true,
-      "t": 20581
+      "t": 14068
+    },
+    {
+      "stage": "score",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · affinity of 5 creator tv_show entities (filter.results.entities)",
+      "output": "5/5 scored: Halt and Catch Fire 0.98, Humans 0.94, UnREAL 0.93, You, Me and the Apocalypse 0.92…",
+      "cached": false,
+      "http": "200",
+      "ms": 975,
+      "ok": true,
+      "t": 14136
     },
     {
       "stage": "score",
@@ -983,9 +923,9 @@
       "output": "1/1 scored: Marques Brownlee 0.85",
       "cached": false,
       "http": "200",
-      "ms": 991,
+      "ms": 1000,
       "ok": true,
-      "t": 20675
+      "t": 14161
     },
     {
       "stage": "score",
@@ -994,7 +934,7 @@
       "output": "9 of 9 named entities scored",
       "decision": "Continue",
       "ok": true,
-      "t": 20675
+      "t": 14161
     },
     {
       "stage": "score",
@@ -1003,7 +943,7 @@
       "output": "Tech & Innovation 75 (n=11) · Film, TV & Entertainment 87 (n=10) · Music 77 (n=5) · Lifestyle & Fashion 63 (n=3) · Food & Travel 68 (n=10)",
       "decision": "Affinity rescaled from [0.5, 1] to [0, 100]; shared taste ≥ 0.85, weak link 0.7–0.85, clash < 0.7",
       "ok": true,
-      "t": 20675
+      "t": 14161
     },
     {
       "stage": "score",
@@ -1012,7 +952,7 @@
       "output": "Fit Score 74, confidence Medium (based on 9 confirmed entities across 5 dimensions; High = 10+ entities and all 5 dimensions, Medium = 5+, Low = fewer)",
       "decision": "Verdict: Moderate fit (80+ strong, 60–79 moderate, 40–59 weak, below 40 no fit)",
       "ok": true,
-      "t": 20676
+      "t": 14161
     },
     {
       "stage": "report",
@@ -1020,7 +960,7 @@
       "input": "Report template filled from the scored entities (no LLM)",
       "output": "3 recommendations, 1 risks, 5 entities shared with the brand’s Qloo proxies",
       "ok": true,
-      "t": 20676
+      "t": 14161
     },
     {
       "stage": "report",
@@ -1030,9 +970,9 @@
       "decision": "Reported as an independent cross-check; not part of the Fit Score",
       "cached": false,
       "http": "200",
-      "ms": 224,
+      "ms": 221,
       "ok": true,
-      "t": 20900
+      "t": 14382
     }
   ],
   "liveRun": true,

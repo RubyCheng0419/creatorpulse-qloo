@@ -33,7 +33,11 @@ The two buttons on the home page use the same five videos with two brands. They 
 
 [`data/demo-snapshot.json`](../data/demo-snapshot.json) and [`data/demo-snapshot-mismatch.json`](../data/demo-snapshot-mismatch.json) are complete, real `/api/match` results for the two pairs. A demo click serves them, labelled “Cached demo result” with their date, so judging spends no API quota. “Run live” runs the full pipeline (YouTube, an LLM proposing names, Qloo resolving and scoring) with every cache bypassed; if that live run throws, or no LLM is available so no score can be given, the snapshot is served instead, labelled “Cached … the live run could not complete”.
 
-Snapshots saved on 2026-10-27 with the current pipeline: Apple × MKBHD **74** (Gemini, 10 confirmed entities, 5 shared Qloo tags in the cross-check); Huggies × MKBHD **37** (Groq, 6 confirmed entities, 18 clashes, no shared tags). The two used different LLMs, so their entity sets differ; regenerate the mismatch when Gemini has quota to compare on the same names.
+Snapshots saved on 2026-10-27 with the current pipeline (with each video’s publish date and views): Apple × MKBHD **74** (Gemini, 10 confirmed entities, 5 shared Qloo tags in the cross-check); Huggies × MKBHD **37** (Groq, 6 confirmed entities, 18 clashes, no shared tags). The two used different LLMs, so their entity sets differ; regenerate the mismatch when Gemini has quota to compare on the same names. A Groq-only regeneration of the Apple pair the same evening also scored 75, but with 5 confirmed entities (Low confidence), so the Gemini run was kept.
+
+## Comparison: Apple × three creators
+
+[`public/demo-compare.json`](../public/demo-compare.json), shown at `/compare?demo=1` and saved by `node scripts/save-demo-compare.mjs [base-url]`: Linus Tech Tips **76** (Medium), Marques Brownlee **74** (the snapshot above), NikkieTutorials **55** (Medium; her videos named too little, so the score comes from her audience’s taste in Qloo; 5 clashes). Apple’s audience is broad: the most distant creators tried scored 55–61 (a gun channel 61, Low); a beauty creator was kept as the mismatch. Two farm and kids channels gave no score (Qloo scored only 2 of their 3 confirmed entities).
 
 Regenerate them with the dev server running:
 

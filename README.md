@@ -28,6 +28,10 @@ Two modes, one scoring formula:
 - **Culture clash, recommendations and risks**, each sentence built from those entities
 - **A two-page PDF report** with the same content as the page
 - **An Agent Trace**: every tool call (YouTube, Gemini, each Qloo request) and every decision behind the result, in order, with timings and whether each Qloo response was live or served from cache
+- **The score’s range**, not one run as a fixed number: this run, the demo pair’s recorded range, the range across your runs of the pair on this device, and dimensions that moved 15+ points since the last run
+- **Compare creators** (`/compare`): up to three creators for one brand side by side (Fit, confidence, strongest and weakest dimension, clashes); a saved demo comparison for Apple: MKBHD, Linus Tech Tips and a beauty creator
+- **A share link** carrying the analysis’s inputs, which re-runs it on any device (History stays in the browser), and a **How the score works** page (`/how-it-works`) with every weight and threshold read from the scoring code
+- **Sources** with each video’s publish date and views, and whether the videos are a channel’s latest uploads or the user’s picks
 
 If Qloo cannot back a score with evidence (unknown brand, too few entities), CreatorPulse says *insufficient data* instead of inventing a number, with the reason as a fixed category and what to try next.
 
