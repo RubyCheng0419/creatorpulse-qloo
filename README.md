@@ -103,6 +103,17 @@ When the videos name fewer than 3 Qloo entities (or no LLM can extract names), C
 5. **Confidence is at most Medium** (20+ scored entities across 4+ dimensions; otherwise Low), and fewer than 10 scored entities gives that creator no score.
 6. **Audience overlap** (the brand audience’s affinity for the creator) is shown but not scored, so the same evidence isn’t counted twice; it only breaks ties.
 7. Queries that fail (timeouts, dropped connections, 429) are asked again after the rest and reported per creator; a creator Qloo can’t use as a signal for a type (400) is reported as having no data there, not retried.
+8. **What was scored** is stated on every card: the creator’s Qloo person profile (person-level, covering everything Qloo links to that person, flagged when Qloo lists several roles), not a YouTube channel. A matched channel is shown with its handle and link, and is used only for the video deep dive. The evidence panel names the entities behind the strongest dimension, the dimensions without data, dimensions resting on fewer than 3 entities that still weigh a full share, and a main identity in Qloo’s description (e.g. “singer”) whose dimension isn’t the strongest.
+
+**Is the ranking valid?** A ranking is checked before it is presented as a result ([`lib/ranking-controls.ts`](lib/ranking-controls.ts)). For the three demo brands, the default ranking (Any YouTuber) carries win/lose controls scored in the same request and batches: an obvious fit must be the top-ranked creator or score at least as high, and an obvious misfit must score 5+ points below the top. A ranking that fails is shown as **“Unverified — do not use for a decision”**, without fit verdicts; one whose control couldn’t be fully scored is never marked validated; other brands are labelled not validated. Checked on 2026-10-27, twice, the second run bypassing every cache (same top 3 both times):
+
+| Brand | Top-ranked | Obvious fit | Obvious misfit | Result |
+|---|---|---|---|---|
+| Apple | Marques Brownlee 79 | Marques Brownlee 79 (#1) | Sandra Lee 50 | **Validated** |
+| Huggies | Sandra Lee 65 | Cole LaBrant 58 (#4) | DrLupo 48 | **Unverified**: the family vlogger ranks below a dermatologist whose lead comes from her audience’s country music (Music 81) |
+| Le Labo Fragrances | Alexis Alford 65 | Jeremy Fragrance 36 | DrLupo 32 | **Unverified**; Jeremy Fragrance’s place profile also timed out |
+
+The weakest dimension is the same for most creators (Food & Travel for 10/10 with Apple and Le Labo, Lifestyle & Fashion for 8/10 with Huggies); leaving it out keeps Le Labo’s top 3 and changes the third place for Apple and Huggies, which the ranking reports. A dimension resting on one entity still weighs a full share (Cole LaBrant: Tech & Innovation, 1 entity, 27): flagged on the card, the formula unchanged.
 
 Checked on 2026-10-27: two live runs per brand gave identical rankings, and for common-sense controls the creator type that should fit scored higher on average in all four cases (re-checked after the popularity filter: Razer: gaming 71 vs beauty 56; Fenty Beauty: beauty 74 vs gaming 57; Apple: technology 64 vs beauty 58; Huggies: lifestyle 53 vs gaming 51, the weakest, since Qloo has no family category).
 
@@ -197,6 +208,7 @@ Regenerate it with `node scripts/save-demo-snapshot.mjs` while the dev server ru
 ## Known limitations
 
 - **Check a creator: taste comes mainly from what the videos name.** Topics that are not Qloo entities (an air fryer, a cheesecake) cannot be matched. A channel URL reads 15 videos instead of 5, which helps: a cooking channel that named too little in five videos confirmed 7 entities from its channel. CreatorPulse uses no audience personal data.
+- **Find creators is validated for Apple only.** Its Huggies and Le Labo Fragrances rankings fail their win/lose controls and are labelled unverified; brands without controls are labelled not validated. A person-level audience profile can rank a creator for a taste unrelated to their channel.
 - **Find creators only knows Qloo’s YouTubers**: about 900, mostly well known, English- and Spanish-speaking. Only two are tagged as Taiwanese YouTubers. Creator types come from Wikipedia categories, so coverage is uneven, and there is no family category.
 - **Not every creator has a matched channel.** Qloo has no YouTube links; a channel is accepted only if its title is the person’s name and it has an audience, so some creators (e.g. Cole LaBrant, whose channel is “The LaBrant Fam”) have a score but no video deep dive.
 - **Scores measure cultural fit only**, not brand safety, past controversies or audience size.

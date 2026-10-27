@@ -57,6 +57,8 @@ Checked on 2026-10-27:
 
 Re-checked on 2026-10-27 after `filter.popularity.min=0.5` was added to the audience-taste calls: Huggies’ order changed (Cole LaBrant 64 → 58), the other two barely moved.
 
+Win/lose controls (see the README): **Apple is validated**; **Huggies and Le Labo Fragrances are unverified** and their rankings show “Unverified — do not use for a decision”. For a demo of Find creators, start with Apple.
+
 - [x] Two live runs per brand (every cache bypassed) gave identical rankings
 - [x] Common-sense controls passed 4/4: for Razer, Fenty Beauty, Apple and Huggies, the creator type that should fit scored higher on average than one that shouldn’t (see the README)
 - [x] About 10–20 seconds on a cold cache, about 70 Qloo calls

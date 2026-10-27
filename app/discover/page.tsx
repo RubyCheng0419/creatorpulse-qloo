@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
 import { CandidateCard } from '@/components/discover/CandidateCard';
 import { RankingOverview } from '@/components/discover/RankingOverview';
+import { RankingValidationNote } from '@/components/discover/RankingValidationNote';
 import { AgentTrace } from '@/components/match/AgentTrace';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -419,7 +420,8 @@ function DiscoverPage() {
 
             {result.status === 'completed' ? (
               <>
-                <RankingOverview candidates={result.candidates} />
+                {result.validation && <RankingValidationNote v={result.validation} />}
+                <RankingOverview candidates={result.candidates} unverified={result.validation?.status === 'unverified'} />
                 <dl className="grid gap-x-6 gap-y-3 px-1 text-sm sm:grid-cols-3">
                   <div>
                     <dt className="font-medium text-slate-900">Fit Score</dt>
@@ -441,7 +443,13 @@ function DiscoverPage() {
                 </dl>
                 <ol className="space-y-3">
                   {result.candidates.map((c) => (
-                    <CandidateCard key={c.qlooId} c={c} deepDiveHref={deepDive(c)} brandName={result.brand.entity?.name || result.brand.name} />
+                    <CandidateCard
+                      key={c.qlooId}
+                      c={c}
+                      deepDiveHref={deepDive(c)}
+                      brandName={result.brand.entity?.name || result.brand.name}
+                      unverified={result.validation?.status === 'unverified'}
+                    />
                   ))}
                 </ol>
               </>

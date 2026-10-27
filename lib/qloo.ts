@@ -22,6 +22,7 @@ import type { Trace, TraceStage } from '@/lib/trace';
 const QLOO_BASE = process.env.QLOO_BASE_URL || 'https://hackathon.api.qloo.com';
 const CACHE_MS = 60 * 60 * 1000;
 const MIN_REQUEST_GAP_MS = 125; // 8 req/s, under Qloo's 10 req/s limit
+const MAX_TAKE = 50; // Qloo rejects take above 50 with a 400
 
 export interface QlooEntity {
   id: string; // Qloo entity_id, stored as returned
@@ -579,13 +580,20 @@ export async function scoreEntities(
     byType.delete('urn:entity:place');
   }
 
+  // Qloo's take is 1–50 (400 otherwise, checked 2026-10-27), and take must cover every target,
+  // so a type with more targets is scored in batches of MAX_TAKE.
+  const batches: [string, string[]][] = [];
+  for (const [type, group] of byType) {
+    const unique = [...new Set(group.map((t) => t.id))];
+    for (let i = 0; i < unique.length; i += MAX_TAKE) batches.push([type, unique.slice(i, i + MAX_TAKE)]);
+  }
+
   const scores = new Map<string, number>();
   const failures: Error[] = [];
   await Promise.all(
-    [...byType].map(async ([type, group]) => {
+    batches.map(async ([type, ids]) => {
       try {
       const t0 = Date.now();
-      const ids = [...new Set(group.map((t) => t.id))];
       const label = `Signal: ${signalLabel(signal, tags)} · affinity of ${ids.length} creator ${typeLabel([type])} entities (filter.results.entities)`;
       const { data, cached, http, tags: used } = await failTraced(ctx, 'Qloo /v2/insights', label, () =>
         insightsGet({ 'filter.type': type, 'filter.results.entities': ids.join(','), take: String(ids.length) }, signal, tags, ctx)
@@ -613,6 +621,6 @@ export async function scoreEntities(
       }
     })
   );
-  if (byType.size && failures.length === byType.size) throw failures[0];
+  if (batches.length && failures.length === batches.length) throw failures[0];
   return scores;
 }

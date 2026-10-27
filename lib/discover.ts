@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
-import { MIN_PROFILE_ENTITIES, PROFILE_PER_TYPE, audienceProfiles, scoreProfile } from '@/lib/audience';
+import { MIN_PROFILE_ENTITIES, PROFILE_PER_TYPE, audienceProfiles, findCreatorPerson, scoreProfile } from '@/lib/audience';
+import { RANKING_CONTROLS, RankingValidation, controlResult, validateRanking, weakestDimension } from '@/lib/ranking-controls';
 import { approximation, brandConfidence, lookupBrand } from '@/lib/brand';
 import { CREATOR_CATEGORIES, CreatorCategory, isCreatorCategory } from '@/lib/creator-categories';
 import { ApiError } from '@/lib/errors';
@@ -51,6 +52,7 @@ export interface Discovery {
   warnings: string[];
   trace: TraceStep[];
   liveRun?: boolean;
+  validation?: RankingValidation; // absent on rankings saved before the checks existed
 }
 
 export interface DiscoverInput {
@@ -167,14 +169,30 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
   const key = process.env.YOUTUBE_API_KEY;
   const channelsPromise = Promise.all(candidates.map((c) => findChannel(c.id, c.name, key, trace).catch(() => null)));
 
+  // Win/lose controls (lib/ranking-controls), for the demo brands' default ranking only: resolved
+  // like any creator (exact name, creator tag) and scored in the same batches, but not ranked.
+  const controlSet = creatorCategory === 'any' && brand.basis === 'brand' ? RANKING_CONTROLS[(brand.brand.entity?.name || '').toLowerCase()] : undefined;
+  const controlPeople = controlSet
+    ? await Promise.all(
+        (['fit', 'misfit'] as const).map(async (role) => {
+          const name = controlSet[role];
+          const inList = candidates.find((c) => c.name === name);
+          return { role, name, person: inList ?? (await findCreatorPerson(name, '', trace)) };
+        })
+      )
+    : [];
+  const extra = controlPeople.flatMap((c) => (c.person && !candidates.some((x) => x.id === c.person!.id) ? [c.person] : []));
+
   // 3. Each candidate's audience taste (lib/audience), with failed queries asked again.
-  const profiles = (await audienceProfiles(candidates, brandIds, trace)).map((p) => ({ ...p, candidate: p.person }));
+  const allProfiles = await audienceProfiles([...candidates, ...extra], brandIds, trace);
+  const profiles = allProfiles.slice(0, candidates.length).map((p) => ({ ...p, candidate: p.person }));
+  const controlProfiles = new Map(allProfiles.map((p) => [p.person.id, p]));
   for (const p of profiles) {
     if (p.failedTypes.length) warnings.push(`${p.candidate.name}: Qloo failed to return ${p.failedTypes.join(', ')}; that part of the profile is missing.`);
   }
 
   // 4. The brand's affinity for every profile entity, one batched call per type.
-  const all = [...new Map(profiles.flatMap((p) => p.entities).map((e) => [e.id, e])).values()];
+  const all = [...new Map(allProfiles.flatMap((p) => p.entities).map((e) => [e.id, e])).values()];
   let affinities: Map<string, number>;
   try {
     affinities = await scoreEntities(brand.signal, all, { trace, stage: 'score' }, brand.tags);
@@ -225,7 +243,41 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
     });
   }
 
-  // 6. YouTube channels for the deep dive; a creator without one keeps the Qloo score.
+  // 6. Validity checks before the ranking is presented as a result: the controls, then whether
+  //    one dimension drags every creator down.
+  const controls = controlSet
+    ? controlPeople.map(({ role, name, person }) => {
+        const profile = person ? controlProfiles.get(person.id) : undefined;
+        const scored = profile ? scoreProfile(profile.entities, affinities).compatibility : null;
+        const rank = person ? ranked.findIndex((c) => c.qlooId === person.id) + 1 || null : null;
+        return controlResult(role, name, person?.id ?? null, scored ? brandConfidence(scored, brand) : null, rank, profile?.failedTypes ?? []);
+      })
+    : null;
+  const validation: RankingValidation = { ...validateRanking(ranked, controls), weakest: weakestDimension(ranked) };
+  trace.add({
+    stage: 'score',
+    tool: 'Rule',
+    input: controls
+      ? `Win/lose controls: ${controls.map((c) => `${c.name} (obvious ${c.role}) ${c.fitScore ?? 'no score'}${c.strongest ? `, strongest ${c.strongest}, weakest ${c.weakest}` : ''}`).join(' · ')}`
+      : 'Win/lose controls for this brand and creator type',
+    output: validation.reasons.join(' '),
+    decision:
+      validation.status === 'validated'
+        ? 'Ranking validated'
+        : validation.status === 'unverified'
+          ? 'Ranking unverified: shown as “do not use for a decision”, without fit verdicts'
+          : 'Not validated: no usable controls; the ranking is labelled as such',
+  });
+  if (validation.weakest)
+    trace.add({
+      stage: 'score',
+      tool: 'Rule',
+      input: `Weakest dimension across the ranking: ${validation.weakest.label} for ${validation.weakest.count} of ${validation.weakest.of} creators`,
+      output: `Top 3 ${validation.weakest.top3.join(', ')}; without ${validation.weakest.label}: ${validation.weakest.top3Without.join(', ')}`,
+      decision: validation.weakest.top3.join() === validation.weakest.top3Without.join() ? 'Same top 3: that dimension doesn’t decide the ranking' : 'The top 3 change without it: reported beside the ranking',
+    });
+
+  // 7. YouTube channels for the deep dive; a creator without one keeps the Qloo score.
   const channels = await channelsPromise;
   const channelOf = new Map(candidates.map((c, i) => [c.id, channels[i]]));
 
@@ -235,5 +287,6 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
     ...(scoredCount ? {} : { errorMessage: 'Qloo scored too little of every candidate’s audience taste to rank them.', noDataReason: 'too-few-profile-entities' as const }),
     brand: brandSide,
     candidates: ranked.map((c, i) => ({ ...c, rank: i + 1, channel: channelOf.get(c.qlooId) ?? null })),
+    validation,
   };
 }
