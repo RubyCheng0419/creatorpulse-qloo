@@ -55,7 +55,7 @@ export function matchToMarkdown(match: Match): string {
       }
       lines.push(
         ...tier('Shared taste (affinity ≥ 0.85)', d.intersection),
-        ...tier('Weak link (0.70–0.85)', d.weakLink),
+        ...tier('Lukewarm (affinity 0.70–0.85)', d.weakLink),
         ...tier('Clash (affinity < 0.70)', d.divergence)
       );
     }

@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
-import { DIVERGENCE_MAX, INTERSECTION_MIN, type DimensionScore, type ScoredEntity } from '@/lib/scoring';
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { DIVERGENCE_MAX, INTERSECTION_MIN, type Dimension, type DimensionScore, type ScoredEntity } from '@/lib/scoring';
 
 const TYPE_LABELS: Record<string, string> = {
   'urn:entity:brand': 'brand',
@@ -16,45 +17,98 @@ const TYPE_LABELS: Record<string, string> = {
   'urn:entity:person': 'person',
 };
 
+// What each dimension is made of, for the plain-language takeaway.
+const DIMENSION_NOUNS: Record<Dimension, string> = {
+  tech: 'tech brands and products',
+  entertainment: 'films, shows and people',
+  music: 'music and artists',
+  lifestyle: 'lifestyle and fashion brands',
+  food_travel: 'food, drink and travel spots',
+};
+
 const PRINT_LIMIT = 3;
 
-// What a one-step-removed entity is called: a match's cross-domain expansion, or a
-// creator's audience taste in Find creators.
-const ProxyLabel = createContext('Cross-domain expansion');
+// What the creator side is: what the videos cover (a match), or what the creator's
+// audience likes in Qloo (Find creators, or a match scored from the creator's audience).
+export type CreatorBasis = 'content' | 'audience';
 
-function EntityRow({ e }: { e: ScoredEntity }) {
-  const proxyLabel = useContext(ProxyLabel);
+// Two decimals, or more when rounding would carry an affinity across a tier boundary:
+// 0.695 is a clash, and showing it as "0.70" under "< 0.70" reads like a bug.
+export function formatAffinity(a: number): string {
+  for (let digits = 2; digits < 4; digits++) {
+    const s = a.toFixed(digits);
+    if (![DIVERGENCE_MAX, INTERSECTION_MIN].some((t) => a < t && Number(s) >= t)) return s;
+  }
+  return (Math.floor(a * 1e4) / 1e4).toFixed(4); // truncated, so it can't round up across
+}
+
+// Same thresholds as the verdict (lib/scoring.ts verdictOf), in words.
+function feeling(score: number): string {
+  if (score >= 80) return 'loves';
+  if (score >= 60) return 'likes';
+  if (score >= 40) return 'is lukewarm about';
+  return 'isn’t into';
+}
+
+function takeaway(d: DimensionScore, audience: string, basis: CreatorBasis): string {
+  const what = basis === 'audience' ? 'this creator’s audience likes' : 'this creator covers';
+  const all = [...d.intersection, ...d.weakLink, ...d.divergence].sort((a, b) => b.brandAffinity - a.brandAffinity);
+  const [top, bottom] = [all[0], all[all.length - 1]];
+  const ends = all.length > 1 ? ` Highest: ${top.name} ${formatAffinity(top.brandAffinity)} · lowest: ${bottom.name} ${formatAffinity(bottom.brandAffinity)}.` : '';
+  return `${audience} ${feeling(d.score!)} the ${DIMENSION_NOUNS[d.dimension]} ${what} (${d.score}/100).${ends}`;
+}
+
+function EntityRow({ e, basis, sources }: { e: ScoredEntity; basis: CreatorBasis; sources: boolean }) {
+  const origin = e.side === 'direct' ? 'In the videos' : basis === 'audience' ? 'Audience taste' : 'Related by Qloo';
   return (
     <li className="py-2 text-sm print:py-1">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-        <span className="font-medium text-slate-900">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="min-w-0 font-medium text-slate-900">
           {e.name}
-          <span className="ml-2 text-xs font-normal text-slate-500">{TYPE_LABELS[e.type] || e.type}</span>
+          <span className="ml-1.5 text-xs font-normal text-slate-500">{TYPE_LABELS[e.type] || e.type}</span>
         </span>
-        <span className="tabular-nums text-slate-700">affinity {e.brandAffinity.toFixed(2)}</span>
+        <span className="shrink-0 tabular-nums text-slate-700">{formatAffinity(e.brandAffinity)}</span>
       </div>
       <div className="mt-0.5 text-xs text-slate-500">
-        {e.side === 'direct' ? (
-          `Named in the videos (“${e.query}”)`
-        ) : (
-          <>
-            {proxyLabel}<span className="print:hidden"> (from {e.query})</span>
-          </>
+        <span className={`rounded px-1.5 py-px ${e.side === 'direct' ? 'bg-slate-100 text-slate-700' : 'bg-slate-50 text-slate-500'}`}>{origin}</span>
+        {sources && (
+          // Its own line on screen; inline in print, so the PDF keeps one line per entity.
+          <span className="mt-1 block print:mt-0 print:ml-2 print:inline">
+            {e.side === 'direct' ? `Named as “${e.query}”` : <span className="print:hidden">From {e.query}</span>}{' '}
+            <span className="font-mono break-all">{e.id}</span>
+          </span>
         )}
-        <span className="ml-2 font-mono break-all">{e.id}</span>
       </div>
     </li>
   );
 }
 
-function EntityList({ title, tone, items, empty }: { title: string; tone: string; items: ScoredEntity[]; empty: string }) {
+function EntityList({
+  title,
+  hint,
+  tone,
+  items,
+  empty,
+  basis,
+  sources,
+}: {
+  title: string;
+  hint: string;
+  tone: string;
+  items: ScoredEntity[];
+  empty: string;
+  basis: CreatorBasis;
+  sources: boolean;
+}) {
   return (
     <div>
-      <h4 className={`text-xs font-semibold tracking-wide ${tone}`}>{title}</h4>
+      <h4 className={`text-sm font-semibold ${tone}`}>
+        {title} <span className="text-xs font-normal text-slate-500">{hint}</span>
+      </h4>
       {items.length ? (
         <ul className="divide-y divide-slate-100">
           {items.map((e) => (
-            <EntityRow key={e.id} e={e} />
+            <EntityRow key={e.id} e={e} basis={basis} sources={sources} />
           ))}
         </ul>
       ) : (
@@ -64,26 +118,35 @@ function EntityList({ title, tone, items, empty }: { title: string; tone: string
   );
 }
 
-function Evidence({ d, limit }: { d: DimensionScore; limit?: number }) {
+function Evidence({ d, basis, sources, limit }: { d: DimensionScore; basis: CreatorBasis; sources: boolean; limit?: number }) {
   return (
     <div className="grid gap-4 sm:grid-cols-3 print:grid-cols-3">
       <EntityList
-        title={`Shared taste (≥ ${INTERSECTION_MIN})`}
+        title="Loves these"
+        hint={`affinity ≥ ${INTERSECTION_MIN}`}
         tone="text-teal-700"
         items={d.intersection.slice(0, limit)}
-        empty="No strongly related entities"
+        empty="Nothing the audience loves here"
+        basis={basis}
+        sources={sources}
       />
       <EntityList
-        title={`Weak link (${DIVERGENCE_MAX}–${INTERSECTION_MIN})`}
+        title="Lukewarm"
+        hint={`affinity ${DIVERGENCE_MAX.toFixed(2)}–${INTERSECTION_MIN}`}
         tone="text-amber-700"
         items={(d.weakLink ?? []).slice(0, limit)}
-        empty="No weak links"
+        empty="Nothing lukewarm"
+        basis={basis}
+        sources={sources}
       />
       <EntityList
-        title={`Clash (< ${DIVERGENCE_MAX})`}
+        title="Not into these · clash"
+        hint={`affinity < ${DIVERGENCE_MAX.toFixed(2)}`}
         tone="text-rose-700"
         items={d.divergence.slice(0, limit)}
-        empty="No evidence of a clash"
+        empty="No clash"
+        basis={basis}
+        sources={sources}
       />
     </div>
   );
@@ -91,20 +154,28 @@ function Evidence({ d, limit }: { d: DimensionScore; limit?: number }) {
 
 export function TasteComparison({
   dimensions,
-  proxyLabel = 'Cross-domain expansion',
+  brandName,
+  basis = 'content',
   title = 'Five taste dimensions',
 }: {
   dimensions: DimensionScore[];
-  proxyLabel?: string;
+  brandName?: string;
+  basis?: CreatorBasis;
   title?: string;
 }) {
   const [open, setOpen] = useState<string | null>(null);
+  const [sources, setSources] = useState(false);
+  // "Huggies’ audience", not "Huggies’s".
+  const audience = brandName ? `${brandName}${/s$/i.test(brandName) ? '’' : '’s'} audience` : 'The brand’s audience';
+  const what = basis === 'audience' ? 'what this creator’s audience likes' : 'what this creator covers';
 
   return (
-    <ProxyLabel.Provider value={proxyLabel}>
-      <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 print:p-4">
+    <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 print:p-4">
       <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-      <p className="mt-1 text-sm text-slate-500 print:hidden">Open a dimension to see the Qloo entities and IDs behind its score.</p>
+      <p className="mt-1 max-w-3xl text-sm text-slate-600 print:hidden">
+        How much {audience.replace(/^The/, 'the')} likes {what}, one area of taste at a time. Each score averages Qloo’s affinity for the
+        things in that area: higher means the audience likes them more. Open an area to see what it is based on.
+      </p>
 
       <ul className="mt-4 space-y-3">
         {dimensions.map((d) => {
@@ -122,8 +193,8 @@ export function TasteComparison({
                   <span className="block text-sm leading-tight font-medium text-slate-800">{d.label}</span>
                   {d.score !== null && (
                     <span className="mt-0.5 block text-xs text-slate-500">
-                      <span className="text-teal-700">{d.intersection.length} shared</span> ·{' '}
-                      <span className="text-amber-700">{(d.weakLink ?? []).length} weak</span> ·{' '}
+                      <span className="text-teal-700">{d.intersection.length} loved</span> ·{' '}
+                      <span className="text-amber-700">{(d.weakLink ?? []).length} lukewarm</span> ·{' '}
                       <span className="text-rose-700">{d.divergence.length} clash</span>
                     </span>
                   )}
@@ -134,7 +205,10 @@ export function TasteComparison({
                 <span className="w-14 shrink-0 text-right text-sm tabular-nums text-slate-900 sm:w-20">
                   {d.score === null ? <span className="text-slate-500">No data</span> : d.score}
                 </span>
-                <span className="w-4 shrink-0 text-slate-400 print:hidden">{d.score === null ? '' : isOpen ? '−' : '+'}</span>
+                {d.score !== null && (
+                  <ChevronDown aria-hidden className={`size-4 shrink-0 text-slate-400 transition-transform print:hidden ${isOpen ? 'rotate-180' : ''}`} />
+                )}
+                {d.score === null && <span className="w-4 shrink-0 print:hidden" />}
               </button>
 
               {d.score === null ? (
@@ -143,14 +217,25 @@ export function TasteComparison({
                 <>
                   {isOpen && (
                     <div className="border-t border-slate-100 px-3 py-3 print:hidden">
-                      <p className="mb-2 text-xs text-slate-500">
-                        {d.itemCount} entities scored · weight {(d.weight * 100).toFixed(0)}%
-                      </p>
-                      <Evidence d={d} />
+                      <p className="text-sm font-medium text-slate-900">{takeaway(d, audience, basis)}</p>
+                      <div className="mt-1 mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                        <span>
+                          Based on {d.itemCount} {d.itemCount === 1 ? 'thing' : 'things'} Qloo knows · {(d.weight * 100).toFixed(0)}% of the Fit Score
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setSources(!sources)}
+                          aria-pressed={sources}
+                          className="font-medium text-teal-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                        >
+                          {sources ? 'Hide Qloo IDs and sources' : 'Show Qloo IDs and sources'}
+                        </button>
+                      </div>
+                      <Evidence d={d} basis={basis} sources={sources} />
                     </div>
                   )}
                   <div className="hidden border-t border-slate-100 px-3 py-2 print:block">
-                    <Evidence d={d} limit={PRINT_LIMIT} />
+                    <Evidence d={d} basis={basis} sources limit={PRINT_LIMIT} />
                   </div>
                 </>
               )}
@@ -158,7 +243,6 @@ export function TasteComparison({
           );
         })}
       </ul>
-      </section>
-    </ProxyLabel.Provider>
+    </section>
   );
 }

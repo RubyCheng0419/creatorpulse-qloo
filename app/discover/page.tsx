@@ -441,7 +441,7 @@ function DiscoverPage() {
                 </dl>
                 <ol className="space-y-3">
                   {result.candidates.map((c) => (
-                    <CandidateCard key={c.qlooId} c={c} deepDiveHref={deepDive(c)} />
+                    <CandidateCard key={c.qlooId} c={c} deepDiveHref={deepDive(c)} brandName={result.brand.entity?.name || result.brand.name} />
                   ))}
                 </ol>
               </>

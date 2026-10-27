@@ -80,7 +80,8 @@ export function MatchResult({
         <>
           <TasteComparison
             dimensions={match.compatibility.dimensions}
-            proxyLabel={match.scoreBasis === 'audience' ? 'Audience taste in Qloo' : 'Cross-domain expansion'}
+            brandName={match.brand.entity?.name || match.brand.name}
+            basis={match.scoreBasis === 'audience' ? 'audience' : 'content'}
           />
           <ReportDetails report={match.report} />
         </>

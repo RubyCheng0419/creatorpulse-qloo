@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronDown, ExternalLink } from 'lucide-react';
-import { TasteComparison } from '@/components/match/TasteComparison';
+import { TasteComparison, formatAffinity } from '@/components/match/TasteComparison';
 import type { CreatorCandidate } from '@/lib/discover';
 import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
 import { VERDICT_LABELS } from '@/lib/report';
@@ -17,7 +17,7 @@ export const VERDICT_STYLE: Record<string, string> = {
   'insufficient-data': 'bg-slate-100 text-slate-700 ring-slate-200',
 };
 
-const names = (list: ScoredEntity[]) => list.map((e) => `${e.name} ${e.brandAffinity.toFixed(2)}`).join(', ');
+const names = (list: ScoredEntity[]) => list.map((e) => `${e.name} ${formatAffinity(e.brandAffinity)}`).join(', ');
 
 // The strongest and weakest of the dimensions that have data; shared by the card and the overview.
 export function extremes(c: CreatorCandidate) {
@@ -30,7 +30,7 @@ export function extremes(c: CreatorCandidate) {
 export const cardId = (c: CreatorCandidate) => `creator-${c.rank}`;
 
 // One ranked creator: the score, what it rests on, and the way into the video deep dive.
-export function CandidateCard({ c, deepDiveHref }: { c: CreatorCandidate; deepDiveHref: string | null }) {
+export function CandidateCard({ c, deepDiveHref, brandName }: { c: CreatorCandidate; deepDiveHref: string | null; brandName?: string }) {
   const [open, setOpen] = useState(false);
   const comp = c.compatibility;
   const { best, worst } = extremes(c);
@@ -126,7 +126,7 @@ export function CandidateCard({ c, deepDiveHref }: { c: CreatorCandidate; deepDi
 
       {open && (
         <div className="mt-3">
-          <TasteComparison dimensions={comp.dimensions} proxyLabel="Audience taste in Qloo" title={`Why ${c.name} scores ${comp.fitScore}`} />
+          <TasteComparison dimensions={comp.dimensions} brandName={brandName} basis="audience" title={`Why ${c.name} scores ${comp.fitScore}`} />
         </div>
       )}
     </li>
