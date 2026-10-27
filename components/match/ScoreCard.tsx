@@ -1,6 +1,7 @@
 import type { Match } from '@/lib/match';
 import { VERDICT_LABELS, brandBasisNote } from '@/lib/report';
 import type { Compatibility, Verdict } from '@/lib/scoring';
+import { ScoreRange } from './ScoreRange';
 
 const VERDICT_STYLE: Record<Verdict, string> = {
   high: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
@@ -82,6 +83,7 @@ export function ScoreCard({ match }: { match: Match }) {
             {c.fitScore ?? '—'}
             {c.fitScore !== null && <span className="text-2xl font-medium text-slate-400">/100</span>}
           </p>
+          <ScoreRange match={match} />
         </div>
         <div>
           <p className="text-xs tracking-wide text-slate-500">Confidence</p>

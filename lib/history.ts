@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import type { Match } from '@/lib/match';
+import { logScore } from '@/lib/score-log';
 
 // Browser-only match history (PRODUCT_SPEC §8: localStorage is enough for now).
 // Storage can be unavailable (private mode, blocked site data), so every access is guarded.
@@ -29,8 +30,10 @@ export function listMatches(): Match[] {
   return parse(readRaw());
 }
 
-// Newest first; re-running the same pair replaces its previous entry (same id).
+// Newest first; re-running the same pair replaces its previous entry (same id). Its score
+// also goes to the score log (lib/score-log), which keeps the pair's recent runs.
 export function saveMatch(match: Match): void {
+  logScore(match);
   try {
     const rest = listMatches().filter((m) => m.id !== match.id);
     window.localStorage.setItem(KEY, JSON.stringify([match, ...rest].slice(0, MAX_ENTRIES)));

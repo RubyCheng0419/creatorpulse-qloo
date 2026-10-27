@@ -18,12 +18,14 @@ export interface DemoPair {
   category: string;
   creatorLabel: string;
   videoUrls: string[];
+  // Fit Scores of the live runs recorded in docs/DEMO_PAIR.md, shown as the pair's range.
+  recorded: { min: number; max: number; period: string };
 }
 
 // Same creator, two brands: shows the score follows the brand, not the creator's fame.
 export const DEMO_PAIRS: DemoPair[] = [
-  { key: 'fit', brandName: 'Apple', category: 'Technology', creatorLabel: 'MKBHD', videoUrls: MKBHD_VIDEOS },
-  { key: 'mismatch', brandName: 'Huggies', category: '', creatorLabel: 'MKBHD', videoUrls: MKBHD_VIDEOS },
+  { key: 'fit', brandName: 'Apple', category: 'Technology', creatorLabel: 'MKBHD', videoUrls: MKBHD_VIDEOS, recorded: { min: 69, max: 75, period: 'Oct 25–27, 2026' } },
+  { key: 'mismatch', brandName: 'Huggies', category: '', creatorLabel: 'MKBHD', videoUrls: MKBHD_VIDEOS, recorded: { min: 36, max: 37, period: 'Oct 25–27, 2026' } },
 ];
 
 export const DEMO_PAIR = DEMO_PAIRS[0];
