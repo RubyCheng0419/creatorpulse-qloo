@@ -109,7 +109,8 @@ if (LLM_CACHE_FILE && existsSync(LLM_CACHE_FILE)) {
 }
 
 export async function cachedAnswer<T>(key: string, call: () => Promise<T>): Promise<{ value: T; cached: boolean; at: number }> {
-  const hit = bypassCache() ? undefined : llmCache.get(key);
+  // A regression run (LLM_CACHE_FILE) keeps its fixed answers even on "Run live".
+  const hit = bypassCache() && !LLM_CACHE_FILE ? undefined : llmCache.get(key);
   if (hit && (LLM_CACHE_FILE || Date.now() - hit.at < VIDEO_CACHE_MS)) return { value: hit.value as T, cached: true, at: hit.at };
   const value = await call();
   const at = Date.now();

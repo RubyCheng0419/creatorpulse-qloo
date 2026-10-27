@@ -31,9 +31,9 @@ The two buttons on the home page use the same five videos with two brands. They 
 
 ### Live runs and the snapshot fallback
 
-The demos run the full pipeline every time: YouTube is read, an LLM proposes names (Gemini, or Groq when Gemini is over quota), and Qloo resolves and scores the entities. Responses may come from the server’s cache (Qloo up to 1 hour; YouTube and the LLM up to 24 hours for the same set of videos), and the Agent Trace marks each call “live” or “cached”. “Run live” bypasses every cache.
+[`data/demo-snapshot.json`](../data/demo-snapshot.json) and [`data/demo-snapshot-mismatch.json`](../data/demo-snapshot-mismatch.json) are complete, real `/api/match` results for the two pairs. A demo click serves them, labelled “Cached demo result” with their date, so judging spends no API quota. “Run live” runs the full pipeline (YouTube, an LLM proposing names, Qloo resolving and scoring) with every cache bypassed; if that live run throws, or no LLM is available so no score can be given, the snapshot is served instead, labelled “Cached … the live run could not complete”.
 
-[`data/demo-snapshot.json`](../data/demo-snapshot.json) and [`data/demo-snapshot-mismatch.json`](../data/demo-snapshot-mismatch.json) are complete, real `/api/match` results for the two pairs, used only as a **fallback**: if a live demo run throws, or no LLM is available so no score can be given, `/api/match` serves the snapshot instead, and the page labels it “Cached result from [date]”.
+Snapshots saved on 2026-10-27 with the current pipeline: Apple × MKBHD **74** (Gemini, 10 confirmed entities, 5 shared Qloo tags in the cross-check); Huggies × MKBHD **37** (Groq, 6 confirmed entities, 18 clashes, no shared tags). The two used different LLMs, so their entity sets differ; regenerate the mismatch when Gemini has quota to compare on the same names.
 
 Regenerate them with the dev server running:
 

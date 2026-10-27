@@ -1,6 +1,6 @@
 {
   "id": "match_a461ec9075e2",
-  "createdAt": "2026-10-25T13:53:31.809Z",
+  "createdAt": "2026-10-27T14:13:03.983Z",
   "creator": {
     "channelName": "Marques Brownlee",
     "youtubeHandle": "@mkbhd",
@@ -72,15 +72,18 @@
       "Tesla Roadster",
       "Tesla",
       "Hagerty",
-      "Apple Homeview",
+      "Auto Focus",
       "Googlebook",
-      "Google",
       "Asus",
-      "Dell"
+      "Dell",
+      "XPS",
+      "Apple Homeview"
     ],
-    "keywordSource": "gemini",
-    "geminiCached": true,
-    "geminiAt": "2026-10-25T13:48:57.877Z",
+    "keywordSource": "groq",
+    "extractionModel": "openai/gpt-oss-120b",
+    "extractionFallback": "Gemini’s request quota is used up for now",
+    "geminiCached": false,
+    "geminiAt": "2026-10-27T14:12:56.629Z",
     "entities": [
       {
         "id": "3180A68A-2853-4675-886E-CB05CDF3F63A",
@@ -138,23 +141,6 @@
         "genres": []
       },
       {
-        "id": "EF6C6B18-ABB3-4A9C-AF86-CF24976407A8",
-        "name": "Google",
-        "type": "urn:entity:brand",
-        "popularity": 0.999737248054788,
-        "affinity": null,
-        "source": "qloo",
-        "via": "search",
-        "query": "Google",
-        "genres": [
-          "brand:electronics:phones_and_tablets",
-          "brand:electronics:computer_accessories",
-          "brand:electronics",
-          "brand:software",
-          "brand:website"
-        ]
-      },
-      {
         "id": "81C0AAC3-4484-4089-81C0-3A69EE301C15",
         "name": "Asus",
         "type": "urn:entity:brand",
@@ -188,11 +174,17 @@
     ],
     "unmatched": [
       "iPhone Duo",
-      "Ridge",
       "Tesla Roadster",
-      "Apple Homeview",
-      "Googlebook"
-    ]
+      "Auto Focus",
+      "Googlebook",
+      "XPS",
+      "Apple Homeview"
+    ],
+    "qlooPerson": {
+      "id": "0E6F37E3-84C4-406B-BE34-D5C7CC7966A8",
+      "name": "Marques Brownlee"
+    },
+    "audienceOverlap": 0.545157037603445
   },
   "mentionsBrand": false,
   "sharedEntities": [],
@@ -202,81 +194,10 @@
       "tool": "YouTube videos.list",
       "input": "5 video IDs",
       "output": "5 readable: “ASMR iPhone Duo Unboxing”, “iPhone Duo Review: First Generation Fun!”, “The NEW Tesla Roadster: My Honest Reaction”, “Apple Homeview Impressions: Not Convinced!”, “WTF is a Googlebook?”",
-      "cached": true,
-      "ms": 0,
+      "cached": false,
+      "ms": 57,
       "ok": true,
-      "t": 1
-    },
-    {
-      "stage": "brand",
-      "tool": "Qloo /search",
-      "input": "“Huggies” among brand",
-      "output": "Huggies (AF9D280D-3546-4538-ACB3-647D9EA8BC7B), exact name match",
-      "decision": "Accepted as evidence",
-      "cached": true,
-      "ms": 0,
-      "ok": true,
-      "t": 2
-    },
-    {
-      "stage": "brand",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: Huggies · type brand",
-      "output": "5 entities: VTech Toys 0.90, The Children's Place 0.89, Pampers 0.88…",
-      "cached": true,
-      "ms": 1,
-      "ok": true,
-      "t": 3
-    },
-    {
-      "stage": "brand",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: Huggies · type artist",
-      "output": "5 entities: Jessica Simpson 0.97, Nick Lachey 0.96, Stacie Orrico 0.96…",
-      "cached": true,
-      "ms": 1,
-      "ok": true,
-      "t": 3
-    },
-    {
-      "stage": "brand",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: Huggies · type movie",
-      "output": "5 entities: Toy Story 4 0.94, Ralph Breaks the Internet 0.94, Incredibles 2 0.93…",
-      "cached": true,
-      "ms": 2,
-      "ok": true,
-      "t": 4
-    },
-    {
-      "stage": "brand",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: Huggies · type tv_show",
-      "output": "5 entities: Bluey 0.99, Peppa Pig 0.98, Daniel Tiger's Neighborhood 0.97…",
-      "cached": true,
-      "ms": 2,
-      "ok": true,
-      "t": 4
-    },
-    {
-      "stage": "brand",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: Huggies · type destination",
-      "output": "5 entities: Cocoa Beach 0.96, Tampa 0.95, Kissimmee 0.95…",
-      "cached": true,
-      "ms": 2,
-      "ok": true,
-      "t": 4
-    },
-    {
-      "stage": "brand",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: Huggies · type place",
-      "output": "5 entities: Smith Creek Village at Silver Falls State Park 0.96, Red Robin Gourmet Burgers and Brews 0.96, Cold Stone Creamery 0.96…",
-      "cached": true,
-      "ms": 2,
-      "ok": true,
-      "t": 5
+      "t": 57
     },
     {
       "stage": "youtube",
@@ -284,20 +205,119 @@
       "input": "1 channel ID",
       "output": "Marques Brownlee (@mkbhd)",
       "cached": false,
-      "ms": 56,
+      "ms": 42,
       "ok": true,
-      "t": 57
+      "t": 99
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /search",
+      "input": "“Huggies” among brand",
+      "output": "Huggies (AF9D280D-3546-4538-ACB3-647D9EA8BC7B), exact name match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "http": "200",
+      "ms": 209,
+      "ok": true,
+      "t": 209
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /entities",
+      "input": "Re-check 1 /search-confirmed entity: Huggies",
+      "output": "1 re-verified by exact name or alias · popularity Huggies 0.882",
+      "decision": "All kept",
+      "cached": false,
+      "http": "200",
+      "ms": 207,
+      "ok": true,
+      "t": 416
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Huggies · type brand · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: VTech Toys 0.90, The Children's Place 0.89, Pampers 0.88…",
+      "cached": false,
+      "http": "200",
+      "ms": 354,
+      "ok": true,
+      "t": 770
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Huggies · type destination · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Cocoa Beach 0.96, Tampa 0.95, Kissimmee 0.95…",
+      "cached": false,
+      "http": "200",
+      "ms": 755,
+      "ok": true,
+      "t": 1172
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Huggies · type tv_show · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Bluey 0.99, Peppa Pig 0.98, Blue's Clues 0.97…",
+      "cached": false,
+      "http": "200",
+      "ms": 791,
+      "ok": true,
+      "t": 1207
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Huggies · type movie · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Toy Story 4 0.94, Ralph Breaks the Internet 0.94, Incredibles 2 0.93…",
+      "cached": false,
+      "http": "200",
+      "ms": 1581,
+      "ok": true,
+      "t": 1997
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Huggies · type place · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Red Robin Gourmet Burgers and Brews 0.96, Cold Stone Creamery 0.96, Starbucks 0.96…",
+      "cached": false,
+      "http": "200",
+      "ms": 1659,
+      "ok": true,
+      "t": 2076
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Huggies · type artist · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Jessica Simpson 0.97, Nick Lachey 0.96, Stacie Orrico 0.96…",
+      "cached": false,
+      "http": "200",
+      "ms": 2185,
+      "ok": true,
+      "t": 2601
     },
     {
       "stage": "creator",
       "tool": "Gemini (gemini-3.5-flash)",
+      "input": "Titles, tags and descriptions of 5 videos",
+      "output": "Failed: Gemini’s request quota is used up for now",
+      "decision": "Ask Groq once, with the same prompt and schema",
+      "ok": false,
+      "t": 2936
+    },
+    {
+      "stage": "creator",
+      "tool": "Groq (openai/gpt-oss-120b)",
       "input": "Titles, tags and descriptions of 5 videos: list names explicitly mentioned",
-      "output": "Proposed 12: iPhone Duo (product), Ridge (brand), dbrand (brand), Apple (brand), Tesla Roadster (product), Tesla (brand), Hagerty (brand), Apple Homeview (product), Googlebook (product), Google (brand), Asus (brand), Dell (brand) (cached answer from 2026-10-25T13:48:57.877Z)",
-      "decision": "12 names go to Qloo as search terms, not as evidence",
-      "cached": true,
-      "ms": 0,
+      "output": "Proposed 14: iPhone Duo (product), Ridge (brand), dbrand (brand), MKBHD (person), Apple (brand), Tesla Roadster (product), Tesla (brand), Hagerty (brand), Auto Focus (brand), Googlebook (product), Asus (brand), Dell (brand), XPS (product), Apple Homeview (product)",
+      "decision": "Dropped MKBHD (the channel itself or YouTube); 13 names go to Qloo as search terms",
+      "cached": false,
+      "ms": 2837,
       "ok": true,
-      "t": 57
+      "t": 2936
     },
     {
       "stage": "creator",
@@ -305,10 +325,11 @@
       "input": "“iPhone Duo” among brand",
       "output": "5 results, none named “iPhone Duo”: Strava, Duo Security, Duolingo",
       "decision": "Rejected: no exact name or alias match, not used",
-      "cached": true,
-      "ms": 5,
+      "cached": false,
+      "http": "200",
+      "ms": 216,
       "ok": true,
-      "t": 62
+      "t": 3152
     },
     {
       "stage": "creator",
@@ -316,10 +337,11 @@
       "input": "“Ridge” among brand",
       "output": "4 results, none named “Ridge”: At Home, The Ridge, Juniper Ridge",
       "decision": "Rejected: no exact name or alias match, not used",
-      "cached": true,
-      "ms": 5,
+      "cached": false,
+      "http": "200",
+      "ms": 348,
       "ok": true,
-      "t": 62
+      "t": 3284
     },
     {
       "stage": "creator",
@@ -327,10 +349,11 @@
       "input": "“dbrand” among brand",
       "output": "Dbrand (3180A68A-2853-4675-886E-CB05CDF3F63A), exact name match",
       "decision": "Accepted as evidence",
-      "cached": true,
-      "ms": 5,
+      "cached": false,
+      "http": "200",
+      "ms": 463,
       "ok": true,
-      "t": 62
+      "t": 3399
     },
     {
       "stage": "creator",
@@ -338,10 +361,11 @@
       "input": "“Apple” among brand",
       "output": "Apple Inc (D5B78065-6DBB-4DDB-80DF-6495B9B1006B), exact Qloo alias match",
       "decision": "Accepted as evidence",
-      "cached": true,
-      "ms": 2,
+      "cached": false,
+      "http": "200",
+      "ms": 596,
       "ok": true,
-      "t": 63
+      "t": 3532
     },
     {
       "stage": "creator",
@@ -349,10 +373,11 @@
       "input": "“Tesla Roadster” among brand",
       "output": "2 results, none named “Tesla Roadster”: Tesla, The Roadster Life",
       "decision": "Rejected: no exact name or alias match, not used",
-      "cached": true,
-      "ms": 2,
+      "cached": false,
+      "http": "200",
+      "ms": 715,
       "ok": true,
-      "t": 63
+      "t": 3651
     },
     {
       "stage": "creator",
@@ -360,10 +385,11 @@
       "input": "“Tesla” among brand",
       "output": "Tesla (29B49E3F-A0EC-42C6-A453-38B1C20D8374), exact name match",
       "decision": "Accepted as evidence",
-      "cached": true,
-      "ms": 2,
+      "cached": false,
+      "http": "200",
+      "ms": 840,
       "ok": true,
-      "t": 63
+      "t": 3776
     },
     {
       "stage": "creator",
@@ -371,21 +397,23 @@
       "input": "“Hagerty” among brand",
       "output": "Hagerty (EEC15C3C-DA67-4811-B25C-DECB5BA51E1F), exact name match",
       "decision": "Accepted as evidence",
-      "cached": true,
-      "ms": 2,
+      "cached": false,
+      "http": "200",
+      "ms": 966,
       "ok": true,
-      "t": 63
+      "t": 3902
     },
     {
       "stage": "creator",
       "tool": "Qloo /search",
-      "input": "“Apple Homeview” among brand",
-      "output": "5 results, none named “Apple Homeview”: Apple Inc, Apple Music, Apple TV+",
+      "input": "“Auto Focus” among brand",
+      "output": "5 results, none named “Auto Focus”: Grand Theft Auto V, Nascar, The High Note",
       "decision": "Rejected: no exact name or alias match, not used",
-      "cached": true,
-      "ms": 3,
+      "cached": false,
+      "http": "200",
+      "ms": 1097,
       "ok": true,
-      "t": 64
+      "t": 4033
     },
     {
       "stage": "creator",
@@ -393,21 +421,11 @@
       "input": "“Googlebook” among brand",
       "output": "No results",
       "decision": "Rejected: no exact name or alias match, not used",
-      "cached": true,
-      "ms": 3,
+      "cached": false,
+      "http": "200",
+      "ms": 1203,
       "ok": true,
-      "t": 64
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Google” among brand",
-      "output": "Google (EF6C6B18-ABB3-4A9C-AF86-CF24976407A8), exact name match",
-      "decision": "Accepted as evidence",
-      "cached": true,
-      "ms": 3,
-      "ok": true,
-      "t": 64
+      "t": 4139
     },
     {
       "stage": "creator",
@@ -415,10 +433,11 @@
       "input": "“Asus” among brand",
       "output": "Asus (81C0AAC3-4484-4089-81C0-3A69EE301C15), exact name match",
       "decision": "Accepted as evidence",
-      "cached": true,
-      "ms": 2,
+      "cached": false,
+      "http": "200",
+      "ms": 1349,
       "ok": true,
-      "t": 64
+      "t": 4285
     },
     {
       "stage": "creator",
@@ -426,167 +445,356 @@
       "input": "“Dell” among brand",
       "output": "Dell Inc (0E550F19-C48D-431A-BF3E-0B4B6D9E8A17), exact Qloo alias match",
       "decision": "Accepted as evidence",
-      "cached": true,
-      "ms": 4,
+      "cached": false,
+      "http": "200",
+      "ms": 1474,
       "ok": true,
-      "t": 66
+      "t": 4410
     },
     {
       "stage": "creator",
-      "tool": "Gemini retry decision (gemini-3.5-flash)",
-      "input": "4 names with no exact Qloo match, each with Qloo’s top results: is any result the same thing under another name?",
-      "output": "Failed: Gemini’s request quota is used up for now",
-      "decision": "Keep the first-pass result",
-      "ms": 1405,
-      "ok": false,
-      "t": 1471
+      "tool": "Qloo /search",
+      "input": "“XPS” among brand",
+      "output": "No results",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "http": "200",
+      "ms": 1596,
+      "ok": true,
+      "t": 4532
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Apple Homeview” among brand",
+      "output": "5 results, none named “Apple Homeview”: Apple Inc, Apple Music, Apple TV+",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "http": "200",
+      "ms": 1724,
+      "ok": true,
+      "t": 4660
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“iPhone Duo” among brand (candidates for the retry decision)",
+      "output": "5 results: Strava, Duo Security, Duolingo",
+      "cached": false,
+      "http": "200",
+      "ms": 211,
+      "ok": true,
+      "t": 4871
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Ridge” among brand (candidates for the retry decision)",
+      "output": "4 results: At Home, The Ridge, Juniper Ridge",
+      "cached": false,
+      "http": "200",
+      "ms": 222,
+      "ok": true,
+      "t": 5093
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Tesla Roadster” among brand (candidates for the retry decision)",
+      "output": "2 results: Tesla, The Roadster Life",
+      "cached": false,
+      "http": "200",
+      "ms": 209,
+      "ok": true,
+      "t": 5302
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Auto Focus” among brand (candidates for the retry decision)",
+      "output": "5 results: Grand Theft Auto V, Nascar, The High Note",
+      "cached": false,
+      "http": "200",
+      "ms": 219,
+      "ok": true,
+      "t": 5521
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Googlebook” among brand (candidates for the retry decision)",
+      "output": "No results",
+      "cached": false,
+      "http": "200",
+      "ms": 203,
+      "ok": true,
+      "t": 5724
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“XPS” among brand (candidates for the retry decision)",
+      "output": "No results",
+      "cached": false,
+      "http": "200",
+      "ms": 208,
+      "ok": true,
+      "t": 5932
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Apple Homeview” among brand (candidates for the retry decision)",
+      "output": "5 results: Apple Inc, Apple Music, Apple TV+",
+      "cached": false,
+      "http": "200",
+      "ms": 213,
+      "ok": true,
+      "t": 6145
+    },
+    {
+      "stage": "creator",
+      "tool": "Groq retry decision (openai/gpt-oss-120b)",
+      "input": "5 names with no exact Qloo match, each with Qloo’s top results: is any result the same thing under another name?",
+      "output": "“iPhone Duo” → none (The name does not correspond exactly to any of the listed candidate brands.) · “Ridge” → “The Ridge” (It matches the brand \"The Ridge\", which is an exact name match.) · “Tesla Roadster” → none (A product model is not the same as its maker brand \"Tesla\".) · “Auto Focus” → none (No candidate brand is an exact abbreviation, alias, alternate spelling, or translation of this term.) · “Apple Homeview” → none (None of the Apple-related brands listed correspond exactly to \"Apple Homeview\".)",
+      "decision": "Re-query Qloo for “The Ridge”; it counts only if Qloo returns that same entity by exact name or alias",
+      "cached": false,
+      "ms": 3935,
+      "ok": true,
+      "t": 10080
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“The Ridge” among brand",
+      "output": "The Ridge (A926389A-C444-4052-A845-D592876F9CB7), exact name match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "http": "200",
+      "ms": 210,
+      "ok": true,
+      "t": 10290
+    },
+    {
+      "stage": "creator",
+      "tool": "Rule",
+      "input": "Verify the Gemini retry for “Ridge”",
+      "output": "Qloo confirmed The Ridge (A926389A-C444-4052-A845-D592876F9CB7)",
+      "decision": "Accepted as evidence",
+      "ok": true,
+      "t": 10290
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Marques Brownlee” among person (the creator’s own entity)",
+      "output": "5 results: Marques Brownlee, Lukas Marques, Bruno Gagliasso",
+      "cached": false,
+      "http": "200",
+      "ms": 222,
+      "ok": true,
+      "t": 10512
+    },
+    {
+      "stage": "creator",
+      "tool": "Rule",
+      "input": "The creator in Qloo: a person named like the channel, tagged as a creator",
+      "output": "“Marques Brownlee”: Marques Brownlee (creator)",
+      "decision": "Use Marques Brownlee (0E6F37E3-84C4-406B-BE34-D5C7CC7966A8) for audience overlap and audience taste",
+      "ms": 222,
+      "ok": true,
+      "t": 10512
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /entities",
+      "input": "Re-check 8 /search-confirmed entities: The Ridge, Dbrand, Apple Inc, Tesla, Hagerty, Asus, Dell Inc, Marques Brownlee",
+      "output": "7 re-verified by exact name or alias · popularity Dbrand 0.988, Apple Inc 0.999, Tesla 0.999, Hagerty 0.870, Asus 0.998, Dell Inc 0.990, Marques Brownlee 0.994",
+      "decision": "Drop The Ridge (“Ridge → The Ridge”): Qloo’s record doesn’t match the keyword by name or alias",
+      "cached": false,
+      "http": "200",
+      "ms": 219,
+      "ok": true,
+      "t": 10731
     },
     {
       "stage": "creator",
       "tool": "Rule",
       "input": "Evidence threshold: at least 3 Qloo-confirmed entities from the videos",
-      "output": "7 confirmed: Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+      "output": "6 confirmed: Dbrand, Apple Inc, Tesla, Hagerty, Asus, Dell Inc",
       "decision": "Continue",
       "ok": true,
-      "t": 1472
+      "t": 10731
     },
     {
       "stage": "expand",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: 7 entities (Dbrand, Apple Inc, Tesla…) · type brand",
-      "output": "5 entities: Unbox Therapy 0.97, Sony 0.96, OnePlus 0.95…",
-      "cached": true,
-      "ms": 0,
+      "input": "Signal: 6 entities (Dbrand, Apple Inc, Tesla…) · type brand · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Unbox Therapy 0.97, Sony 0.95, OnePlus 0.95…",
+      "cached": false,
+      "http": "200",
+      "ms": 363,
       "ok": true,
-      "t": 1472
+      "t": 11094
     },
     {
       "stage": "expand",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: 7 entities (Dbrand, Apple Inc, Tesla…) · type artist",
-      "output": "5 entities: Vicetone 0.92, ILLENIUM 0.92, TheFatRat 0.92…",
-      "cached": true,
-      "ms": 0,
+      "input": "Signal: 6 entities (Dbrand, Apple Inc, Tesla…) · type tv_show · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Halt and Catch Fire 0.96, Humans 0.95, You, Me and the Apocalypse 0.94…",
+      "cached": false,
+      "http": "200",
+      "ms": 897,
       "ok": true,
-      "t": 1472
+      "t": 11628
     },
     {
       "stage": "expand",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: 7 entities (Dbrand, Apple Inc, Tesla…) · type movie",
+      "input": "Signal: 6 entities (Dbrand, Apple Inc, Tesla…) · type destination · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Mysore 0.94, Hyderabad 0.93, Kochi 0.93…",
+      "cached": false,
+      "http": "200",
+      "ms": 1140,
+      "ok": true,
+      "t": 11871
+    },
+    {
+      "stage": "expand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: 6 entities (Dbrand, Apple Inc, Tesla…) · type movie · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
       "output": "5 entities: Venom 0.94, Avengers: Endgame 0.94, Captain Marvel 0.94…",
-      "cached": true,
-      "ms": 1,
+      "cached": false,
+      "http": "200",
+      "ms": 2316,
       "ok": true,
-      "t": 1473
+      "t": 13047
     },
     {
       "stage": "expand",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: 7 entities (Dbrand, Apple Inc, Tesla…) · type tv_show",
-      "output": "5 entities: Halt and Catch Fire 0.96, Humans 0.95, Silicon Valley 0.95…",
-      "cached": true,
-      "ms": 1,
+      "input": "Signal: 6 entities (Dbrand, Apple Inc, Tesla…) · type place · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: One World Trade Center 0.94, Hotel De La Source 0.94, Hotel Ares Eiffel 0.94…",
+      "cached": false,
+      "http": "200",
+      "ms": 2484,
       "ok": true,
-      "t": 1473
+      "t": 13215
     },
     {
       "stage": "expand",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: 7 entities (Dbrand, Apple Inc, Tesla…) · type destination",
-      "output": "5 entities: Hyderabad 0.95, Mysore 0.94, Darjeeling 0.94…",
-      "cached": true,
-      "ms": 1,
+      "input": "Signal: 6 entities (Dbrand, Apple Inc, Tesla…) · type artist · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: ILLENIUM 0.93, Vicetone 0.93, TheFatRat 0.93…",
+      "cached": false,
+      "http": "200",
+      "ms": 2695,
       "ok": true,
-      "t": 1473
-    },
-    {
-      "stage": "expand",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: 7 entities (Dbrand, Apple Inc, Tesla…) · type place",
-      "output": "5 entities: Hotel Ares Eiffel 0.94, La Bourdonnais 0.94, One World Trade Center 0.94…",
-      "cached": true,
-      "ms": 1,
-      "ok": true,
-      "t": 1473
+      "t": 13426
     },
     {
       "stage": "score",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: Huggies · affinity of 12 creator brand entities (filter.results.entities)",
-      "output": "12/12 scored: Google 0.67, Dell Inc 0.65, Apple Inc 0.65, Nvidia 0.64…",
-      "cached": true,
-      "ms": 0,
+      "input": "Signal: Huggies · affinity of 11 creator brand entities (filter.results.entities)",
+      "output": "11/11 scored: Dell Inc 0.65, Apple Inc 0.65, Advanced Micro Devices 0.63, Sony 0.62…",
+      "cached": false,
+      "http": "200",
+      "ms": 237,
       "ok": true,
-      "t": 1473
+      "t": 13663
     },
     {
       "stage": "score",
       "tool": "Qloo /v2/insights",
       "input": "Signal: Huggies · affinity of 5 creator artist entities (filter.results.entities)",
       "output": "5/5 scored: Alan Walker 0.76, ILLENIUM 0.72, Vicetone 0.72, TheFatRat 0.70…",
-      "cached": true,
-      "ms": 1,
+      "cached": false,
+      "http": "200",
+      "ms": 358,
       "ok": true,
-      "t": 1474
+      "t": 13784
     },
     {
       "stage": "score",
       "tool": "Qloo /v2/insights",
       "input": "Signal: Huggies · affinity of 5 creator movie entities (filter.results.entities)",
       "output": "5/5 scored: Deadpool 2 0.88, Captain Marvel 0.87, Avengers: Endgame 0.86, Venom 0.86…",
-      "cached": true,
-      "ms": 1,
+      "cached": false,
+      "http": "200",
+      "ms": 511,
       "ok": true,
-      "t": 1474
+      "t": 13937
     },
     {
       "stage": "score",
       "tool": "Qloo /v2/insights",
       "input": "Signal: Huggies · affinity of 5 creator tv_show entities (filter.results.entities)",
       "output": "5/5 scored: You, Me and the Apocalypse 0.89, Humans 0.87, Dark Matter 0.86, Halt and Catch Fire 0.85…",
-      "cached": true,
-      "ms": 1,
+      "cached": false,
+      "http": "200",
+      "ms": 631,
       "ok": true,
-      "t": 1474
+      "t": 14057
     },
     {
       "stage": "score",
       "tool": "Qloo /v2/insights",
       "input": "Signal: Huggies · affinity of 5 creator destination entities (filter.results.entities)",
-      "output": "5/5 scored: Mysore 0.62, Kochi 0.60, Hyderabad 0.57, Darjeeling 0.56…",
-      "cached": true,
-      "ms": 1,
+      "output": "5/5 scored: Chennai 0.63, Mysore 0.62, Kochi 0.60, Hyderabad 0.57…",
+      "cached": false,
+      "http": "200",
+      "ms": 722,
       "ok": true,
-      "t": 1474
+      "t": 14148
     },
     {
       "stage": "score",
       "tool": "Qloo /v2/insights",
       "input": "Signal: Huggies · affinity of 5 creator place entities (filter.results.entities)",
       "output": "5/5 scored: One World Trade Center 0.88, Hotel Ares Eiffel 0.81, La Bourdonnais 0.81, Hotel De La Source 0.78…",
-      "cached": true,
-      "ms": 1,
+      "cached": false,
+      "http": "200",
+      "ms": 888,
       "ok": true,
-      "t": 1474
+      "t": 14315
+    },
+    {
+      "stage": "score",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Huggies · affinity of 1 creator person entities (filter.results.entities)",
+      "output": "1/1 scored: Marques Brownlee 0.55",
+      "cached": false,
+      "http": "200",
+      "ms": 983,
+      "ok": true,
+      "t": 14410
     },
     {
       "stage": "score",
       "tool": "Rule",
-      "input": "37 scored entities (7 named in the videos at weight 1, 30 cross-domain at weight 0.5) sorted into dimensions by Qloo type and genre tags",
-      "output": "Tech & Innovation 24 (n=9) · Film, TV & Entertainment 73 (n=10) · Music 43 (n=5) · Lifestyle & Fashion 6 (n=3) · Food & Travel 39 (n=10)",
+      "input": "Evidence threshold after scoring: at least 3 named entities with a Qloo affinity",
+      "output": "6 of 6 named entities scored",
+      "decision": "Continue",
+      "ok": true,
+      "t": 14411
+    },
+    {
+      "stage": "score",
+      "tool": "Rule",
+      "input": "36 scored entities (6 named in the videos at weight 1, 30 cross-domain at weight 0.5) sorted into dimensions by Qloo type and genre tags",
+      "output": "Tech & Innovation 22 (n=8) · Film, TV & Entertainment 73 (n=10) · Music 43 (n=5) · Lifestyle & Fashion 6 (n=3) · Food & Travel 40 (n=10)",
       "decision": "Affinity rescaled from [0.5, 1] to [0, 100]; shared taste ≥ 0.85, weak link 0.7–0.85, clash < 0.7",
       "ok": true,
-      "t": 1474
+      "t": 14411
     },
     {
       "stage": "score",
       "tool": "Rule",
       "input": "Equal-weight mean of 5 dimensions with data",
-      "output": "Fit Score 37, confidence Medium (based on 7 confirmed entities across 5 dimensions; High = 10+ entities and all 5 dimensions, Medium = 5+, Low = fewer)",
+      "output": "Fit Score 37, confidence Medium (based on 6 confirmed entities across 5 dimensions; High = 10+ entities and all 5 dimensions, Medium = 5+, Low = fewer)",
       "decision": "Verdict: No fit (80+ strong, 60–79 moderate, 40–59 weak, below 40 no fit)",
       "ok": true,
-      "t": 1474
+      "t": 14411
     },
     {
       "stage": "report",
@@ -594,11 +802,24 @@
       "input": "Report template filled from the scored entities (no LLM)",
       "output": "3 recommendations, 2 risks, 0 entities shared with the brand’s Qloo proxies",
       "ok": true,
-      "t": 1474
+      "t": 14411
+    },
+    {
+      "stage": "report",
+      "tool": "Qloo /v2/analysis/compare",
+      "input": "A (brand side): Huggies · B (creator): 6 confirmed entities",
+      "output": "No shared tags",
+      "decision": "Reported as an independent cross-check; not part of the Fit Score",
+      "cached": false,
+      "http": "200",
+      "ms": 234,
+      "ok": true,
+      "t": 14645
     }
   ],
-  "liveRun": false,
+  "liveRun": true,
   "status": "completed",
+  "scoreBasis": "videos",
   "brand": {
     "name": "Huggies",
     "category": null,
@@ -631,7 +852,8 @@
           "brand:electronics:headphones",
           "brand:electronics",
           "brand:electronics:appliances"
-        ]
+        ],
+        "description": "VTech Toys is a brand specializing in educational and electronic learning toys for infants, toddlers, and children, including interactive playsets and smart devices."
       },
       {
         "id": "3A54685C-02CE-42EB-9ED0-75EC6746AC5B",
@@ -647,7 +869,8 @@
           "brand:fashion",
           "brand:fashion:footwear",
           "brand:fashion:casual"
-        ]
+        ],
+        "description": "The Children's Place is a retailer specializing in fashionable, high-quality, and affordable clothing and accessories for kids, babies, and toddlers."
       },
       {
         "id": "3B35CE7D-4EC7-4C52-805C-2B35DFAEF8B8",
@@ -660,7 +883,8 @@
         "query": "Huggies",
         "genres": [
           "brand:household"
-        ]
+        ],
+        "description": "Pampers is a trusted brand offering baby diapers and wipes designed for various developmental stages and baby care needs."
       },
       {
         "id": "56838795-F095-4788-B598-564C59E74998",
@@ -673,7 +897,8 @@
         "query": "Huggies",
         "genres": [
           "brand:household"
-        ]
+        ],
+        "description": "Elmer's Products, Inc. is a trusted brand known for its adhesives, including Elmer's Glue-All, and craft products like slime kits for kids and adults."
       },
       {
         "id": "FA12C8C2-EABA-4D65-8406-CB8A90EB63FD",
@@ -686,7 +911,8 @@
         "query": "Huggies",
         "genres": [
           "brand:fashion"
-        ]
+        ],
+        "description": "Motherhood Maternity is a brand offering versatile, comfortable maternity and nursing clothing including jeans, tops, and dresses for every stage of pregnancy."
       },
       {
         "id": "44BBAA57-9F14-4F52-A944-CB077025730C",
@@ -942,26 +1168,6 @@
         ]
       },
       {
-        "id": "5C707D14-FF9B-462D-93DF-55C4B9B25F27",
-        "name": "Daniel Tiger's Neighborhood",
-        "type": "urn:entity:tv_show",
-        "popularity": 0.45256299448174986,
-        "affinity": 0.9718546342531954,
-        "source": "qloo",
-        "via": "insights",
-        "query": "Huggies",
-        "genres": [
-          "qloo:family",
-          "media:family",
-          "media:musical",
-          "qloo:animation",
-          "media:fantasy",
-          "qloo:fantasy",
-          "media:animation",
-          "qloo:musical"
-        ]
-      },
-      {
         "id": "D6602DCA-72C3-4167-BB91-8990CD264DAD",
         "name": "Blue's Clues",
         "type": "urn:entity:tv_show",
@@ -992,19 +1198,45 @@
         ]
       },
       {
-        "id": "FCC33C01-6E24-4CA6-A942-1D5BED9BB525",
-        "name": "Charlie and Lola",
+        "id": "D806D2B3-743F-4C9D-9C09-A52B8588DE95",
+        "name": "Curious George",
         "type": "urn:entity:tv_show",
-        "popularity": 0.4702479888305299,
-        "affinity": 0.967665138310941,
+        "popularity": 0.5610664184562196,
+        "affinity": 0.9658465471759177,
         "source": "qloo",
         "via": "insights",
         "query": "Huggies",
         "genres": [
-          "media:family",
-          "qloo:animation",
           "media:animation",
+          "qloo:animation",
+          "media:adventure",
+          "media:family",
+          "qloo:adventure",
+          "qloo:comedy",
+          "media:comedy",
           "qloo:family"
+        ]
+      },
+      {
+        "id": "D2022265-AD9E-4744-AEF8-D85EE478F607",
+        "name": "The Backyardigans",
+        "type": "urn:entity:tv_show",
+        "popularity": 0.5090751944684528,
+        "affinity": 0.9656754760517855,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Huggies",
+        "genres": [
+          "qloo:family",
+          "qloo:animation",
+          "media:adventure",
+          "media:animation",
+          "media:family",
+          "qloo:comedy",
+          "media:comedy",
+          "qloo:adventure",
+          "media:music",
+          "qloo:music"
         ]
       },
       {
@@ -1078,27 +1310,6 @@
         ]
       },
       {
-        "id": "000E4C06-6002-4EC2-AC96-32EB31D2EB78",
-        "name": "Smith Creek Village at Silver Falls State Park",
-        "type": "urn:entity:place",
-        "popularity": 0.15655059004101257,
-        "affinity": 0.9605500787807251,
-        "source": "qloo",
-        "via": "insights",
-        "query": "Huggies",
-        "genres": [
-          "place:hotel",
-          "place:event_venue",
-          "place:tourist_attraction",
-          "place:restaurant",
-          "place:restaurant:breakfast",
-          "place:hotel:lodge",
-          "place",
-          "place:restaurant:coffee_shop",
-          "place:wedding_venue"
-        ]
-      },
-      {
         "id": "9983754C-63FE-437A-9881-8A24F9EF5D6F",
         "name": "Red Robin Gourmet Burgers and Brews",
         "type": "urn:entity:place",
@@ -1118,7 +1329,8 @@
           "place:restaurant:traditional_american",
           "place:restaurant:grill",
           "place"
-        ]
+        ],
+        "description": "Family-friendly chain serving gourmet burgers, bottomless fries and American comfort fare with a full bar and casual dining."
       },
       {
         "id": "B30DEB69-1976-43AD-AFFE-2A903470E06B",
@@ -1136,7 +1348,8 @@
           "place:restaurant",
           "place:restaurant:dessert",
           "place:restaurant:frozen_yogurt_shop"
-        ]
+        ],
+        "description": "Hand-mixed ice cream chain offering custom creations on a frozen granite slab, plus shakes, cakes, and pick-up or delivery."
       },
       {
         "id": "C5C565C4-270B-4D4C-8485-33353848B85F",
@@ -1157,7 +1370,8 @@
           "place:internet_cafe",
           "place",
           "place:restaurant"
-        ]
+        ],
+        "description": "Seattle-origin coffeehouse chain serving signature roasts, light bites, free Wi‑Fi, and casual dine-in, drive-through, and takeaway service."
       },
       {
         "id": "9413A7DF-4D56-4AB9-8C86-3AB0DBE7C9A6",
@@ -1173,7 +1387,30 @@
           "place:hotel:resort",
           "place",
           "place:hotel:vacation_home_rental_agency"
-        ]
+        ],
+        "description": "Relaxed oceanfront resort with spacious suites, multiple pools, and extensive recreational amenities on the Oregon Coast."
+      },
+      {
+        "id": "F1635F76-FE56-4F19-89A5-426CEC2149E3",
+        "name": "Starbucks",
+        "type": "urn:entity:place",
+        "popularity": 0.622529021013699,
+        "affinity": 0.9551045031475337,
+        "source": "qloo",
+        "via": "insights",
+        "query": "Huggies",
+        "genres": [
+          "place:restaurant",
+          "place:internet_cafe",
+          "place:restaurant:coffee_shop",
+          "place:restaurant:cafe",
+          "place:restaurant:breakfast",
+          "place",
+          "place:coffee_store",
+          "place:restaurant:espresso_bar",
+          "place:shopping"
+        ],
+        "description": "Seattle-origin coffeehouse chain offering signature roasts, light bites, and Wi-Fi in a casual café setting."
       }
     ],
     "basis": "brand",
@@ -1192,13 +1429,14 @@
         ]
       }
     ],
-    "tags": []
+    "tags": [],
+    "imageTags": []
   },
   "compatibility": {
     "fitScore": 37,
     "confidence": "Medium",
     "confidenceBasis": {
-      "entities": 7,
+      "entities": 6,
       "dimensions": 5
     },
     "verdict": "no-match",
@@ -1206,9 +1444,9 @@
       {
         "dimension": "tech",
         "label": "Tech & Innovation",
-        "score": 24,
+        "score": 22,
         "weight": 0.2,
-        "itemCount": 9,
+        "itemCount": 8,
         "intersection": [],
         "weakLink": [],
         "divergence": [
@@ -1236,16 +1474,17 @@
             "name": "OnePlus",
             "type": "urn:entity:brand",
             "popularity": 0.9972114390330729,
-            "affinity": 0.9519794856046437,
+            "affinity": 0.9485808066977193,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Asus, Apple Inc",
             "genres": [
               "brand:electronics:home_theater",
               "brand:electronics",
               "brand:electronics:headphones",
               "brand:electronics:phones_and_tablets"
             ],
+            "description": "OnePlus is a Chinese consumer electronics brand known for smartphones, IoT devices, and accessories like the OnePlus 13 series, Nord N30 5G, Pad 2, and Watch 3.",
             "side": "proxy",
             "weight": 0.5,
             "brandAffinity": 0.5552971307879748,
@@ -1271,14 +1510,36 @@
             "dimension": "tech"
           },
           {
+            "id": "B9521149-B55D-41E6-B1B6-68DC01A0FDAA",
+            "name": "Micro star International",
+            "type": "urn:entity:brand",
+            "popularity": 0.9890661287315015,
+            "affinity": 0.9426934537336621,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Asus, Dbrand, Dell Inc",
+            "genres": [
+              "brand:electronics",
+              "brand:electronics:computers_and_laptops",
+              "brand:electronics:robotics",
+              "brand:electronics:computer_components",
+              "brand:electronics:computer_accessories"
+            ],
+            "description": "MSI is a leading brand specializing in high-performance gaming laptops, motherboards, graphics cards, and AIoT business solutions.",
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.6114612327058447,
+            "dimension": "tech"
+          },
+          {
             "id": "AA620FF2-87D7-43EC-BFAE-36631D076D8D",
             "name": "Sony",
             "type": "urn:entity:brand",
             "popularity": 0.9993134545947687,
-            "affinity": 0.9560851293973752,
+            "affinity": 0.9518111901226718,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Asus, Dell Inc, Apple Inc",
             "genres": [
               "brand:electronics",
               "brand:electronics:camera_and_video",
@@ -1288,6 +1549,7 @@
               "brand:electronics:gaming",
               "brand:entertainment"
             ],
+            "description": "Sony is a multinational conglomerate known for electronics, entertainment, gaming, and imaging products and services.",
             "side": "proxy",
             "weight": 0.5,
             "brandAffinity": 0.6190865304875353,
@@ -1298,37 +1560,18 @@
             "name": "Advanced Micro Devices",
             "type": "urn:entity:brand",
             "popularity": 0.9951263752097778,
-            "affinity": 0.9387722711141656,
+            "affinity": 0.9406616826840624,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Asus, Dell Inc, Dbrand",
             "genres": [
               "brand:electronics:computer_components",
               "brand:electronics"
             ],
+            "description": "AMD is a leading technology company specializing in high-performance computing, graphics, and adaptive AI solutions for data centers, gaming, and intelligent devices.",
             "side": "proxy",
             "weight": 0.5,
             "brandAffinity": 0.6283839474630835,
-            "dimension": "tech"
-          },
-          {
-            "id": "5F55E5CB-3F3A-4B04-B794-E134A0835CD5",
-            "name": "Nvidia",
-            "type": "urn:entity:brand",
-            "popularity": 0.9937702361377159,
-            "affinity": 0.9423003652333645,
-            "source": "qloo",
-            "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
-            "genres": [
-              "brand:electronics:computers_and_laptops",
-              "brand:software",
-              "brand:electronics:gaming",
-              "brand:electronics"
-            ],
-            "side": "proxy",
-            "weight": 0.5,
-            "brandAffinity": 0.6369748292935482,
             "dimension": "tech"
           },
           {
@@ -1372,27 +1615,6 @@
             "weight": 1,
             "brandAffinity": 0.6534707282377167,
             "dimension": "tech"
-          },
-          {
-            "id": "EF6C6B18-ABB3-4A9C-AF86-CF24976407A8",
-            "name": "Google",
-            "type": "urn:entity:brand",
-            "popularity": 0.999737248054788,
-            "affinity": null,
-            "source": "qloo",
-            "via": "search",
-            "query": "Google",
-            "genres": [
-              "brand:electronics:phones_and_tablets",
-              "brand:electronics:computer_accessories",
-              "brand:electronics",
-              "brand:software",
-              "brand:website"
-            ],
-            "side": "direct",
-            "weight": 1,
-            "brandAffinity": 0.6735259660487478,
-            "dimension": "tech"
           }
         ]
       },
@@ -1408,10 +1630,10 @@
             "name": "You, Me and the Apocalypse",
             "type": "urn:entity:tv_show",
             "popularity": 0.8010770560468053,
-            "affinity": 0.9385537725349311,
+            "affinity": 0.9374800050661938,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Asus, Dell Inc",
             "genres": [
               "qloo:comedy",
               "media:sci_fi",
@@ -1432,10 +1654,10 @@
             "name": "Deadpool 2",
             "type": "urn:entity:movie",
             "popularity": 0.9971273677617227,
-            "affinity": 0.9342261467653185,
+            "affinity": 0.9366848876315617,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Asus, Apple Inc",
             "genres": [
               "media:sci_fi",
               "media:comedy",
@@ -1457,10 +1679,10 @@
             "name": "Captain Marvel",
             "type": "urn:entity:movie",
             "popularity": 0.9968249854208514,
-            "affinity": 0.9354800620791928,
+            "affinity": 0.9409389000606266,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Tesla, Dbrand, Asus",
             "genres": [
               "qloo:science_fiction",
               "media:adventure",
@@ -1479,10 +1701,10 @@
             "name": "Humans",
             "type": "urn:entity:tv_show",
             "popularity": 0.9610398244797553,
-            "affinity": 0.9480278101549496,
+            "affinity": 0.9495156146316199,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Tesla, Asus",
             "genres": [
               "qloo:science_fiction",
               "media:drama",
@@ -1499,10 +1721,10 @@
             "name": "Dark Matter",
             "type": "urn:entity:tv_show",
             "popularity": 0.9607073997739513,
-            "affinity": 0.9348259980411083,
+            "affinity": 0.937388074772352,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Tesla, Apple Inc",
             "genres": [
               "qloo:science_fiction",
               "media:adventure",
@@ -1525,10 +1747,10 @@
             "name": "Avengers: Endgame",
             "type": "urn:entity:movie",
             "popularity": 0.9994060346875743,
-            "affinity": 0.9363610882229791,
+            "affinity": 0.9423181712355931,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Tesla, Dbrand, Apple Inc",
             "genres": [
               "media:sci_fi",
               "qloo:adventure",
@@ -1547,10 +1769,10 @@
             "name": "Venom",
             "type": "urn:entity:movie",
             "popularity": 0.9956910516425841,
-            "affinity": 0.9381956861610075,
+            "affinity": 0.9436118670181336,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Tesla, Asus",
             "genres": [
               "qloo:adventure",
               "qloo:superhero",
@@ -1570,10 +1792,10 @@
             "name": "Avengers: Infinity War",
             "type": "urn:entity:movie",
             "popularity": 0.9993412384716732,
-            "affinity": 0.9338132328253721,
+            "affinity": 0.9373739123042444,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Apple Inc, Asus",
             "genres": [
               "media:sci_fi",
               "qloo:adventure",
@@ -1592,10 +1814,10 @@
             "name": "Halt and Catch Fire",
             "type": "urn:entity:tv_show",
             "popularity": 0.9625024931852936,
-            "affinity": 0.9591364627563767,
+            "affinity": 0.9599210332113981,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Apple Inc, Asus",
             "genres": [
               "qloo:drama",
               "media:drama"
@@ -1612,10 +1834,10 @@
             "name": "Silicon Valley",
             "type": "urn:entity:tv_show",
             "popularity": 0.9921547769430225,
-            "affinity": 0.9452955003126198,
+            "affinity": 0.9369468500206432,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dell Inc, Asus, Dbrand",
             "genres": [
               "qloo:satire",
               "media:comedy",
@@ -1642,10 +1864,10 @@
             "name": "Alan Walker",
             "type": "urn:entity:artist",
             "popularity": 0.9927353872166408,
-            "affinity": 0.9137494114478211,
+            "affinity": 0.9247028521234828,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Apple Inc, Asus, Dbrand",
             "genres": [
               "music:dance",
               "qloo:progressive_house",
@@ -1670,10 +1892,10 @@
             "name": "ILLENIUM",
             "type": "urn:entity:artist",
             "popularity": 0.9779341892272706,
-            "affinity": 0.9163644120126244,
+            "affinity": 0.9349357920359815,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Apple Inc, Asus",
             "genres": [
               "music:electronic",
               "music:melodic_dubstep",
@@ -1696,10 +1918,10 @@
             "name": "Vicetone",
             "type": "urn:entity:artist",
             "popularity": 0.9794709972540616,
-            "affinity": 0.9168336510004497,
+            "affinity": 0.932699148993896,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Asus, Apple Inc",
             "genres": [
               "music:electronic",
               "qloo:electro_house",
@@ -1722,10 +1944,10 @@
             "name": "Aero Chord",
             "type": "urn:entity:artist",
             "popularity": 0.9666719095085491,
-            "affinity": 0.9141603115083077,
+            "affinity": 0.9257240437266425,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Asus, Tesla",
             "genres": [
               "music:electronic",
               "qloo:electronic_dance_music",
@@ -1745,10 +1967,10 @@
             "name": "TheFatRat",
             "type": "urn:entity:artist",
             "popularity": 0.9757747937269396,
-            "affinity": 0.9157341038787778,
+            "affinity": 0.9288475210085266,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Asus, Dbrand, Tesla",
             "genres": [
               "qloo:electronic",
               "music:germany",
@@ -1810,13 +2032,14 @@
             "name": "Unbox Therapy",
             "type": "urn:entity:brand",
             "popularity": 0.9955671204081978,
-            "affinity": 0.9705960215304648,
+            "affinity": 0.9716060883604921,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Asus, Tesla",
             "genres": [
               "brand:website"
             ],
+            "description": "Unbox Therapy is a popular YouTube channel and brand focused on unboxing and reviewing technology products, created by Lewis Hilsenteger.",
             "side": "proxy",
             "weight": 0.5,
             "brandAffinity": 0.5532037989940615,
@@ -1827,7 +2050,7 @@
       {
         "dimension": "food_travel",
         "label": "Food & Travel",
-        "score": 39,
+        "score": 40,
         "weight": 0.2,
         "itemCount": 10,
         "intersection": [
@@ -1836,15 +2059,16 @@
             "name": "One World Trade Center",
             "type": "urn:entity:place",
             "popularity": 0.99999275658677,
-            "affinity": 0.9378878880747225,
+            "affinity": 0.9388661549525666,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Tesla, Apple Inc",
             "genres": [
               "place",
               "place:historical_landmark",
               "place:tourist_attraction"
             ],
+            "description": "Tallest skyscraper in the Western Hemisphere with a 360-degree observation deck overlooking NYC, adjacent to the 9/11 Memorial and a major transit hub.",
             "side": "proxy",
             "weight": 0.5,
             "brandAffinity": 0.8790659134035478,
@@ -1857,14 +2081,15 @@
             "name": "Hotel Ares Eiffel",
             "type": "urn:entity:place",
             "popularity": 0.8650864139198343,
-            "affinity": 0.939917925450532,
+            "affinity": 0.9350182859609708,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Apple Inc, Tesla, Asus",
             "genres": [
               "place",
               "place:hotel"
             ],
+            "description": "Elegant 4-star boutique hotel near Eiffel Tower with luxurious rooms, designer furnishings, and excellent location close to metro and dining.",
             "side": "proxy",
             "weight": 0.5,
             "brandAffinity": 0.8072450612736916,
@@ -1875,14 +2100,15 @@
             "name": "La Bourdonnais",
             "type": "urn:entity:place",
             "popularity": 0.9182034775069732,
-            "affinity": 0.9381435915451796,
+            "affinity": 0.9319986456928768,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Apple Inc, Asus, Tesla",
             "genres": [
               "place:hotel",
               "place"
             ],
+            "description": "Upscale boutique hotel near the Eiffel Tower with warmly decorated rooms, a bar, tea room, and meeting space.",
             "side": "proxy",
             "weight": 0.5,
             "brandAffinity": 0.8064182531143376,
@@ -1893,15 +2119,16 @@
             "name": "Hotel De La Source",
             "type": "urn:entity:place",
             "popularity": 0.8516914855720494,
-            "affinity": 0.9372569639353145,
+            "affinity": 0.9379185661137736,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Asus, Hagerty, Tesla",
             "genres": [
               "place",
               "place:hotel",
               "place:restaurant"
             ],
+            "description": "Four-star superior hotel overlooking the Spa-Francorchamps racetrack, offering 90 modern rooms, a restaurant, tapas bar and wellness facilities.",
             "side": "proxy",
             "weight": 0.5,
             "brandAffinity": 0.7816576269527905,
@@ -1912,10 +2139,10 @@
             "name": "Blue Caves Villas",
             "type": "urn:entity:place",
             "popularity": 0.7337003700826975,
-            "affinity": 0.9376587997294111,
+            "affinity": 0.9313176184310171,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Apple Inc, Asus, Tesla",
             "genres": [
               "place",
               "place:hotel",
@@ -1923,6 +2150,7 @@
               "place:hotel:villa",
               "place:hotel:holiday_home"
             ],
+            "description": "Luxury cliffside villas overlooking the Ionian Sea with private pools, beach access, full kitchens, helipad, and personalized services for families and groups.",
             "side": "proxy",
             "weight": 0.5,
             "brandAffinity": 0.775441265805184,
@@ -1931,38 +2159,24 @@
         ],
         "divergence": [
           {
-            "id": "C398801B-D86C-446C-95E5-E4E575939D64",
-            "name": "Panaji",
+            "id": "45FE4072-A5D6-4A1E-9363-FCC6B944C0A1",
+            "name": "Munnar",
             "type": "urn:entity:destination",
-            "popularity": 0.009066183136899365,
-            "affinity": 0.934407947772,
+            "popularity": 0.6523118766999093,
+            "affinity": 0.9218054847015789,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Asus, Dbrand, Tesla",
             "genres": [
-              "destination:beaches"
+              "destination:scenic_picturesque",
+              "destination:off_beaten_path",
+              "destination:outdoor_activities",
+              "destination:peace_tranquility",
+              "destination:nature"
             ],
             "side": "proxy",
             "weight": 0.5,
-            "brandAffinity": 0.5437934257686445,
-            "dimension": "food_travel"
-          },
-          {
-            "id": "361A6C64-0F43-4B6C-9209-33978B1ECD14",
-            "name": "Darjeeling",
-            "type": "urn:entity:destination",
-            "popularity": 0.32774252039891205,
-            "affinity": 0.9377324777962313,
-            "source": "qloo",
-            "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
-            "genres": [
-              "destination:nature",
-              "destination:scenic_picturesque"
-            ],
-            "side": "proxy",
-            "weight": 0.5,
-            "brandAffinity": 0.5600408556604861,
+            "brandAffinity": 0.5194612013120751,
             "dimension": "food_travel"
           },
           {
@@ -1970,10 +2184,10 @@
             "name": "Hyderabad",
             "type": "urn:entity:destination",
             "popularity": 0.727561196736174,
-            "affinity": 0.9466000235469831,
+            "affinity": 0.9321267910078442,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Tesla, Dbrand, Asus",
             "genres": [
               "destination:art_culture"
             ],
@@ -1987,10 +2201,10 @@
             "name": "Kochi",
             "type": "urn:entity:destination",
             "popularity": 0.7901178603807797,
-            "affinity": 0.9317718083202852,
+            "affinity": 0.9268612282060774,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Asus, Dbrand, Tesla",
             "genres": [
               "destination:outdoor_activities"
             ],
@@ -2004,10 +2218,10 @@
             "name": "Mysore",
             "type": "urn:entity:destination",
             "popularity": 0.6600181323662738,
-            "affinity": 0.9438621150713745,
+            "affinity": 0.9354241525200049,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc",
+            "query": "Dbrand, Asus, Tesla",
             "genres": [
               "destination:art_culture",
               "destination:history"
@@ -2016,6 +2230,24 @@
             "weight": 0.5,
             "brandAffinity": 0.616951553829629,
             "dimension": "food_travel"
+          },
+          {
+            "id": "82E83615-FD01-40B1-8386-69D5AC971561",
+            "name": "Chennai",
+            "type": "urn:entity:destination",
+            "popularity": 0.6033544877606528,
+            "affinity": 0.9182071305381027,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Dbrand, Asus, Tesla",
+            "genres": [
+              "destination:outdoor_activities",
+              "destination:beaches"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.6310203465743861,
+            "dimension": "food_travel"
           }
         ]
       }
@@ -2023,7 +2255,7 @@
   },
   "report": {
     "summary": "Huggies × Marques Brownlee: Fit Score 37 (No fit), Medium confidence. Strongest dimension: Film, TV & Entertainment (73); weakest: Lifestyle & Fashion (6).",
-    "cultureClash": "Tech & Innovation: Tesla (affinity 0.53), OnePlus (affinity 0.56), Asus (affinity 0.61) relate weakly to Huggies's audience (below 0.7).\n\nMusic: Aero Chord (affinity 0.69), TheFatRat (affinity 0.70) relate weakly to Huggies's audience (below 0.7).\n\nLifestyle & Fashion: Hagerty (affinity 0.41), Dbrand (affinity 0.54), Unbox Therapy (affinity 0.55) relate weakly to Huggies's audience (below 0.7).\n\nFood & Travel: Panaji (affinity 0.54), Darjeeling (affinity 0.56), Hyderabad (affinity 0.57) relate weakly to Huggies's audience (below 0.7).",
+    "cultureClash": "Tech & Innovation: Tesla (affinity 0.53), OnePlus (affinity 0.56), Asus (affinity 0.61) relate weakly to Huggies's audience (below 0.7).\n\nMusic: Aero Chord (affinity 0.69), TheFatRat (affinity 0.70) relate weakly to Huggies's audience (below 0.7).\n\nLifestyle & Fashion: Hagerty (affinity 0.41), Dbrand (affinity 0.54), Unbox Therapy (affinity 0.55) relate weakly to Huggies's audience (below 0.7).\n\nFood & Travel: Munnar (affinity 0.52), Hyderabad (affinity 0.57), Kochi (affinity 0.60) relate weakly to Huggies's audience (below 0.7).",
     "recommendations": [
       "Build content around “You, Me and the Apocalypse” (Film, TV & Entertainment, affinity 0.89); Huggies's audience relates to it strongly.",
       "Build content around “Deadpool 2” (Film, TV & Entertainment, affinity 0.88); Huggies's audience relates to it strongly.",
@@ -2031,8 +2263,65 @@
     ],
     "risks": [
       "Avoid “Hagerty” as a collaboration theme (Lifestyle & Fashion, affinity 0.41).",
-      "Avoid “Tesla” as a collaboration theme (Tech & Innovation, affinity 0.53)."
+      "Avoid “Munnar” as a collaboration theme (Food & Travel, affinity 0.52)."
     ]
   },
-  "warnings": []
+  "warnings": [],
+  "crossCheck": {
+    "brandEntities": [
+      "Huggies"
+    ],
+    "creatorEntities": [
+      "Dbrand",
+      "Apple Inc",
+      "Tesla",
+      "Hagerty",
+      "Asus",
+      "Dell Inc"
+    ],
+    "shared": [],
+    "brandTags": [
+      {
+        "id": "urn:tag:genre:brand:health_and_beauty",
+        "name": "Health & Beauty",
+        "count": 1
+      }
+    ],
+    "creatorTags": [
+      {
+        "id": "urn:tag:genre:brand:electronics",
+        "name": "Electronics",
+        "count": 3
+      },
+      {
+        "id": "urn:tag:genre:brand:software",
+        "name": "Software",
+        "count": 2
+      },
+      {
+        "id": "urn:tag:genre:brand:electronics:computers_and_laptops",
+        "name": "Computers & Laptops",
+        "count": 2
+      },
+      {
+        "id": "urn:tag:genre:brand:electronics:phones_and_tablets",
+        "name": "Phones & Tablets",
+        "count": 2
+      },
+      {
+        "id": "urn:tag:genre:brand:electronics:headphones",
+        "name": "Headphones",
+        "count": 1
+      },
+      {
+        "id": "urn:tag:genre:brand:electronics:computer_components",
+        "name": "Computer Components",
+        "count": 1
+      }
+    ]
+  },
+  "expansion": {
+    "popularityMin": 0.5,
+    "excludesBrand": true
+  }
 }

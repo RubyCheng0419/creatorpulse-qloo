@@ -26,7 +26,8 @@ for (const [key, { file, input }] of Object.entries(PAIRS)) {
   const r = await fetch(`${base}/api/match`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(input),
+    // live: a demo pair without it gets the stored snapshot back, by design.
+    body: JSON.stringify({ ...input, live: true }),
   });
   const match = await r.json();
 

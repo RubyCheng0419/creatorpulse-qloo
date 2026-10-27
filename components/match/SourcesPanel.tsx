@@ -31,8 +31,9 @@ export function SourcesPanel({ match }: { match: Match }) {
                 ? `Groq${c.extractionModel ? ` (${c.extractionModel})` : ''}, the fallback LLM (proposes search terms only; Qloo confirms)`
                 : 'unavailable (no LLM answered, so no names were extracted)'}
           </h4>
-          {c.keywordSource === 'groq' && c.extractionFallback && (
-            <p className="mt-1 text-xs text-slate-500">Used because Gemini failed: {c.extractionFallback}.</p>
+          {c.keywordSource === 'groq' && (
+            // Why Gemini didn't answer stays in the Agent Trace; the result page only says what it means.
+            <p className="mt-1 text-xs text-slate-500">Name extraction completed by the fallback model; scoring logic unchanged.</p>
           )}
           {c.keywordSource !== 'unavailable' && c.geminiCached !== undefined && (
             <p className="mt-1">

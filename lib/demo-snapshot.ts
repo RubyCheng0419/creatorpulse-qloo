@@ -11,18 +11,20 @@ const stored: Record<DemoPair['key'], Match | null> = {
   mismatch: mismatchSnapshot as unknown as Match | null,
 };
 
-// The demos always run the real pipeline first. Only if that fails (it throws, or
-// no LLM was available so no score could be given) is the stored result served,
-// clearly labelled with its date (PRODUCT_SPEC §3.3).
+// A demo click serves the stored result, labelled with its date, so repeated clicks during
+// judging spend no Gemini, Groq, YouTube or Qloo quota. "Run live" ({ live: true }) runs the
+// real pipeline; only if that fails (it throws, or no LLM could give a score) is the stored
+// result served instead, labelled as a fallback.
 export async function withDemoFallback(input: MatchInput, run: () => Promise<Match>): Promise<Match> {
   const pair = findDemoPair(input.videoUrls, input.brandName);
   const snapshot = pair && stored[pair.key];
   if (!snapshot) return run();
+  if (input.live !== true) return { ...snapshot, cachedAt: snapshot.createdAt, cachedReason: 'demo' };
   try {
     const live = await run();
     if (live.status === 'completed' && live.creator.keywordSource !== 'unavailable') return live;
   } catch {
     // fall through to the snapshot
   }
-  return { ...snapshot, cachedAt: snapshot.createdAt };
+  return { ...snapshot, cachedAt: snapshot.createdAt, cachedReason: 'fallback' };
 }

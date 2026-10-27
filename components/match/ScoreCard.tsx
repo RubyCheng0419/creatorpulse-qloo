@@ -39,9 +39,22 @@ export function ScoreCard({ match }: { match: Match }) {
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 print:break-inside-avoid print:p-4">
-      {match.cachedAt && (
-        <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
-          Cached result from {new Date(match.cachedAt).toLocaleString('en-US')}: the live analysis could not complete, so this is the last real analysis of the demo pair.
+      {match.cachedAt &&
+        (match.cachedReason === 'fallback' ? (
+          <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
+            <span className="font-semibold">Cached</span> result from {new Date(match.cachedAt).toLocaleString('en-US')}: the live run could not complete, so
+            this is the last real analysis of the demo pair.
+          </p>
+        ) : (
+          <p className="mb-4 rounded-md bg-sky-50 px-3 py-2 text-sm text-sky-950 ring-1 ring-sky-200">
+            <span className="font-semibold">Cached</span> demo result: a real run of the full pipeline from {new Date(match.cachedAt).toLocaleString('en-US')},
+            saved so the demo spends no API quota. Use <span className="font-medium">Run live</span> in the Agent Trace below to run it again now.
+          </p>
+        ))}
+      {!match.cachedAt && (
+        <p className="mb-4 text-xs font-medium text-teal-800">
+          <span className="rounded bg-teal-50 px-1.5 py-0.5 ring-1 ring-teal-200">{match.liveRun ? 'Live run' : 'Live'}</span>{' '}
+          {match.liveRun ? 'Every cache bypassed for this run.' : 'Analysed for this request (repeat calls may reuse cached API answers; see the Agent Trace).'}
         </p>
       )}
       {basisNote && (

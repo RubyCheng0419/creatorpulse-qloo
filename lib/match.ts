@@ -89,6 +89,8 @@ export interface Match {
   trace: TraceStep[];
   liveRun?: boolean; // "Run live": every Qloo, YouTube and Gemini call bypassed the cache
   cachedAt?: string; // set when a stored demo snapshot is served instead of a live run
+  // 'demo': a demo click, served from the snapshot by design; 'fallback': a live run failed.
+  cachedReason?: 'demo' | 'fallback';
   // GET /v2/analysis/compare of the brand side and the creator's confirmed entities: an
   // independent cross-check shown next to the Fit Score, never part of it.
   crossCheck?: TagComparison | { skipped: string };

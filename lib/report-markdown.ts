@@ -39,7 +39,12 @@ export function matchToMarkdown(match: Match): string {
     lines.push(`- **Score basis:** ${match.creator.qlooPerson.name}’s audience taste in Qloo; the videos named fewer than 3 Qloo entities.`);
   if (match.creator.qlooPerson && typeof match.creator.audienceOverlap === 'number')
     lines.push(`- **Audience overlap:** ${match.creator.audienceOverlap.toFixed(2)} (the brand audience’s affinity for ${match.creator.qlooPerson.name}; not scored)`);
-  if (match.cachedAt) lines.push(`- **Cached result** from ${match.cachedAt}: the live analysis could not complete.`);
+  if (match.cachedAt)
+    lines.push(
+      match.cachedReason === 'fallback'
+        ? `- **Cached result** from ${match.cachedAt}: the live run could not complete.`
+        : `- **Cached demo result**: a real run of the full pipeline from ${match.cachedAt}, saved so the demo spends no API quota.`
+    );
   if (match.mentionsBrand) lines.push(`- The creator already features ${brand} in these videos; that mention is not scored.`);
   lines.push('');
 

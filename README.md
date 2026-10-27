@@ -199,11 +199,11 @@ Open http://localhost:3000 and click **Run demo**.
 
 ## Demo pair and fallback
 
-The demo pair is Apple × Marques Brownlee (MKBHD), five recent videos: see [docs/DEMO_PAIR.md](docs/DEMO_PAIR.md). The demo runs the full pipeline every time: YouTube is read, Gemini is called, and Qloo resolves and scores the entities. Qloo responses may come from the server’s one-hour cache, and the Agent Trace marks each one as live or cached.
+The demo pair is Apple × Marques Brownlee (MKBHD), five recent videos: see [docs/DEMO_PAIR.md](docs/DEMO_PAIR.md).
 
-[`data/demo-snapshot.json`](data/demo-snapshot.json) holds a real result for the pair and is used only as a **fallback**: if a live demo run fails (Qloo, YouTube or Gemini down), the app shows the snapshot, clearly labelled as a cached result with its date.
+A demo click serves [`data/demo-snapshot.json`](data/demo-snapshot.json) (and `demo-snapshot-mismatch.json` for Huggies): a complete, real result of the full pipeline, labelled **“Cached demo result”** with its date, so repeated clicks while judging spend no Gemini, Groq, YouTube or Qloo quota. **Run live** (in the Agent Trace) is the explicit opt-in: it runs everything again with every cache bypassed, and the page says “Live run”. If that live run fails, the snapshot is served again, labelled as a fallback. When the fallback LLM (Groq) extracted the names, the result page says so neutrally; why Gemini didn’t answer stays in the Agent Trace.
 
-Regenerate it with `node scripts/save-demo-snapshot.mjs` while the dev server runs.
+Regenerate the snapshots with `node scripts/save-demo-snapshot.mjs [base-url]` against a running server; it asks for live runs and refuses anything but a completed, LLM-backed result.
 
 ## Known limitations
 
