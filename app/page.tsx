@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
 import { MatchResult } from '@/components/match/MatchResult';
@@ -227,6 +228,9 @@ function MatchPage() {
                   </p>
                 </div>
               ))}
+              <Link href="/compare?demo=1" className="mt-4 block text-sm font-medium text-teal-800 hover:underline">
+                Compare three creators for Apple →
+              </Link>
             </aside>
           </div>
         )}

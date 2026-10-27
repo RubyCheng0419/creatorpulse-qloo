@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import type { Match } from '@/lib/match';
 import { Button } from '@/components/ui/button';
 import { NO_DATA_NEXT_STEPS, noDataCause } from '@/lib/no-data';
@@ -65,6 +66,12 @@ export function MatchResult({
           <Button variant="outline" onClick={() => downloadMarkdown(match)}>
             Download as Markdown
           </Button>
+          <Link
+            href={`/compare?brand=${encodeURIComponent(match.brand.name)}`}
+            className="inline-flex items-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+          >
+            Compare creators
+          </Link>
           {onReset && (
             <Button className="sm:ml-auto" onClick={onReset}>
               Run another match
