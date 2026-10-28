@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
+import { ComparisonTable } from '@/components/compare/ComparisonTable';
 import { MatchResult } from '@/components/match/MatchResult';
 import { ProgressPanel } from '@/components/match/ProgressPanel';
 import { StepIndicator } from '@/components/match/StepIndicator';
@@ -14,12 +15,16 @@ import { DEMO_PAIRS, type DemoPair } from '@/lib/demo-pair';
 import { saveMatch } from '@/lib/history';
 import type { Match } from '@/lib/match';
 import { type MatchRequest, requestMatch } from '@/lib/match-client';
+import { decisionSummary, summaryContext } from '@/lib/report';
 import type { MatchStage } from '@/lib/stages';
 import { CHANNEL_VIDEOS, MAX_VIDEOS, channelLabel, parseChannelRef, parseVideoId } from '@/lib/youtube-url';
 
 // PRODUCT_SPEC v3.1 §3.1: the four steps on one page, plus the one-click demo (§3.3).
+// The brand comes first, as in Find creators; step 2 takes one creator, or two to compare.
 
 type Step = 1 | 2 | 3 | 4;
+type Mode = 'one' | 'two';
+type BrandInput = Omit<MatchRequest, 'videoUrls'>;
 
 const CATEGORIES = ['Technology', 'Sports', 'Beauty', 'Food & Beverage', 'Automotive', 'Fashion'];
 
@@ -52,90 +57,124 @@ function linkedRequest(params: URLSearchParams): MatchRequest | null {
   };
 }
 
-function MatchPage() {
-  const params = useSearchParams();
-  const [linked] = useState(() => linkedRequest(params)); // read once, on the first render
-  const linkedRan = useRef(false);
-  const [step, setStep] = useState<Step>(1);
-  const [urlsText, setUrlsText] = useState(linked?.videoUrls[0] ?? '');
-  const [brandName, setBrandName] = useState(linked?.brandName ?? '');
-  const [category, setCategory] = useState('');
-  const [done, setDone] = useState<MatchStage[]>([]);
-  const [doneAt, setDoneAt] = useState<Partial<Record<MatchStage, number>>>({}); // ms since the request started
-  const [elapsed, setElapsed] = useState(0);
-  const [match, setMatch] = useState<Match | null>(null);
-  const [error, setError] = useState<{ message: string; backTo: Step; invalid?: string[] } | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const lastInput = useRef<MatchRequest | null>(null);
-
-  const lines = urlsText.split(/\s*\n\s*/).map((l) => l.trim()).filter(Boolean);
+// One creator's input: 1–MAX_VIDEOS video URLs, or one channel URL.
+function parseCreator(text: string) {
+  const lines = text.split(/\s*\n\s*/).map((l) => l.trim()).filter(Boolean);
   // One channel URL reads that channel's latest uploads instead of picked videos.
   const channel = lines.length === 1 && !parseVideoId(lines[0]) ? parseChannelRef(lines[0]) : null;
   const checks = lines.map((line) => ({ line, id: parseVideoId(line) }));
   const invalidCount = channel ? 0 : checks.filter((c) => !c.id).length;
   const tooMany = lines.length > MAX_VIDEOS;
-  const canContinue = lines.length > 0 && !invalidCount && !tooMany;
+  const label = channel ? channelLabel(channel) : `${lines.length} video${lines.length === 1 ? '' : 's'}`;
+  return { lines, channel, checks, tooMany, label, ok: lines.length > 0 && !invalidCount && !tooMany };
+}
+
+const brandProblem = (m: Match) => !m.brand.entity && !m.brand.basis;
+// analyse() runs from handlers and the link effect only, never during render.
+const now = () => Date.now();
+
+function MatchPage() {
+  const params = useSearchParams();
+  const [linked] = useState(() => linkedRequest(params)); // read once, on the first render
+  const linkedRan = useRef(false);
+  const [step, setStep] = useState<Step>(1);
+  const [mode, setMode] = useState<Mode>('one');
+  const [creatorTexts, setCreatorTexts] = useState(() => [linked?.videoUrls.join('\n') ?? '', '']);
+  const [brandName, setBrandName] = useState(linked?.brandName ?? '');
+  const [category, setCategory] = useState('');
+  const [done, setDone] = useState<MatchStage[]>([]);
+  const [doneAt, setDoneAt] = useState<Partial<Record<MatchStage, number>>>({}); // ms since the request started
+  const [startedAt, setStartedAt] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [running, setRunning] = useState({ index: 0, total: 1, label: '' });
+  const [results, setResults] = useState<Match[]>([]);
+  const [error, setError] = useState<{ message: string; backTo: Step; invalid?: string[] } | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const lastRun = useRef<{ brand: BrandInput; creators: string[][] } | null>(null);
+
+  const creators = creatorTexts.slice(0, mode === 'two' ? 2 : 1).map(parseCreator);
+  const canAnalyse = creators.every((c) => c.ok);
 
   useEffect(() => {
-    if (step !== 3) return;
-    const started = Date.now();
-    const t = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    if (step !== 3 || !startedAt) return;
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 1000);
     return () => clearInterval(t);
-  }, [step]);
+  }, [step, startedAt]);
 
-  async function analyse(input: MatchRequest) {
-    lastInput.current = input;
+  // Each creator is its own request, one after the other: one analysis fits the function time
+  // limit, two in one request might not, and both share the Qloo rate limit.
+  async function analyse(brand: BrandInput, creatorUrls: string[][]) {
+    lastRun.current = { brand, creators: creatorUrls };
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    setDone([]);
-    setDoneAt({});
-    const startedAt = Date.now();
-    setElapsed(0);
     setError(null);
-    setMatch(null);
+    setResults([]);
     setStep(3);
 
-    try {
-      const outcome = await requestMatch(
-        input,
-        (s) => {
-          setDone((d) => [...d, s]);
-          setDoneAt((t) => ({ ...t, [s]: Date.now() - startedAt }));
-        },
-        controller.signal
-      );
-      if (outcome.ok) {
+    const matches: Match[] = [];
+    for (const [i, videoUrls] of creatorUrls.entries()) {
+      setDone([]);
+      setDoneAt({});
+      const start = now();
+      setStartedAt(start);
+      setElapsed(0);
+      setRunning({ index: i, total: creatorUrls.length, label: parseCreator(videoUrls.join('\n')).label });
+      try {
+        const outcome = await requestMatch(
+          { ...brand, videoUrls },
+          (s) => {
+            setDone((d) => [...d, s]);
+            setDoneAt((t) => ({ ...t, [s]: now() - start }));
+          },
+          controller.signal
+        );
+        if (!outcome.ok) {
+          // Video problems send the user back to the creator step, everything else to the brand.
+          const videoProblem = Boolean(outcome.invalid) || outcome.status === 422 || /video/i.test(outcome.error);
+          const who = creatorUrls.length > 1 ? `Creator ${i ? 'B' : 'A'}: ` : '';
+          setError({ message: who + outcome.error, backTo: videoProblem ? 2 : 1, invalid: outcome.invalid });
+          setStep(videoProblem ? 2 : 1);
+          return;
+        }
         saveMatch(outcome.match);
-        setMatch(outcome.match);
-        setStep(4);
-      } else {
-        // Video problems send the user back to step 1, everything else to step 2.
-        const videoProblem = Boolean(outcome.invalid) || outcome.status === 422 || /video/i.test(outcome.error);
-        setError({ message: outcome.error, backTo: videoProblem ? 1 : 2, invalid: outcome.invalid });
-        setStep(videoProblem ? 1 : 2);
+        matches.push(outcome.match);
+        // The brand isn't in Qloo: the second creator would hit the same wall, and the single
+        // result offers the ways around it.
+        if (brandProblem(outcome.match)) break;
+      } catch (e: any) {
+        if (e?.name === 'AbortError') return;
+        setError({ message: `Connection failed: ${e?.message || e}`, backTo: 1 });
+        setStep(1);
+        return;
       }
-    } catch (e: any) {
-      if (e?.name === 'AbortError') return;
-      setError({ message: `Connection failed: ${e?.message || e}`, backTo: 2 });
-      setStep(2);
     }
+    setResults(matches);
+    setStep(4);
   }
+
+  const brandInput = (): BrandInput => ({ brandName, ...(category ? { category } : {}) });
+  const runForm = () => analyse(brandInput(), creators.map((c) => c.lines));
 
   // Runs once for a linked request (the ref guards against React running effects twice).
   useEffect(() => {
     if (!linked || linkedRan.current) return;
     linkedRan.current = true;
-    analyse(linked);
+    const { videoUrls, ...brand } = linked;
+    analyse(brand, [videoUrls]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function runDemo(pair: DemoPair) {
-    setUrlsText(pair.videoUrls.join('\n'));
+    setMode('one');
+    setCreatorTexts([pair.videoUrls.join('\n'), creatorTexts[1]]);
     setBrandName(pair.brandName);
     setCategory(pair.category);
-    analyse({ videoUrls: pair.videoUrls, brandName: pair.brandName, category: pair.category });
+    analyse({ brandName: pair.brandName, category: pair.category }, [pair.videoUrls]);
   }
+
+  // Re-runs the last request with a changed brand side (the same creators).
+  const rerun = (change: Partial<BrandInput>) => lastRun.current && analyse({ ...lastRun.current.brand, ...change }, lastRun.current.creators);
 
   function cancel() {
     abortRef.current?.abort();
@@ -143,7 +182,7 @@ function MatchPage() {
   }
 
   function reset() {
-    setMatch(null);
+    setResults([]);
     setError(null);
     setStep(1);
   }
@@ -189,42 +228,40 @@ function MatchPage() {
         {step === 1 && (
           <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
             <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
-              <label htmlFor="urls" className="text-base font-semibold text-slate-900">
-                The creator’s YouTube videos
+              <label htmlFor="brand" className="text-base font-semibold text-slate-900">
+                Your brand
               </label>
-              <p className="mt-1 text-sm text-slate-500">
-                Paste 1–{MAX_VIDEOS} video URLs, one per line, or one channel URL (e.g. youtube.com/@mkbhd) to read its latest{' '}
-                {CHANNEL_VIDEOS} videos.
-              </p>
-              <Textarea
-                id="urls"
-                rows={6}
-                value={urlsText}
-                onChange={(e) => setUrlsText(e.target.value)}
-                placeholder={'https://www.youtube.com/watch?v=...\nhttps://youtu.be/...'}
-                className="mt-3 font-mono"
+              <Input
+                id="brand"
+                value={brandName}
+                onChange={(e) => setBrandName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && brandName.trim()) setStep(2);
+                }}
+                placeholder="e.g. Apple, Nike, Sony"
+                className="mt-2 max-w-md"
               />
-              {channel && (
-                <p className="mt-3 text-sm text-teal-700">✓ Channel {channelLabel(channel)}: its latest {CHANNEL_VIDEOS} videos will be read</p>
-              )}
-              {checks.length > 0 && !channel && (
-                <ul className="mt-3 space-y-1 text-sm">
-                  {checks.map((c, i) => (
-                    <li key={i} className={`break-all ${c.id ? 'text-teal-700' : 'text-rose-700'}`}>
-                      {c.id ? `✓ Video ${c.id}` : `✗ Not a YouTube video URL: ${c.line}`}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {tooMany && (
-                <p className="mt-2 text-sm text-rose-700">
-                  At most {MAX_VIDEOS} videos; you have {lines.length}.
-                </p>
-              )}
-              <p className="mt-3 text-xs text-slate-500">
-                Whether a video is public is checked during analysis; unreadable videos are skipped and reported. Comments are never read.
-              </p>
-              <Button className="mt-4" size="lg" disabled={!canContinue} onClick={() => setStep(2)}>
+              <p className="mt-1 text-xs text-slate-500">Use the brand’s English name. If Qloo has no exact match, we say so instead of guessing a similar brand.</p>
+
+              <label htmlFor="category" className="mt-5 block text-sm font-medium text-slate-900">
+                Category (optional)
+              </label>
+              <select
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="mt-2 h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+              >
+                <option value="">Any</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-500">Only used to pick between brands that share a name.</p>
+
+              <Button className="mt-6" size="lg" disabled={!brandName.trim()} onClick={() => setStep(2)}>
                 Next
               </Button>
             </section>
@@ -257,48 +294,59 @@ function MatchPage() {
         {step === 2 && (
           <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
             <p className="text-sm text-slate-500">
-              {channel ? `Channel ${channelLabel(channel)}` : `${lines.length} video${lines.length === 1 ? '' : 's'} added`}
+              Brand: <span className="font-medium text-slate-700">{brandName}</span>
+              {category ? ` · ${category}` : ''}
             </p>
-            <label htmlFor="brand" className="mt-4 block text-base font-semibold text-slate-900">
-              Brand
-            </label>
-            <Input
-              id="brand"
-              value={brandName}
-              onChange={(e) => setBrandName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && brandName.trim()) analyse({ videoUrls: lines, brandName, category });
-              }}
-              placeholder="e.g. Apple, Nike, Sony"
-              className="mt-2 max-w-md"
-              autoFocus
-            />
-            <p className="mt-1 text-xs text-slate-500">Use the brand’s English name. If Qloo has no exact match, we say so instead of guessing a similar brand.</p>
+            <fieldset className="mt-4">
+              <legend className="text-base font-semibold text-slate-900">Creators</legend>
+              <div className="mt-2 inline-flex rounded-lg bg-slate-100 p-1 text-sm" role="radiogroup">
+                {(
+                  [
+                    ['one', 'One creator'],
+                    ['two', 'Compare two creators'],
+                  ] as const
+                ).map(([value, label]) => (
+                  <label
+                    key={value}
+                    className={`cursor-pointer rounded-md px-3 py-1.5 font-medium has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-600 ${
+                      mode === value ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <input type="radio" name="mode" value={value} checked={mode === value} onChange={() => setMode(value)} className="sr-only" />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <p className="mt-3 text-sm text-slate-500">
+              For each creator, paste 1–{MAX_VIDEOS} video URLs, one per line, or one channel URL (e.g. youtube.com/@mkbhd) to read its
+              latest {CHANNEL_VIDEOS} videos.
+              {mode === 'two' && ' The two are analysed one after the other, so this takes about twice as long.'}
+            </p>
 
-            <label htmlFor="category" className="mt-5 block text-sm font-medium text-slate-900">
-              Category (optional)
-            </label>
-            <select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="mt-2 h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
-            >
-              <option value="">Any</option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+            <div className={`mt-4 grid gap-5 ${mode === 'two' ? 'md:grid-cols-2' : ''}`}>
+              {creators.map((c, i) => (
+                <CreatorField
+                  key={i}
+                  id={`creator-${i}`}
+                  label={mode === 'two' ? `Creator ${i ? 'B' : 'A'}` : 'The creator’s YouTube videos'}
+                  rows={mode === 'two' ? 5 : 6}
+                  value={creatorTexts[i]}
+                  parsed={c}
+                  onChange={(v) => setCreatorTexts((t) => t.map((x, j) => (j === i ? v : x)))}
+                />
               ))}
-            </select>
-            <p className="mt-1 text-xs text-slate-500">Only used to pick between brands that share a name.</p>
+            </div>
+            <p className="mt-3 text-xs text-slate-500">
+              Whether a video is public is checked during analysis; unreadable videos are skipped and reported. Comments are never read.
+            </p>
 
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Button variant="outline" size="lg" onClick={() => setStep(1)}>
                 Back
               </Button>
-              <Button size="lg" disabled={!brandName.trim()} onClick={() => analyse({ videoUrls: lines, brandName, category })}>
-                Analyze compatibility
+              <Button size="lg" disabled={!canAnalyse} onClick={runForm}>
+                {mode === 'two' ? 'Compare creators' : 'Analyze compatibility'}
               </Button>
             </div>
           </section>
@@ -306,7 +354,7 @@ function MatchPage() {
 
         {step === 3 && (
           <ProgressPanel
-            title={`${brandName || 'brand'} × ${channel ? channelLabel(channel) : `${lines.length} video${lines.length === 1 ? '' : 's'}`}`}
+            title={`${running.total > 1 ? `creator ${running.index + 1} of ${running.total}: ` : ''}${brandName || 'brand'} × ${running.label}`}
             done={done}
             doneAt={doneAt}
             elapsed={elapsed}
@@ -314,20 +362,118 @@ function MatchPage() {
           />
         )}
 
-        {step === 4 && match && (
+        {step === 4 && results.length === 1 && (
           <MatchResult
-            match={match}
+            match={results[0]}
             onReset={reset}
-            onRunLive={() => lastInput.current && analyse({ ...lastInput.current, live: true })}
+            onRunLive={() => rerun({ live: true })}
             onUseBrand={(brand) => {
-              if (!lastInput.current) return;
               setBrandName(brand);
-              analyse({ ...lastInput.current, brandName: brand, referenceBrands: undefined, brandDescription: undefined });
+              rerun({ brandName: brand, referenceBrands: undefined, brandDescription: undefined });
             }}
-            onBrandFallback={(fallback) => lastInput.current && analyse({ ...lastInput.current, ...fallback })}
+            onBrandFallback={(fallback) => rerun(fallback)}
           />
         )}
+
+        {step === 4 && results.length > 1 && <TwoCreators matches={results} onReset={reset} />}
       </main>
     </>
+  );
+}
+
+function CreatorField({
+  id,
+  label,
+  rows,
+  value,
+  parsed,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  rows: number;
+  value: string;
+  parsed: ReturnType<typeof parseCreator>;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="text-sm font-semibold text-slate-900">
+        {label}
+      </label>
+      <Textarea
+        id={id}
+        rows={rows}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={'https://www.youtube.com/watch?v=...\nhttps://youtu.be/...'}
+        className="mt-2 font-mono"
+      />
+      {parsed.channel && <p className="mt-2 text-sm text-teal-700">✓ Channel {parsed.label}: its latest {CHANNEL_VIDEOS} videos will be read</p>}
+      {parsed.checks.length > 0 && !parsed.channel && (
+        <ul className="mt-2 space-y-1 text-sm">
+          {parsed.checks.map((c, i) => (
+            <li key={i} className={`break-all ${c.id ? 'text-teal-700' : 'text-rose-700'}`}>
+              {c.id ? `✓ Video ${c.id}` : `✗ Not a YouTube video URL: ${c.line}`}
+            </li>
+          ))}
+        </ul>
+      )}
+      {parsed.tooMany && (
+        <p className="mt-2 text-sm text-rose-700">
+          At most {MAX_VIDEOS} videos; you have {parsed.lines.length}.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Two creators for one brand: the comparison first, each creator's decision under it, and
+// every row opens its full result (both are in History).
+function TwoCreators({ matches, onReset }: { matches: Match[]; onReset: () => void }) {
+  const brand = matches[0].brand.entity?.name || matches[0].brand.name;
+  const name = (m: Match) => m.creator.channelName || m.creator.youtubeHandle || 'Creator';
+  return (
+    <div className="space-y-4">
+      <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
+        <p className="text-sm text-slate-500">Cultural compatibility due diligence · comparison</p>
+        <h2 className="mt-1 text-xl font-semibold text-slate-900">
+          {brand}: {matches.map(name).join(' vs ')}
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">Same brand, same formula, side by side. Open a creator for the full result, its evidence and the Agent Trace.</p>
+        <ul className="mt-4 space-y-2 text-sm text-slate-700">
+          {matches.map((m) => {
+            const d = decisionSummary(m.compatibility, summaryContext(m));
+            return (
+              <li key={m.id}>
+                <Link href={`/match/${m.id}`} className="font-medium text-slate-900 hover:text-teal-700 hover:underline">
+                  {name(m)}
+                </Link>
+                {' — '}
+                {d ? (
+                  <>
+                    <span className="font-semibold text-slate-900">{d.verdict}:</span> {d.condition}
+                  </>
+                ) : (
+                  m.errorMessage || 'No score.'
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+      <ComparisonTable matches={matches} />
+      <div className="flex flex-wrap gap-2 print:hidden">
+        <Link
+          href={`/compare?brand=${encodeURIComponent(matches[0].brand.name)}`}
+          className="inline-flex items-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+        >
+          Open in Compare creators
+        </Link>
+        <Button className="sm:ml-auto" onClick={onReset}>
+          Run another match
+        </Button>
+      </div>
+    </div>
   );
 }

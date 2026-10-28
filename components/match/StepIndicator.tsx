@@ -1,4 +1,4 @@
-const STEPS = ['Creator', 'Brand', 'Analysis', 'Result'];
+const STEPS = ['Brand', 'Creator', 'Analysis', 'Result'];
 
 export function StepIndicator({ current }: { current: 1 | 2 | 3 | 4 }) {
   return (
