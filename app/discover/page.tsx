@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CopyLinkButton } from '@/components/CopyLinkButton';
 import { SiteHeader } from '@/components/SiteHeader';
+import { Tour } from '@/components/Tour';
+import { DISCOVER_TOUR } from '@/components/tours';
 import { CandidateCard } from '@/components/discover/CandidateCard';
 import { RankingOverview } from '@/components/discover/RankingOverview';
 import { RankingValidationNote } from '@/components/discover/RankingValidationNote';
@@ -248,7 +250,7 @@ function DiscoverPage() {
 
         <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
           <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
-            <div className="mb-5 rounded-lg bg-slate-50 p-3">
+            <div data-tour="discover-project" className="mb-5 rounded-lg bg-slate-50 p-3">
               <div className="flex flex-wrap items-end gap-3">
                 <label className="text-sm font-medium text-slate-900">
                   Project
@@ -305,6 +307,7 @@ function DiscoverPage() {
             </label>
             <Input
               id="brand"
+              data-tour="discover-brand"
               value={brandName}
               onChange={(e) => setBrandName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && find(currentRequest())}
@@ -318,6 +321,7 @@ function DiscoverPage() {
             </label>
             <select
               id="ctype"
+              data-tour="discover-type"
               value={creatorCategory}
               onChange={(e) => setCreatorCategory(e.target.value as CreatorCategory)}
               className="mt-2 h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
@@ -330,7 +334,7 @@ function DiscoverPage() {
             </select>
             <p className="mt-1 text-xs text-slate-500">Types come from Qloo’s Wikipedia categories, so coverage is uneven.</p>
 
-            <button type="button" onClick={() => setMoreOpen(!moreOpen)} aria-expanded={moreOpen} className="mt-5 text-sm font-medium text-teal-700 hover:underline">
+            <button type="button" data-tour="discover-more" onClick={() => setMoreOpen(!moreOpen)} aria-expanded={moreOpen} className="mt-5 text-sm font-medium text-teal-700 hover:underline">
               {moreOpen ? '− ' : '+ '}Brand not in Qloo, or want to add more about it?
             </button>
             {moreOpen && (
@@ -428,7 +432,7 @@ function DiscoverPage() {
           </section>
 
           {/* First on a phone: the demo is what most first-time visitors are here for. */}
-          <aside className="order-first rounded-xl border border-teal-200 bg-teal-50 p-4 sm:p-6 lg:order-none">
+          <aside data-tour="discover-demo" className="order-first rounded-xl border border-teal-200 bg-teal-50 p-4 sm:p-6 lg:order-none">
             <h2 className="text-base font-semibold text-teal-900">Try the demo</h2>
             <p className="mt-2 text-sm text-teal-900">Three very different brands. Each click runs Qloo live; the rankings should differ.</p>
             {DEMOS.map((d) => (
@@ -586,6 +590,8 @@ function DiscoverPage() {
           </div>
         )}
       </main>
+      {/* Not over a shared, stored or project ranking: those open on their result. */}
+      <Tour id="discover" steps={DISCOVER_TOUR} autoStart={!seed} />
     </>
   );
 }
