@@ -282,14 +282,20 @@ export function extractBrandMentions(text: string): Promise<LlmAnswer<Mentions>>
   return withFallback((json) => namedEntities(BRAND_MENTION_PROMPT, truncateToTokens(text, PROMPT_TOKEN_BUDGET), json));
 }
 
+// People's names aren't looked up in English: a romanised name is shared by many people, and
+// Qloo's aliases matched 淳兒 → "Chun'er" to Ch. Hüner and 王彤 → "Wang Tong" to Hitomi Wu.
+// A person counts only under the name as written (阿滴 is an alias of Ray Du).
+const englishTerm = (m: { english?: string; kind: string }) => (m.kind === 'person' ? undefined : m.english);
+
 // A Qloo entity for a mention: the name as written first (an exact name or Qloo alias match
 // is the strongest evidence), then its English name. Either must match exactly.
 export async function resolveMention(m: Mention, ctx?: TraceCtx): Promise<QlooEntity | null> {
   const types = KIND_TYPES[m.kind];
   const entity = await resolveEntity(m.name, types, undefined, ctx);
-  if (entity || !m.english) return entity;
-  const english = await resolveEntity(m.english, types, undefined, ctx);
-  return english && { ...english, query: `${m.name} → ${m.english}` };
+  const term = englishTerm(m);
+  if (entity || !term) return entity;
+  const english = await resolveEntity(term, types, undefined, ctx);
+  return english && { ...english, query: `${m.name} → ${term}` };
 }
 
 // A brand name typed in another language (蘋果) → its English name, only to offer as a
@@ -399,7 +405,7 @@ const RETRY_SCHEMA = {
 
 async function retryUnmatched(
   videoKey: string,
-  queries: { keyword: string; english?: string; types: string[] }[],
+  queries: { keyword: string; english?: string; kind: string; types: string[] }[],
   resolved: { keyword: string; entity: QlooEntity | null; error?: string }[],
   trace?: Trace
 ): Promise<void> {
@@ -410,7 +416,7 @@ async function retryUnmatched(
   for (const row of resolved) {
     if (row.entity || row.error) continue;
     const q = queries.find((x) => x.keyword === row.keyword)!;
-    const term = q.english || row.keyword;
+    const term = englishTerm(q) || row.keyword;
     const found = await searchEntities(term, q.types, 5, trace && { trace, stage: 'creator' }, 'candidates for the retry decision').catch(() => []);
     const candidates = found.filter((x) => x.entity_id && x.name).slice(0, 5);
     if (candidates.length) pending.push({ row, term, types: q.types, candidates });

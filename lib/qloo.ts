@@ -383,6 +383,10 @@ interface RawTag {
   query?: { score?: number; count?: string | number };
 }
 
+// The term Qloo matched: "甄嬛傳 → Empresses in the Palace" (an English name) and
+// "Dell → Dell Inc" (a retry) were matched by the part after the last arrow.
+const searchedTerm = (query: string) => query.split(' → ').pop()!;
+
 export async function verifyEntities(entities: QlooEntity[], ctx?: TraceCtx): Promise<{ kept: QlooEntity[]; dropped: QlooEntity[] }> {
   if (!entities.length) return { kept: entities, dropped: [] };
   const ids = [...new Set(entities.map((e) => e.id))];
@@ -405,7 +409,7 @@ export async function verifyEntities(entities: QlooEntity[], ctx?: TraceCtx): Pr
     if (!x) {
       absent.push(e.name);
       kept.push(e);
-    } else if (!namesMatch(e.query, x)) dropped.push(e);
+    } else if (!namesMatch(searchedTerm(e.query), x)) dropped.push(e);
     else kept.push({ ...e, popularity: typeof x.popularity === 'number' ? x.popularity : e.popularity });
   }
   ctx?.trace.add({
