@@ -442,6 +442,22 @@ async function makersOfProducts(
   });
 }
 
+// A retry pick whose name holds every word of the name plus other words is a different,
+// longer-named thing, not an alias: "Wahoo" (the fitness brand) is not “Wahoo's Fish Taco”
+// (a restaurant chain). Fixed rule, applied after the LLM. Company suffixes and a leading
+// "The" don't count as other words ("Dell" → "Dell Inc", "Beatles" → "The Beatles").
+const NAME_FILLER = new Set(['the', 'inc', 'incorporated', 'corp', 'corporation', 'co', 'company', 'ltd', 'limited', 'llc', 'plc', 'gmbh', 'ag', 'sa', 'group', 'holdings']);
+const nameWords = (s: string) => s.toLocaleLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+
+function longerNameOf(term: string, candidate: string): boolean {
+  const own = nameWords(term);
+  const other = nameWords(candidate);
+  if (!own.length || !own.every((w) => other.includes(w))) return false;
+  const rest = [...other];
+  for (const w of own) rest.splice(rest.indexOf(w), 1);
+  return rest.some((w) => !NAME_FILLER.has(w));
+}
+
 async function retryUnmatched(
   videoKey: string,
   queries: { keyword: string; english?: string; kind: string; types: string[] }[],
@@ -517,6 +533,16 @@ async function retryUnmatched(
   });
 
   for (const p of chosen) {
+    if (longerNameOf(p.term, p.candidate.name)) {
+      trace?.add({
+        stage: 'creator',
+        tool: 'Rule',
+        input: `Verify the Gemini retry for “${p.row.keyword}”`,
+        output: `“${p.candidate.name}” is “${p.term}” plus other words, so it names something else`,
+        decision: 'Rejected: not used',
+      });
+      continue;
+    }
     const entity = await resolveEntity(p.candidate.name, p.types, undefined, trace && { trace, stage: 'creator' });
     const ok = entity?.id === p.candidate.entity_id;
     if (ok) p.row.entity = { ...entity!, query: `${p.row.keyword} → ${p.candidate.name}` };

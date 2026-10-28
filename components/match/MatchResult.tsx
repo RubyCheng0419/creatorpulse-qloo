@@ -119,7 +119,10 @@ export function MatchResult({
             <dl className="mt-3 space-y-1 text-amber-900">
               <div>
                 <dt className="inline font-medium">Confirmed by Qloo ({match.creator.entities.length}): </dt>
-                <dd className="inline">{match.creator.entities.map((e) => e.name).join(', ') || 'none'}</dd>
+                <dd className="inline">
+                  {match.creator.entities.map((e) => (brandIdsOf(match).includes(e.id) ? `${e.name} (the brand itself, not scored)` : e.name)).join(', ') ||
+                    'none'}
+                </dd>
               </div>
               {match.creator.unmatched.length > 0 && (
                 <div>
@@ -132,7 +135,7 @@ export function MatchResult({
           {match.noDataReason && (
             <div className="mt-3 space-y-2">
               <p>
-                <span className="font-semibold">Cause:</span> {noDataCause(match.noDataReason, match.creator)}
+                <span className="font-semibold">Cause:</span> {noDataCause(match.noDataReason, match.creator, brandIdsOf(match))}
               </p>
               <p className="rounded-md bg-white/70 px-3 py-2 ring-1 ring-amber-200">
                 <span className="font-semibold">Next step:</span> {nextSteps(match)[0]}
@@ -177,15 +180,30 @@ export function MatchResult({
 
 // A channel was already read in full, so "paste the channel URL" would send the user in a
 // circle; its audience-taste score in Find creators needs no named entities at all.
+// When the videos named the brand itself, more videos about its own products add nothing:
+// the channel's other videos might.
 function nextSteps(match: Match): string[] {
   const steps = NO_DATA_NEXT_STEPS[match.noDataReason!];
   const fromChannel = match.creator.videoUrls.length === 1 && !parseVideoId(match.creator.videoUrls[0]);
-  if (match.noDataReason !== 'too-few-creator-entities' || !fromChannel) return steps;
+  if (match.noDataReason !== 'too-few-creator-entities') return steps;
+  if (!fromChannel && namesBrand(match))
+    return [
+      'Paste the creator’s channel URL: its latest 15 videos are read, including ones about other brands and topics.',
+      'Or add 2–3 videos that name other brands, products or topics, not this brand’s own products.',
+    ];
+  if (!fromChannel) return steps;
   return [
     'Paste 2–3 of this creator’s videos that explicitly name brands, products or topics: the latest 15 named too few.',
     'Or use Find creators, which scores creators from their audience’s taste in Qloo and doesn’t depend on what the videos name.',
   ];
 }
+
+// The brand side: the brand, or the reference brands standing in for it.
+function brandIdsOf(match: Match): string[] {
+  const side = match.brand.signal ?? (match.brand.entity ? [match.brand.entity] : []);
+  return side.map((e) => e.id);
+}
+const namesBrand = (match: Match) => match.creator.entities.some((e) => brandIdsOf(match).includes(e.id));
 
 // The interactive trace is screen-only; the printed report gets its summary and decisions.
 function PrintedTraceSummary({ match }: { match: Match }) {

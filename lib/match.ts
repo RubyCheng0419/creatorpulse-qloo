@@ -111,7 +111,17 @@ function matchId(urls: string[], brand: string, references: string[]): string {
   return `match_${createHash('sha256').update(key).digest('hex').slice(0, 12)}`;
 }
 
-const NO_SCORE: Compatibility = { fitScore: null, confidence: null, verdict: 'insufficient-data', dimensions: [] };
+// Why the videos fell short. A video about the brand's own products names only the brand,
+// which is never scored, so "only 1 matched" alone would read as Qloo missing it.
+function tooFewMessage(direct: QlooEntity[], brandSignal: QlooEntity[]): string {
+  const brandNamed = direct.filter((e) => brandSignal.some((b) => b.id === e.id));
+  const others = direct.length - brandNamed.length;
+  const count = (n: number) => `${n} taste entit${n === 1 ? 'y' : 'ies'}`;
+  if (!brandNamed.length) return `Qloo matched only ${count(direct.length)} from the videos, below the scoring minimum of ${MIN_DIRECT_ENTITIES}.`;
+  return `The videos name ${brandNamed.map((e) => e.name).join(', ')}, the brand being scored, which is reported but never scored against itself. Besides it, Qloo matched ${count(others)} from the videos, below the scoring minimum of ${MIN_DIRECT_ENTITIES}.`;
+}
+
+const NO_SCORE: Compatibility ={ fitScore: null, confidence: null, verdict: 'insufficient-data', dimensions: [] };
 
 export interface MatchInput {
   videoUrls: unknown;
@@ -229,14 +239,15 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
 
   const direct = creator.entities.filter((e) => keptIds.has(e.id)).map((e) => keptIds.get(e.id)!);
   base.creator = { ...base.creator, entities: direct };
-  const enough = !creator.extractionError && direct.length >= MIN_DIRECT_ENTITIES;
+  // The brand itself is never scored (step 2), so it doesn't count towards the minimum.
+  const enough = !creator.extractionError && direct.filter((e) => !brandIds.has(e.id)).length >= MIN_DIRECT_ENTITIES;
   trace.add({
     stage: 'creator',
     tool: 'Rule',
-    input: `Evidence threshold: at least ${MIN_DIRECT_ENTITIES} Qloo-confirmed entities from the videos`,
+    input: `Evidence threshold: at least ${MIN_DIRECT_ENTITIES} Qloo-confirmed entities from the videos, besides the brand itself`,
     output: creator.extractionError
       ? `No names extracted: ${creator.extractionError}`
-      : `${direct.length} confirmed: ${direct.map((e) => e.name).join(', ') || 'none'}`,
+      : `${direct.length} confirmed: ${direct.map((e) => (brandIds.has(e.id) ? `${e.name} (the brand itself)` : e.name)).join(', ') || 'none'}`,
     decision: enough
       ? 'Continue'
       : person
@@ -246,7 +257,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   if (!enough) {
     const why: [NoDataReason, string] = creator.extractionError
       ? ['llm-unavailable', `Couldn’t extract the names mentioned in the videos (${creator.extractionError}). No score is given rather than one built on guessed keywords. Please try again later.`]
-      : ['too-few-creator-entities', `Qloo matched only ${direct.length} taste entities from the videos, below the scoring minimum of ${MIN_DIRECT_ENTITIES}.`];
+      : ['too-few-creator-entities', tooFewMessage(direct, brandSignal)];
     if (!person) return insufficient(why[0], why[1], brandSide);
 
     // Fallback: the creator's audience taste, scored like a Find creators candidate.

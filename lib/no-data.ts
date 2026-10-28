@@ -41,10 +41,13 @@ export const NO_DATA_NEXT_STEPS: Record<NoDataReason, string[]> = {
 
 // The cause in a few plain words. For too few creator entities it depends on how far the
 // chain got: no names proposed, names Qloo didn't match, or fewer than 3 confirmed.
-export function noDataCause(reason: NoDataReason, creator?: { keywords: string[]; entities: unknown[] }): string {
+// `brandIds`: the brand side, which the videos may name but which is never scored.
+export function noDataCause(reason: NoDataReason, creator?: { keywords: string[]; entities: { id: string }[] }, brandIds: string[] = []): string {
   if (reason === 'too-few-creator-entities' && creator) {
     if (!creator.keywords.length) return 'No names extracted from the videos';
     if (!creator.entities.length) return 'No Qloo match for any name in the videos';
+    const others = creator.entities.filter((e) => !brandIds.includes(e.id)).length;
+    if (others < creator.entities.length) return `Only the brand itself plus ${others} other verified entit${others === 1 ? 'y' : 'ies'}; the brand is never scored`;
     return `Fewer than 3 verified entities (Qloo confirmed ${creator.entities.length})`;
   }
   const causes: Record<NoDataReason, string> = {
