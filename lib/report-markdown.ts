@@ -1,6 +1,6 @@
 import type { Match } from '@/lib/match';
 import { HOLD_RECOMMENDATION, VERDICT_LABELS, brandBasisNote, decisionSummary, summaryContext } from '@/lib/report';
-import { type ScoredEntity, isCounted } from '@/lib/scoring';
+import { type ScoredEntity, isByDefault, isCounted } from '@/lib/scoring';
 import { matchUnverified } from '@/lib/unverified';
 import { isLlm, summarizeTrace } from '@/lib/trace';
 
@@ -63,7 +63,7 @@ export function matchToMarkdown(match: Match): string {
         continue;
       }
       if (!isCounted(d)) lines.push(`_Thin: ${d.itemCount} entit${d.itemCount === 1 ? 'y' : 'ies'}, shown but not counted in the Fit Score._`, '');
-      if (d.byDefault) lines.push('_Classified by default: none of these entities has a Qloo genre for this dimension, so it decides nothing._', '');
+      if (isByDefault(d)) lines.push('_Classified by default: none of these entities has a Qloo genre for this dimension, so it decides nothing._', '');
       lines.push(
         ...tier('Shared taste (affinity ≥ 0.85)', d.intersection),
         ...tier('Lukewarm (affinity 0.70–0.85)', d.weakLink),

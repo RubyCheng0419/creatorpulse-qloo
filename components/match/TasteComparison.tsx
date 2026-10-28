@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { DIVERGENCE_MAX, INTERSECTION_MIN, MIN_DIMENSION_ENTITIES, type Dimension, type DimensionScore, type ScoredEntity, isCounted } from '@/lib/scoring';
+import { DIVERGENCE_MAX, INTERSECTION_MIN, MIN_DIMENSION_ENTITIES, type Dimension, type DimensionScore, type ScoredEntity, isByDefault, isCounted } from '@/lib/scoring';
 
 const TYPE_LABELS: Record<string, string> = {
   'urn:entity:brand': 'brand',
@@ -217,7 +217,7 @@ export function TasteComparison({
                   {d.score !== null && !isCounted(d) && (
                     <span className="mt-0.5 block text-xs font-medium text-amber-800">Thin: shown, not counted</span>
                   )}
-                  {d.byDefault && <span className="mt-0.5 block text-xs font-medium text-slate-600">Classified by default</span>}
+                  {isByDefault(d) && <span className="mt-0.5 block text-xs font-medium text-slate-600">Classified by default</span>}
                 </span>
                 <span className="relative h-3 min-w-12 flex-1 overflow-hidden rounded-full bg-slate-100">
                   {d.score !== null && <span className="absolute inset-y-0 left-0 rounded-full bg-teal-600" style={{ width: `${d.score}%` }} />}
@@ -238,7 +238,7 @@ export function TasteComparison({
                   {isOpen && (
                     <div className="border-t border-slate-100 px-3 py-3 print:hidden">
                       <p className="text-sm font-medium text-slate-900">{takeaway(d, audience, basis)}</p>
-                      {d.byDefault && (
+                      {isByDefault(d) && (
                         <p className="mt-1 text-xs text-slate-600">
                           None of these has a Qloo genre that places it here; such brands land in {d.label} by default. It still counts, but isn’t
                           named strongest or weakest and decides nothing.

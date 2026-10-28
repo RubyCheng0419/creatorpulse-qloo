@@ -193,8 +193,13 @@ export function confidenceLevel({ entities, dimensions }: { entities: number; di
 // and counted every dimension with data.
 export const isCounted = (d: DimensionScore): boolean => d.counted ?? d.score !== null;
 
+// Made only of default-classified entities. A result saved before the flag (the demo snapshots)
+// has none, so it is worked out from the stored entities' type and genres.
+export const isByDefault = (d: DimensionScore): boolean =>
+  d.byDefault ?? (d.itemCount > 0 && [...d.intersection, ...(d.weakLink ?? []), ...d.divergence].every(classifiedByDefault));
+
 // The dimensions that may be named strongest or weakest, or decide anything: counted, and not
 // made only of default-classified entities. Strongest first.
 export function rankable(dimensions: DimensionScore[]): DimensionScore[] {
-  return dimensions.filter((d) => isCounted(d) && !d.byDefault).sort((a, b) => b.score! - a.score!);
+  return dimensions.filter((d) => isCounted(d) && !isByDefault(d)).sort((a, b) => b.score! - a.score!);
 }

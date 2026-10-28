@@ -7,7 +7,7 @@ import { TasteComparison, formatAffinity } from '@/components/match/TasteCompari
 import type { CreatorCandidate } from '@/lib/discover';
 import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
 import { VERDICT_LABELS } from '@/lib/report';
-import { type ScoredEntity, isCounted, rankable } from '@/lib/scoring';
+import { type ScoredEntity, isByDefault, isCounted, rankable } from '@/lib/scoring';
 import { type UnverifiedReason, codesText } from '@/lib/unverified';
 
 export const VERDICT_STYLE: Record<string, string> = {
@@ -66,7 +66,7 @@ export function EvidenceSummary({ c }: { c: CreatorCandidate }) {
   const { best } = extremes(c);
   const drivers = best ? [...best.intersection, ...best.weakLink, ...best.divergence].sort((a, b) => b.brandAffinity - a.brandAffinity).slice(0, 3) : [];
   const thin = withData.filter((d) => !isCounted(d));
-  const byDefault = withData.filter((d) => d.byDefault && isCounted(d));
+  const byDefault = withData.filter((d) => isByDefault(d) && isCounted(d));
   const empty = dims.filter((d) => d.score === null);
   const identity = c.description ? IDENTITY_DIMENSION.find(([re]) => re.test(c.description!)) : undefined;
   const idDim = identity ? dims.find((d) => d.label === identity[1]) : undefined;
