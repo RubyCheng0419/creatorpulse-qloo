@@ -30,24 +30,38 @@ export interface AudienceProfile {
 // creators past the 60 s function limit; a control missing a type is marked incomplete instead.
 const CONTROL_DEADLINE_MS = 12_000;
 
-export async function audienceProfiles(people: QlooEntity[], exclude: Set<string>, trace?: Trace, control = false): Promise<AudienceProfile[]> {
+// `deadline` (a Date.now() time) does the same for everyone else in Find creators: a query
+// still out at the deadline is given up, and the second pass only runs while there is time
+// left. Without it, one query that times out twice (≈31 s) and again on the second pass took
+// the whole ranking past the 60 s limit: Apple and Samsung with Technology YouTubers got a
+// 504 and no ranking at all, instead of one creator missing one type.
+const MIN_RETRY_MS = 3_000;
+
+export async function audienceProfiles(
+  people: QlooEntity[],
+  exclude: Set<string>,
+  trace?: Trace,
+  control = false,
+  deadline?: number
+): Promise<AudienceProfile[]> {
   const UNSUPPORTED = 'unsupported' as const;
   const abandoned: string[] = [];
-  const profileOf = (c: QlooEntity, type: string) => {
+  const profileOf = (c: QlooEntity, type: string, until?: number) => {
     const call = getInsights([c], type, PROFILE_PER_TYPE, trace && { trace, stage: 'profile' }, [], expansionParams([...exclude])).catch((e: any) =>
       e?.status === 400 ? UNSUPPORTED : null
     );
-    if (!control) return call;
+    if (until === undefined) return call;
     let timer: ReturnType<typeof setTimeout>;
-    const deadline = new Promise<null>((res) => {
+    const giveUp = new Promise<null>((res) => {
       timer = setTimeout(() => {
         abandoned.push(`${c.name} · ${type.replace('urn:entity:', '')}`);
         res(null);
-      }, CONTROL_DEADLINE_MS);
+      }, Math.max(0, until - Date.now()));
     });
-    return Promise.race([call.finally(() => clearTimeout(timer)), deadline]);
+    return Promise.race([call.finally(() => clearTimeout(timer)), giveUp]);
   };
-  const lists = await Promise.all(people.map((c) => Promise.all(PROXY_TYPES.map((type) => profileOf(c, type)))));
+  const firstUntil = control ? Date.now() + CONTROL_DEADLINE_MS : deadline;
+  const lists = await Promise.all(people.map((c) => Promise.all(PROXY_TYPES.map((type) => profileOf(c, type, firstUntil)))));
   const failed = lists.flatMap((l, i) => l.map((x, j) => (x === null ? [i, j] : null)).filter((x): x is number[] => x !== null));
   if (control && failed.length) {
     trace?.add({
@@ -60,16 +74,32 @@ export async function audienceProfiles(people: QlooEntity[], exclude: Set<string
       ok: false,
     });
   }
-  const retry = !control;
-  if (failed.length && retry) {
-    await new Promise((res) => setTimeout(res, 1000));
-    for (const [i, j] of failed) lists[i][j] = await profileOf(people[i], PROXY_TYPES[j]);
-    const still = failed.filter(([i, j]) => lists[i][j] === null).length;
+  const timeLeft = deadline === undefined ? Infinity : deadline - Date.now();
+  if (failed.length && !control && timeLeft < MIN_RETRY_MS) {
     trace?.add({
       stage: 'profile',
       tool: 'Rule',
-      input: `${failed.length} profile quer${failed.length === 1 ? 'y' : 'ies'} failed on the first pass`,
-      output: still ? `${failed.length - still} recovered on a second pass, ${still} still failed` : 'All recovered on a second pass',
+      input: `${failed.length} profile quer${failed.length === 1 ? 'y' : 'ies'} failed or didn’t answer before the time limit${abandoned.length ? `: ${abandoned.join(', ')}` : ''}`,
+      output: `${Math.max(0, Math.round(timeLeft / 1000))} s left of the time limit`,
+      decision: 'Not asked again, to stay within the time limit; the missing parts are reported for each creator, not treated as empty',
+      http: abandoned.length ? 'no response before the time limit (abandoned)' : 'see above',
+      ok: false,
+    });
+  } else if (failed.length && !control) {
+    const abandonedFirst = abandoned.length;
+    await new Promise((res) => setTimeout(res, 1000));
+    // In parallel: asked one after another, each failure could take another 31 s.
+    const again = await Promise.all(failed.map(([i, j]) => profileOf(people[i], PROXY_TYPES[j], deadline)));
+    failed.forEach(([i, j], k) => (lists[i][j] = again[k]));
+    const still = failed.filter(([i, j]) => lists[i][j] === null).length;
+    const gaveUp = abandoned.slice(abandonedFirst);
+    trace?.add({
+      stage: 'profile',
+      tool: 'Rule',
+      input: `${failed.length} profile quer${failed.length === 1 ? 'y' : 'ies'} failed on the first pass${abandonedFirst ? ` (${abandoned.slice(0, abandonedFirst).join(', ')} given up at the time limit)` : ''}`,
+      output:
+        (still ? `${failed.length - still} recovered on a second pass, ${still} still failed` : 'All recovered on a second pass') +
+        (gaveUp.length ? `; given up at the time limit: ${gaveUp.join(', ')}` : ''),
       decision: still ? 'The missing parts are reported for each creator, not treated as empty' : 'Profiles complete',
     });
   }

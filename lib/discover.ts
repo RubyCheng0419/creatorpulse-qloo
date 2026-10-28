@@ -67,6 +67,12 @@ export interface DiscoverInput {
 
 const NO_SCORE: Compatibility = { fitScore: null, confidence: null, verdict: 'insufficient-data', dimensions: [] };
 
+// The function stops at 60 s (app/api/discover/route.ts). Audience-taste queries still out
+// PROFILE_DEADLINE_MS after the start are given up (lib/audience), which leaves time to score
+// and to return what was found; channel lookups get CHANNEL_DEADLINE_MS.
+const PROFILE_DEADLINE_MS = 38_000;
+const CHANNEL_DEADLINE_MS = 50_000;
+
 function discoveryId(input: DiscoverInput, category: CreatorCategory): string {
   const key = JSON.stringify([
     String(input.brandName || '').trim().toLocaleLowerCase(),
@@ -79,6 +85,7 @@ function discoveryId(input: DiscoverInput, category: CreatorCategory): string {
 }
 
 export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
+  const started = Date.now();
   const brandName = String(input.brandName || '').trim();
   if (!brandName) throw new ApiError('Provide a brand name.', 400);
   const creatorCategory: CreatorCategory = isCreatorCategory(input.creatorCategory) ? input.creatorCategory : 'any';
@@ -186,7 +193,7 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
   // 3. Each candidate's audience taste (lib/audience), with failed queries asked again; the
   //    controls' alongside, in parallel and without that second pass (see audienceProfiles).
   const [candidateProfiles, extraProfiles] = await Promise.all([
-    audienceProfiles(candidates, brandIds, trace),
+    audienceProfiles(candidates, brandIds, trace, false, started + PROFILE_DEADLINE_MS),
     extra.length ? audienceProfiles(extra, brandIds, trace, true) : Promise.resolve([]),
   ]);
   const allProfiles = [...candidateProfiles, ...extraProfiles];
@@ -285,7 +292,11 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
     });
 
   // 7. YouTube channels for the deep dive; a creator without one keeps the Qloo score.
-  const channels = await channelsPromise;
+  // A creator whose channel isn't found in time keeps the Qloo score, without a deep dive.
+  const channels = await Promise.race([
+    channelsPromise,
+    new Promise<null[]>((res) => setTimeout(() => res(candidates.map(() => null)), Math.max(0, started + CHANNEL_DEADLINE_MS - Date.now()))),
+  ]);
   const channelOf = new Map(candidates.map((c, i) => [c.id, channels[i]]));
 
   return {
