@@ -146,6 +146,10 @@ Each result carries a trace of the run, recorded as it happens: the YouTube call
 
 Gemini (`gemini-3.5-flash`) reads video titles, descriptions and tags and proposes names that are **explicitly mentioned**, e.g. a sponsor in a description. These are only search terms: a name becomes evidence only if Qloo returns an entity whose name or Qloo alias matches it exactly. Gemini never sees or produces scores, entities or report text.
 
+Qloo’s catalogue is in English, so for a name written in another language the LLM also gives its established English name (中華電信 → Chunghwa Telecom, 甄嬛傳 → *Empresses in the Palace*). The name as written is searched first, then the English name; either must match exactly, and the Agent Trace shows which (“甄嬛傳 → Empresses in the Palace”). A brand typed in another language (蘋果) is never substituted: its English name is offered as a suggestion (“Did you mean Apple Inc?”) if Qloo has a brand by exactly that name.
+
+The text sent to the LLM is kept under about 4,500 tokens: links, emails and chapter timestamps are removed, a line every video repeats (a channel’s footer) is sent once, and the descriptions share what titles and tags leave. Groq’s free tier refuses any request over 8,000 tokens per minute, and the latest 15 videos of a Chinese-language channel were about 9,000, so those channels got no score whenever Gemini was over quota. English channels are almost always under the budget and are sent as before.
+
 If Gemini is over quota (429), overloaded (503) or doesn’t answer in time, the same prompt and JSON schema go to **Groq** (`openai/gpt-oss-120b`, temperature 0) once, for every LLM step: video names, brand-description names and keywords, and the retry decision. Its answer is cached for 24 hours like Gemini’s, and the page says which LLM answered (“Groq live”, “Groq cached”). Groq is held to the same rule: it only proposes search terms. Key visuals are read by Gemini only.
 
 Find creators needs no LLM at all unless a description or key visual is given: candidates, audience taste and scores all come from Qloo.
@@ -221,7 +225,7 @@ Regenerate the snapshots with `node scripts/save-demo-snapshot.mjs [base-url]` a
 - **Scores measure cultural fit only**, not brand safety, past controversies or audience size.
 - **A tags-only brand side is coarse.** Affinities against a few style tags span a narrower range than against a brand, and Qloo takes about 15 seconds to score places against tags alone, so places are left out then (Food & Travel uses destinations). Confidence for such a brand side is at most Low in Find creators.
 - **No location signal yet**, so place and destination proxies can skew toward particular regions.
-- **Brand names must be in English**; Qloo’s matching of non-English brand names is unreliable.
+- **Brand names should be in English**; Qloo’s matching of non-English brand names is unreliable. A brand typed in another language gets its English name as a suggestion, which the user confirms.
 - **Brands outside Qloo are approximated**, by reference brands or by the Qloo entities their description names, and labelled as such with lower confidence.
 - **LLM output varies between calls** (Check a creator only). Answers are cached for 24 hours per set of videos, so repeating a match on the same server gives the same names. Across servers or after the cache expires, the confirmed entities can differ and the score moves: the Apple × MKBHD demo has scored between 69 and 75 on live runs. Find creators doesn’t depend on an LLM and gave identical rankings on repeated live runs.
 - **History is stored in the browser** (localStorage), so `/match/[id]` links only open on the device that ran the match.
