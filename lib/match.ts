@@ -16,7 +16,7 @@ import {
   verifyEntities,
 } from '@/lib/qloo';
 import type { NoDataReason } from '@/lib/no-data';
-import { Report, VERDICT_LABELS, buildReport } from '@/lib/report';
+import { Report, SummaryContext, VERDICT_LABELS, buildReport } from '@/lib/report';
 import {
   AFFINITY_FLOOR,
   Compatibility,
@@ -199,6 +199,17 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   const brandTags = brand.tags;
   const brandIds = new Set(brandSignal.map((e) => e.id));
   const brandLabel = brand.brand.entity?.name || brandName;
+  // What the Summary says the score rests on (lib/report decisionSummary).
+  const summaryContextFor = (scoreBasis: 'videos' | 'audience'): SummaryContext => ({
+    brand: brandLabel,
+    basis: brand.basis,
+    brandSignal: brandSignal.map((e) => e.name),
+    styleTags: brandTags.filter((t) => !brand.imageTags.some((i) => i.id === t.id)).map((t) => t.name),
+    imageTags: brand.imageTags.map((t) => t.name),
+    scoreBasis,
+    person: base.creator.qlooPerson?.name,
+    fromChannel: urls.length === 1 && !parseVideoId(urls[0]),
+  });
 
   // The creator's own Qloo entity: for the audience overlap, and as the fallback evidence
   // when the videos name too little.
@@ -255,7 +266,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     const audienceCompat = brandConfidence(fromAudience, brand, trace);
     const proxyIds = new Set(brand.entities.map((e) => e.id));
     const shared = profileItems.filter((e) => proxyIds.has(e.id));
-    const audienceReport = buildReport(brandLabel, base.creator.channelName || person.name, audienceCompat, profileItems, shared, false);
+    const audienceReport = buildReport(brandLabel, base.creator.channelName || person.name, audienceCompat, profileItems, shared, summaryContextFor('audience'));
     onStage?.('report');
     return {
       ...base,
@@ -386,7 +397,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     compatibility,
     items,
     sharedEntities,
-    mentionsBrand
+    summaryContextFor('videos')
   );
   trace.add({
     stage: 'report',

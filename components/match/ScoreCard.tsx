@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Match } from '@/lib/match';
-import { VERDICT_LABELS, brandBasisNote } from '@/lib/report';
-import type { Compatibility, Verdict } from '@/lib/scoring';
+import { VERDICT_LABELS, brandBasisNote, decisionSummary, summaryContext } from '@/lib/report';
+import type { Verdict } from '@/lib/scoring';
 import { ScoreRange } from './ScoreRange';
 
 const VERDICT_STYLE: Record<Verdict, string> = {
@@ -12,32 +12,14 @@ const VERDICT_STYLE: Record<Verdict, string> = {
   'insufficient-data': 'bg-slate-100 text-slate-700 ring-slate-200',
 };
 
-// The hint follows the evidence: it only mentions clashes when some dimension has one.
-function verdictHint(c: Compatibility): string {
-  const clashes = c.dimensions.filter((d) => d.score !== null && d.divergence.length).map((d) => d.label);
-  const list = clashes.join(', ');
-  switch (c.verdict) {
-    case 'high':
-      return clashes.length ? `Recommended. Watch for clashes in ${list}.` : 'Recommended. No evidence of a taste clash.';
-    case 'medium':
-      return clashes.length ? `Workable, but steer clear of ${list}.` : 'Workable. No evidence of a taste clash; the overlap is moderate.';
-    case 'low':
-      return 'Not recommended unless only one dimension matters.';
-    case 'no-match':
-      return 'Not recommended.';
-    default:
-      return 'Not enough Qloo evidence to score.';
-  }
-}
-
 export function ScoreCard({ match }: { match: Match }) {
   const c = match.compatibility;
   const brand = match.brand.entity?.name || match.brand.name;
   const creator = match.creator.channelName || 'this creator';
   // Results saved before confidence became a level carry a number; don't show it.
   const level = typeof c.confidence === 'string' ? c.confidence : null;
-  const lowConfidence = level === 'Low';
   const basisNote = brandBasisNote(match.brand);
+  const decision = level ? decisionSummary(c, summaryContext(match)) : null;
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 print:break-inside-avoid print:p-4">
@@ -104,7 +86,16 @@ export function ScoreCard({ match }: { match: Match }) {
           <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ring-1 ${VERDICT_STYLE[c.verdict]}`}>
             {VERDICT_LABELS[c.verdict]}
           </span>
-          <p className="text-sm text-slate-600">{verdictHint(c)}</p>
+          {/* The decision, from the same rules as the Summary (lib/report decisionSummary). */}
+          <p className="max-w-md text-sm text-slate-700">
+            {decision ? (
+              <>
+                <span className="font-semibold text-slate-900">{decision.verdict}:</span> {decision.condition}
+              </>
+            ) : (
+              'Not enough Qloo evidence to score.'
+            )}
+          </p>
         </div>
       </div>
 
@@ -121,7 +112,6 @@ export function ScoreCard({ match }: { match: Match }) {
           {brand}’s audience likes {match.creator.qlooPerson.name} in Qloo. Shown, not part of the score.
         </p>
       )}
-      {lowConfidence && <p className="mt-4 text-sm font-medium text-amber-800">Low confidence: indicative only.</p>}
       <p className="mt-4 text-xs text-slate-500">
         {new Date(match.createdAt).toLocaleDateString('en-US')} · Report {match.id}
       </p>

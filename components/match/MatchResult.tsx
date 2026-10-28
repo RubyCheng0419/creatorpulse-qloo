@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { decisionSummary, summaryContext } from '@/lib/report';
 import { shareLink } from '@/lib/share-link';
 import Link from 'next/link';
 import type { Match } from '@/lib/match';
@@ -94,7 +95,7 @@ export function MatchResult({
             brandName={match.brand.entity?.name || match.brand.name}
             basis={match.scoreBasis === 'audience' ? 'audience' : 'content'}
           />
-          <ReportDetails report={match.report} />
+          <ReportDetails report={match.report} decision={decisionSummary(match.compatibility, summaryContext(match))} />
           <CrossCheck match={match} />
         </>
       ) : (

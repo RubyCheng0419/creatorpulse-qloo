@@ -1,5 +1,5 @@
 import type { Match } from '@/lib/match';
-import { VERDICT_LABELS, brandBasisNote } from '@/lib/report';
+import { VERDICT_LABELS, brandBasisNote, decisionSummary, summaryContext } from '@/lib/report';
 import type { ScoredEntity } from '@/lib/scoring';
 import { isLlm, summarizeTrace } from '@/lib/trace';
 
@@ -65,10 +65,13 @@ export function matchToMarkdown(match: Match): string {
       );
     }
     const r = match.report;
+    const d = decisionSummary(match.compatibility, summaryContext(match));
     lines.push(
       '## Summary',
       '',
-      r.summary,
+      ...(d
+        ? [`- **Decision — ${d.verdict}:** ${d.condition}`, `- **Why:** ${d.why}`, `- **Next step:** ${d.next}`, `- **Confidence — ${d.confidence.replace(/^(\w+): /, '$1:** ')}`]
+        : [r.summary]),
       '',
       '## Culture clash',
       '',
