@@ -403,6 +403,45 @@ const RETRY_SCHEMA = {
   required: ['decisions'],
 };
 
+// A product the videos name, by its maker: "Sony FX3" counts as Sony, "Adobe Premiere" as
+// Adobe. Qloo has few products but most makers, and a creator who names a brand's products
+// covers that brand. Decided by a fixed rule, not the LLM, so it's the same every run: the
+// product name's first one or two words must be a Qloo brand's exact name or alias (the
+// longer first). Only for names the LLM called a product and Qloo didn't match exactly. A
+// maker that is the brand being scored is left out like any mention of the brand (lib/match).
+const MAKER_PREFIX_WORDS = 2;
+
+async function makersOfProducts(
+  queries: { keyword: string; kind: string }[],
+  resolved: { keyword: string; entity: QlooEntity | null; error?: string }[],
+  trace?: Trace
+): Promise<void> {
+  const rows = resolved.filter((r) => !r.entity && !r.error && queries.find((q) => q.keyword === r.keyword)?.kind === 'product');
+  const found: string[] = [];
+  for (const row of rows) {
+    const words = row.keyword.split(/\s+/).filter(Boolean);
+    for (let n = Math.min(MAKER_PREFIX_WORDS, words.length - 1); n >= 1; n--) {
+      const maker = words.slice(0, n).join(' ');
+      if (compact(maker).length < 2) continue;
+      const entity = await resolveEntity(maker, KIND_TYPES.brand, undefined, trace && { trace, stage: 'creator' }).catch(() => null);
+      if (entity) {
+        // "Sony FX3 → Sony": lib/qloo verifyEntities re-checks the part after the arrow.
+        row.entity = { ...entity, query: `${row.keyword} → ${maker}` };
+        found.push(`“${row.keyword}” → ${entity.name}`);
+        break;
+      }
+    }
+  }
+  if (!rows.length) return;
+  trace?.add({
+    stage: 'creator',
+    tool: 'Rule',
+    input: `${rows.length} product${rows.length === 1 ? '' : 's'} with no exact Qloo match: counted as the maker when the name starts with a Qloo brand’s exact name`,
+    output: found.length ? `Maker found: ${found.join(', ')}` : 'No maker found',
+    decision: found.length ? 'Counted as the maker brand (labelled “product → maker” in the evidence)' : 'Left for the retry decision',
+  });
+}
+
 async function retryUnmatched(
   videoKey: string,
   queries: { keyword: string; english?: string; kind: string; types: string[] }[],
@@ -723,6 +762,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
       }
     })
   );
+  await makersOfProducts(queries, resolved, trace);
   await retryUnmatched(videoKey, queries, resolved, trace);
 
   onStage?.('creator');
