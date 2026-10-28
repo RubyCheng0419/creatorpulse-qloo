@@ -1,8 +1,10 @@
-import type { DecisionSummary, Report } from '@/lib/report';
+import { type DecisionSummary, HOLD_RECOMMENDATION, type Report } from '@/lib/report';
 
 // `decision` is rebuilt from the scores (lib/report decisionSummary), so a result saved before
 // the decision summary existed shows it too; without one, the stored summary text is shown.
+// A Hold gives no content recommendations, whatever the stored report says.
 export function ReportDetails({ report, decision }: { report: Report; decision: DecisionSummary | null }) {
+  const recommendations = decision?.verdict === 'Hold' ? [HOLD_RECOMMENDATION] : report.recommendations;
   return (
     <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-4 sm:p-6 print:p-4">
       <div>
@@ -36,7 +38,7 @@ export function ReportDetails({ report, decision }: { report: Report; decision: 
         <div>
           <h3 className="text-base font-semibold text-slate-900">Recommendations</h3>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed text-slate-700">
-            {report.recommendations.map((r) => (
+            {recommendations.map((r) => (
               <li key={r}>{r}</li>
             ))}
           </ul>

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Match } from '@/lib/match';
 import { VERDICT_LABELS, brandBasisNote, decisionSummary, summaryContext } from '@/lib/report';
 import type { Verdict } from '@/lib/scoring';
+import { matchUnverified } from '@/lib/unverified';
 import { ScoreRange } from './ScoreRange';
 
 const VERDICT_STYLE: Record<Verdict, string> = {
@@ -20,6 +21,7 @@ export function ScoreCard({ match }: { match: Match }) {
   const level = typeof c.confidence === 'string' ? c.confidence : null;
   const basisNote = brandBasisNote(match.brand);
   const decision = level ? decisionSummary(c, summaryContext(match)) : null;
+  const unverified = matchUnverified(match);
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 print:break-inside-avoid print:p-4">
@@ -83,9 +85,16 @@ export function ScoreCard({ match }: { match: Match }) {
           )}
         </div>
         <div className="space-y-1">
-          <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ring-1 ${VERDICT_STYLE[c.verdict]}`}>
-            {VERDICT_LABELS[c.verdict]}
-          </span>
+          {/* Unverified (lib/unverified): the score stays, the verdict goes, with the reasons. */}
+          {unverified.length ? (
+            <span className="inline-block rounded-full bg-rose-50 px-3 py-1 text-sm font-semibold text-rose-800 ring-1 ring-rose-200">
+              Unverified: do not use for a decision
+            </span>
+          ) : (
+            <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ring-1 ${VERDICT_STYLE[c.verdict]}`}>
+              {VERDICT_LABELS[c.verdict]}
+            </span>
+          )}
           {/* The decision, from the same rules as the Summary (lib/report decisionSummary). */}
           <p className="max-w-md text-sm text-slate-700">
             {decision ? (
@@ -96,6 +105,18 @@ export function ScoreCard({ match }: { match: Match }) {
               'Not enough Qloo evidence to score.'
             )}
           </p>
+          {unverified.length > 0 && (
+            <ul className="max-w-md space-y-0.5 text-xs text-rose-900">
+              {unverified.map((r) => (
+                <li key={r.code + r.detail}>
+                  <span className="font-semibold">
+                    {r.code} · {r.label}:
+                  </span>{' '}
+                  {r.detail}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 

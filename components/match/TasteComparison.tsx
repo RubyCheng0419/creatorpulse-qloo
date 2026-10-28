@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { DIVERGENCE_MAX, INTERSECTION_MIN, type Dimension, type DimensionScore, type ScoredEntity } from '@/lib/scoring';
+import { DIVERGENCE_MAX, INTERSECTION_MIN, MIN_DIMENSION_ENTITIES, type Dimension, type DimensionScore, type ScoredEntity, isCounted } from '@/lib/scoring';
 
 const TYPE_LABELS: Record<string, string> = {
   'urn:entity:brand': 'brand',
@@ -214,6 +214,10 @@ export function TasteComparison({
                       <span className="text-rose-700">{d.divergence.length} clash</span>
                     </span>
                   )}
+                  {d.score !== null && !isCounted(d) && (
+                    <span className="mt-0.5 block text-xs font-medium text-amber-800">Thin: shown, not counted</span>
+                  )}
+                  {d.byDefault && <span className="mt-0.5 block text-xs font-medium text-slate-600">Classified by default</span>}
                 </span>
                 <span className="relative h-3 min-w-12 flex-1 overflow-hidden rounded-full bg-slate-100">
                   {d.score !== null && <span className="absolute inset-y-0 left-0 rounded-full bg-teal-600" style={{ width: `${d.score}%` }} />}
@@ -234,9 +238,16 @@ export function TasteComparison({
                   {isOpen && (
                     <div className="border-t border-slate-100 px-3 py-3 print:hidden">
                       <p className="text-sm font-medium text-slate-900">{takeaway(d, audience, basis)}</p>
+                      {d.byDefault && (
+                        <p className="mt-1 text-xs text-slate-600">
+                          None of these has a Qloo genre that places it here; such brands land in {d.label} by default. It still counts, but isn’t
+                          named strongest or weakest and decides nothing.
+                        </p>
+                      )}
                       <div className="mt-1 mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                         <span>
-                          Based on {d.itemCount} {d.itemCount === 1 ? 'thing' : 'things'} Qloo knows · {(d.weight * 100).toFixed(0)}% of the Fit Score
+                          Based on {d.itemCount} {d.itemCount === 1 ? 'thing' : 'things'} Qloo knows ·{' '}
+                          {isCounted(d) ? `${(d.weight * 100).toFixed(0)}% of the Fit Score` : `not counted: fewer than ${MIN_DIMENSION_ENTITIES} things`}
                         </span>
                         <button
                           type="button"

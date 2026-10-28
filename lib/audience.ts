@@ -1,5 +1,5 @@
 import { PROXY_TYPES, QlooEntity, expansionParams, getInsights, namesMatch, searchEntities } from '@/lib/qloo';
-import { Compatibility, ConfidenceLevel, PROXY_WEIGHT, ScoredEntity, computeCompatibility, dimensionOf } from '@/lib/scoring';
+import { Compatibility, ConfidenceLevel, PROXY_WEIGHT, ScoredEntity, computeCompatibility, dimensionOf, isCounted } from '@/lib/scoring';
 import type { Trace } from '@/lib/trace';
 
 // A creator's audience taste, straight from Qloo: the creator's person entity as signal,
@@ -100,7 +100,8 @@ export function scoreProfile(entities: QlooEntity[], affinities: Map<string, num
   }
   if (items.length < MIN_PROFILE_ENTITIES) return { items, compatibility: null };
   const c = computeCompatibility(items);
-  const dims = c.dimensions.filter((d) => d.score !== null).length;
+  if (c.fitScore === null) return { items, compatibility: null }; // fewer than 2 dimensions counted
+  const dims = c.dimensions.filter(isCounted).length;
   return { items, compatibility: { ...c, confidence: profileConfidence(items.length, dims), confidenceBasis: { entities: items.length, dimensions: dims } } };
 }
 
@@ -113,12 +114,14 @@ const isCreator = (r: any) => (r?.tags || []).some((t: any) => CREATOR_TAG.test(
 // The Qloo person behind a channel: the channel's title, then its handle, must be the
 // person's exact name or alias ("阿滴" is an alias of Ray Du, "Dr. Pimple Popper" of Sandra
 // Lee), and the person must carry a creator tag, so a namesake never brings someone else's
-// audience. Among several exact matches (Qloo has three Mark Wiens), the tagged one wins.
-export async function findCreatorPerson(title: string, handle: string, trace?: Trace): Promise<QlooEntity | null> {
+// audience. Among several exact matches (Qloo has three Mark Wiens), the tagged one wins; how
+// many there were is returned as `namesakes`, since the tag alone then picks the person.
+export async function findCreatorPerson(title: string, handle: string, trace?: Trace): Promise<(QlooEntity & { namesakes: number }) | null> {
   const t0 = Date.now();
   const queries = [...new Set([title, handle.replace(/^@/, '')].filter((q) => q && q.trim()))];
   let chosen: any = null;
   let used = '';
+  let namesakes = 0;
   const seen: string[] = [];
   for (const query of queries) {
     // A failed query is in the trace (with its HTTP attempts) and skipped: no person, not "none".
@@ -128,6 +131,7 @@ export async function findCreatorPerson(title: string, handle: string, trace?: T
     chosen = exact.find(isCreator) ?? null;
     if (chosen) {
       used = query;
+      namesakes = exact.length;
       break;
     }
   }
@@ -150,5 +154,6 @@ export async function findCreatorPerson(title: string, handle: string, trace?: T
     via: 'search',
     query: used,
     genres: [],
+    namesakes,
   };
 }

@@ -19,6 +19,7 @@ import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
 import { type ProjectInputs, addRun, createProject, getProject, updateInputs, useProjects } from '@/lib/projects';
 import { brandBasisNote } from '@/lib/report';
 import { discoverShareLink } from '@/lib/share-link';
+import { candidateUnverified } from '@/lib/unverified';
 
 // "Find creators": the brand goes in, Qloo's YouTubers come out ranked by how their
 // audience's taste relates to the brand's. Each one links to the video deep dive on "/".
@@ -497,6 +498,7 @@ function DiscoverPage() {
                 <RankingOverview
                   candidates={result.candidates}
                   hrefOf={(c) => creatorPageHref(result.id, c.qlooId)}
+                  reasonsOf={(c) => candidateUnverified(c, result)}
                   unverified={result.validation?.status === 'unverified'}
                 />
                 <dl className="grid gap-x-6 gap-y-3 px-1 text-sm sm:grid-cols-3">
@@ -524,6 +526,7 @@ function DiscoverPage() {
                       key={c.qlooId}
                       c={c}
                       href={creatorPageHref(result.id, c.qlooId)}
+                      reasons={candidateUnverified(c, result)}
                       deepDiveHref={deepDive(c)}
                       brandName={result.brand.entity?.name || result.brand.name}
                       unverified={result.validation?.status === 'unverified'}

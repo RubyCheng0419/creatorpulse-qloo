@@ -23,11 +23,14 @@ import {
   DIRECT_WEIGHT,
   DIVERGENCE_MAX,
   INTERSECTION_MIN,
+  MIN_COUNTED_DIMENSIONS,
+  MIN_DIMENSION_ENTITIES,
   MIN_DIRECT_ENTITIES,
   PROXY_WEIGHT,
   ScoredEntity,
   computeCompatibility,
   dimensionOf,
+  isCounted,
 } from '@/lib/scoring';
 import { bypassCache } from '@/lib/request-context';
 import type { OnStage } from '@/lib/stages';
@@ -75,7 +78,9 @@ export interface Match {
     geminiAt?: string;
     entities: QlooEntity[]; // Qloo entities named in the videos (before cross-domain expansion)
     unmatched: string[];
-    qlooPerson?: { id: string; name: string }; // the creator's own Qloo entity, when one matches the channel
+    // The creator's own Qloo entity, when one matches the channel; namesakes: exact-name Qloo
+    // people found, of whom the creator tag picked this one (2+ = identity rests on the tag).
+    qlooPerson?: { id: string; name: string; namesakes?: number };
     audienceOverlap?: number | null; // the brand audience's affinity for that person (shown, not scored)
   };
   // 'videos': scored from what the videos name (the usual case). 'audience': the videos named
@@ -220,7 +225,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   const { kept } = await verifyEntities([...creator.entities, ...(found ? [found] : [])], { trace, stage: 'creator' });
   const keptIds = new Map(kept.map((e) => [e.id, e]));
   const person = found ? (keptIds.get(found.id) ?? null) : null;
-  if (person) base.creator = { ...base.creator, qlooPerson: { id: person.id, name: person.name } };
+  if (person) base.creator = { ...base.creator, qlooPerson: { id: person.id, name: person.name, namesakes: found!.namesakes } };
 
   const direct = creator.entities.filter((e) => keptIds.has(e.id)).map((e) => keptIds.get(e.id)!);
   base.creator = { ...base.creator, entities: direct };
@@ -359,30 +364,40 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
 
   // 4. Score by fixed formula, then write the report from the same evidence.
   let compatibility = computeCompatibility(items);
-  const scored = compatibility.dimensions.filter((d) => d.score !== null);
+  const scored = compatibility.dimensions.filter(isCounted);
   const empty = compatibility.dimensions.filter((d) => d.score === null);
+  const thin = compatibility.dimensions.filter((d) => d.score !== null && !isCounted(d));
   trace.add({
     stage: 'score',
     tool: 'Rule',
     input: `${items.length} scored entities (${items.filter((i) => i.side === 'direct').length} named in the videos at weight ${DIRECT_WEIGHT}, ${items.filter((i) => i.side === 'proxy').length} cross-domain at weight ${PROXY_WEIGHT}) sorted into dimensions by Qloo type and genre tags`,
-    output: compatibility.dimensions.map((d) => `${d.label} ${d.score ?? 'no data'} (n=${d.itemCount})`).join(' · '),
+    output: compatibility.dimensions
+      .map((d) => `${d.label} ${d.score ?? 'no data'} (n=${d.itemCount}${d.score !== null && !isCounted(d) ? ', thin' : ''}${d.byDefault ? ', classified by default' : ''})`)
+      .join(' · '),
     decision:
       `Affinity rescaled from [${AFFINITY_FLOOR}, 1] to [0, 100]; shared taste ≥ ${INTERSECTION_MIN}, weak link ${DIVERGENCE_MAX}–${INTERSECTION_MIN}, clash < ${DIVERGENCE_MAX}` +
-      (empty.length ? `; ${empty.map((d) => d.label).join(', ')} excluded (no data, not counted as zero)` : ''),
+      (empty.length ? `; ${empty.map((d) => d.label).join(', ')} excluded (no data, not counted as zero)` : '') +
+      (thin.length ? `; ${thin.map((d) => d.label).join(', ')} shown, not counted (fewer than ${MIN_DIMENSION_ENTITIES} entities)` : ''),
   });
   onStage?.('score');
   if (compatibility.fitScore === null) {
-    return insufficient('no-affinity', 'Qloo returned no affinity for any creator entity, so no score can be given.', brandSide);
+    return scored.length || thin.length
+      ? insufficient(
+          'too-few-dimensions',
+          `Only ${scored.length} taste dimension${scored.length === 1 ? ' has' : 's have'} ${MIN_DIMENSION_ENTITIES} or more scored entities; a score needs at least ${MIN_COUNTED_DIMENSIONS}.`,
+          brandSide
+        )
+      : insufficient('no-affinity', 'Qloo returned no affinity for any creator entity, so no score can be given.', brandSide);
   }
   const evidenceLevel = compatibility.confidence!;
   trace.add({
     stage: 'score',
     tool: 'Rule',
-    input: `Equal-weight mean of ${scored.length} dimension${scored.length === 1 ? '' : 's'} with data`,
+    input: `Equal-weight mean of ${scored.length} counted dimension${scored.length === 1 ? '' : 's'} (${MIN_DIMENSION_ENTITIES}+ entities each)`,
     output:
       `Fit Score ${compatibility.fitScore}, confidence ${evidenceLevel}` +
       (compatibility.confidenceBasis
-        ? ` (based on ${compatibility.confidenceBasis.entities} confirmed entities across ${compatibility.confidenceBasis.dimensions} dimensions; High = 10+ entities and all 5 dimensions, Medium = 5+, Low = fewer)`
+        ? ` (based on ${compatibility.confidenceBasis.entities} named entities across ${compatibility.confidenceBasis.dimensions} counted dimensions; High = 10+ entities and all 5 dimensions, Medium = 5+ entities and 3+ dimensions, Low = less)`
         : ''),
     decision: `Verdict: ${VERDICT_LABELS[compatibility.verdict]} (80+ strong, 60–79 moderate, 40–59 weak, below 40 no fit)`,
   });

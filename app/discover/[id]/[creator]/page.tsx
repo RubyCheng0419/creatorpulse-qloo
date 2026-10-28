@@ -13,6 +13,7 @@ import { type StoredDiscovery, useDiscoveries } from '@/lib/discoveries';
 import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
 import { VERDICT_LABELS, brandBasisNote } from '@/lib/report';
 import { discoverShareLink } from '@/lib/share-link';
+import { candidateUnverified } from '@/lib/unverified';
 
 // One ranked creator from a ranking this browser found (lib/discoveries): the profile that
 // was scored, the channel it maps to, every dimension and entity, and the confidence.
@@ -57,6 +58,7 @@ function CreatorDetail({ d, c }: { d: StoredDiscovery; c: CreatorCandidate }) {
   const comp = c.compatibility;
   const scored = c.status === 'scored';
   const unverified = d.validation?.status === 'unverified';
+  const reasons = candidateUnverified(c, d);
   const roles = roleKinds(c).length;
   const basisNote = brandBasisNote(d.brand);
   const entities = comp.dimensions
@@ -109,12 +111,24 @@ function CreatorDetail({ d, c }: { d: StoredDiscovery; c: CreatorCandidate }) {
           </div>
           {scored && (
             <span
-              className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ring-1 ${unverified ? 'text-rose-800 ring-rose-200' : VERDICT_STYLE[comp.verdict]}`}
+              className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ring-1 ${unverified || reasons.length ? 'text-rose-800 ring-rose-200' : VERDICT_STYLE[comp.verdict]}`}
             >
-              {unverified ? 'Unverified ranking: no verdict' : VERDICT_LABELS[comp.verdict]}
+              {reasons.length ? 'Unverified: do not use for a decision' : unverified ? 'Unverified ranking: no verdict' : VERDICT_LABELS[comp.verdict]}
             </span>
           )}
         </div>
+        {scored && reasons.length > 0 && (
+          <ul className="mt-3 space-y-0.5 text-sm text-rose-900">
+            {reasons.map((r) => (
+              <li key={r.code}>
+                <span className="font-semibold">
+                  {r.code} · {r.label}:
+                </span>{' '}
+                {r.detail} {r.next}
+              </li>
+            ))}
+          </ul>
+        )}
 
         <dl className="mt-6 grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[9rem_1fr]">
           <dt className="text-slate-500">Scored profile</dt>

@@ -29,10 +29,16 @@ export const DIVERGENCE_MAX = 0.7;
 export const DIRECT_WEIGHT = 1; // entity named in the creator's own videos
 export const PROXY_WEIGHT = 0.5; // entity Qloo associates with those, one step removed
 export const MIN_DIRECT_ENTITIES = 3; // §3.2: fewer than this → no score
-// Confidence: High needs this many named entities and data in all five dimensions;
-// Medium needs MEDIUM_CONFIDENCE_ENTITIES; anything less is Low.
+// debate/decision.md: a dimension resting on 1–2 entities is shown but not counted in the Fit
+// Score, and a score needs at least MIN_COUNTED_DIMENSIONS counted dimensions (one dimension
+// alone isn't a cross-domain fit).
+export const MIN_DIMENSION_ENTITIES = 3;
+export const MIN_COUNTED_DIMENSIONS = 2;
+// Confidence: High needs this many named entities and all five dimensions counted; Medium
+// needs MEDIUM_CONFIDENCE_ENTITIES and MEDIUM_CONFIDENCE_DIMENSIONS counted; anything less is Low.
 export const HIGH_CONFIDENCE_ENTITIES = 10;
 export const MEDIUM_CONFIDENCE_ENTITIES = 5;
+export const MEDIUM_CONFIDENCE_DIMENSIONS = 3;
 
 const TYPE_DIMENSION: Record<string, Dimension> = {
   'urn:entity:artist': 'music',
@@ -58,6 +64,7 @@ const BRAND_GENRE_DIMENSION: Record<string, Dimension> = {
   entertainment: 'entertainment',
   media: 'entertainment',
   gaming: 'entertainment',
+  games: 'entertainment', // brand:games (e.g. World Of Warships); videogame entities are entertainment too
   sports_organization: 'entertainment',
   food_and_beverage: 'food_travel',
   dining: 'food_travel',
@@ -67,18 +74,26 @@ const BRAND_GENRE_DIMENSION: Record<string, Dimension> = {
   home: 'lifestyle',
 };
 
-export function dimensionOf(entity: QlooEntity): Dimension {
-  if (TYPE_DIMENSION[entity.type]) return TYPE_DIMENSION[entity.type];
-  // Brands: majority vote over genre tags; generic tags like mobile_app and retail don't vote.
+// Brands: majority vote over genre tags; generic tags like mobile_app and retail don't vote.
+function genreVote(entity: QlooEntity): Dimension | null {
   const votes = new Map<Dimension, number>();
-  for (const g of entity.genres) {
+  for (const g of entity.genres ?? []) {
     const [kind, top] = g.split(':');
     const d = kind === 'brand' ? BRAND_GENRE_DIMENSION[top] : undefined;
     if (d) votes.set(d, (votes.get(d) || 0) + 1);
   }
   const winner = [...votes].sort((a, b) => b[1] - a[1] || DIMENSIONS.indexOf(a[0]) - DIMENSIONS.indexOf(b[0]))[0];
-  return winner ? winner[0] : 'lifestyle';
+  return winner ? winner[0] : null;
 }
+
+export function dimensionOf(entity: QlooEntity): Dimension {
+  return TYPE_DIMENSION[entity.type] ?? genreVote(entity) ?? 'lifestyle';
+}
+
+// A brand with no genre that votes lands in Lifestyle by default, not because Qloo says so
+// (Dbrand, Hagerty, YouTube). Such entities still count, but a dimension made only of them
+// can't be called the strongest or weakest, nor decide anything (debate/decision.md).
+export const classifiedByDefault = (entity: QlooEntity): boolean => !TYPE_DIMENSION[entity.type] && !genreVote(entity);
 
 export interface ScoredEntity extends QlooEntity {
   side: 'direct' | 'proxy';
@@ -93,6 +108,10 @@ export interface DimensionScore {
   score: number | null; // null = no data; excluded from the total, not counted as 0
   weight: number; // share of the total after redistribution
   itemCount: number;
+  // In the Fit Score: data from MIN_DIMENSION_ENTITIES or more entities. Absent on results
+  // saved before the rule, which counted every dimension with data (see isCounted).
+  counted?: boolean;
+  byDefault?: boolean; // every entity here was classified by default (classifiedByDefault)
   intersection: ScoredEntity[]; // shared taste
   weakLink: ScoredEntity[];
   divergence: ScoredEntity[]; // clash
@@ -133,6 +152,8 @@ export function computeCompatibility(items: ScoredEntity[]): Compatibility {
       score,
       weight: 0,
       itemCount: group.length,
+      counted: score !== null && group.length >= MIN_DIMENSION_ENTITIES,
+      byDefault: group.length > 0 && group.every(classifiedByDefault),
       intersection: group.filter((i) => i.brandAffinity >= INTERSECTION_MIN).sort((a, b) => b.brandAffinity - a.brandAffinity),
       weakLink: group
         .filter((i) => i.brandAffinity >= DIVERGENCE_MAX && i.brandAffinity < INTERSECTION_MIN)
@@ -141,10 +162,11 @@ export function computeCompatibility(items: ScoredEntity[]): Compatibility {
     };
   });
 
-  // Equal weights (0.2 each), redistributed over the dimensions that have data.
-  const scored = dimensions.filter((d) => d.score !== null);
+  // Equal weights (0.2 each), redistributed over the counted dimensions; a thin one (1–2
+  // entities) is shown with its score but weighs nothing.
+  const scored = dimensions.filter(isCounted);
   for (const d of scored) d.weight = 1 / scored.length;
-  if (!scored.length) return { fitScore: null, confidence: null, verdict: 'insufficient-data', dimensions };
+  if (scored.length < MIN_COUNTED_DIMENSIONS) return { fitScore: null, confidence: null, verdict: 'insufficient-data', dimensions };
 
   const fitScore = Math.round(scored.reduce((s, d) => s + d.score! * d.weight, 0));
 
@@ -160,9 +182,19 @@ export function lowerConfidence(level: ConfidenceLevel): ConfidenceLevel {
   return level === 'High' ? 'Medium' : 'Low';
 }
 
-// Named, Qloo-confirmed, scored entities from the videos, and dimensions with data.
+// Named, Qloo-confirmed, scored entities from the videos, and counted dimensions.
 export function confidenceLevel({ entities, dimensions }: { entities: number; dimensions: number }): ConfidenceLevel {
   if (entities >= HIGH_CONFIDENCE_ENTITIES && dimensions === DIMENSIONS.length) return 'High';
-  if (entities >= MEDIUM_CONFIDENCE_ENTITIES) return 'Medium';
+  if (entities >= MEDIUM_CONFIDENCE_ENTITIES && dimensions >= MEDIUM_CONFIDENCE_DIMENSIONS) return 'Medium';
   return 'Low';
+}
+
+// Counted in the Fit Score. A result saved before MIN_DIMENSION_ENTITIES has no `counted`
+// and counted every dimension with data.
+export const isCounted = (d: DimensionScore): boolean => d.counted ?? d.score !== null;
+
+// The dimensions that may be named strongest or weakest, or decide anything: counted, and not
+// made only of default-classified entities. Strongest first.
+export function rankable(dimensions: DimensionScore[]): DimensionScore[] {
+  return dimensions.filter((d) => isCounted(d) && !d.byDefault).sort((a, b) => b.score! - a.score!);
 }

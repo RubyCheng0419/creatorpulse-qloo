@@ -1,5 +1,16 @@
 import type { Match } from '@/lib/match';
-import { Compatibility, DIVERGENCE_MAX, INTERSECTION_MIN, ScoredEntity, Verdict, confidenceLevel } from '@/lib/scoring';
+import {
+  Compatibility,
+  DIVERGENCE_MAX,
+  INTERSECTION_MIN,
+  MIN_DIMENSION_ENTITIES,
+  ScoredEntity,
+  Verdict,
+  confidenceLevel,
+  isCounted,
+  rankable,
+} from '@/lib/scoring';
+import { type UnverifiedReason, matchUnverified } from '@/lib/unverified';
 import { parseVideoId } from '@/lib/youtube-url';
 
 // PRODUCT_SPEC v3.1 §6 step 4 / §7. Template-based: every sentence is assembled
@@ -76,6 +87,7 @@ export interface SummaryContext {
   scoreBasis?: 'videos' | 'audience';
   person?: string; // the creator's Qloo person, for an audience-taste score
   fromChannel: boolean; // the videos are a channel's latest uploads, not the user's picks
+  unverified?: UnverifiedReason[]; // lib/unverified: any → the decision is Hold
 }
 
 export function summaryContext(match: Match): SummaryContext {
@@ -89,6 +101,7 @@ export function summaryContext(match: Match): SummaryContext {
     scoreBasis: match.scoreBasis,
     person: match.creator.qlooPerson?.name,
     fromChannel: urls.length === 1 && !parseVideoId(urls[0]),
+    unverified: matchUnverified(match),
   };
 }
 
@@ -108,17 +121,22 @@ const REAL_CLASH_SHARE = 0.1;
 
 export function decisionSummary(c: Compatibility, ctx: SummaryContext): DecisionSummary | null {
   if (c.fitScore === null || !c.confidence) return null;
-  const scored = c.dimensions.filter((d) => d.score !== null).sort((a, b) => b.score! - a.score!);
+  // Strongest and weakest only among dimensions that may decide anything (counted, not made of
+  // default-classified entities); the evidence only from counted ones (lib/scoring).
+  const counted = c.dimensions.filter(isCounted);
+  const ranked = rankable(c.dimensions);
+  const scored = ranked.length ? ranked : [...counted].sort((a, b) => b.score! - a.score!);
   if (!scored.length) return null;
   const best = scored[0];
   const worst = scored[scored.length - 1];
-  const entities = c.dimensions.flatMap((d) => [...d.intersection, ...d.weakLink, ...d.divergence].map((e) => ({ e, dim: d.label })));
+  const entities = counted.flatMap((d) => [...d.intersection, ...d.weakLink, ...d.divergence].map((e) => ({ e, dim: d.label })));
   const byAffinity = [...entities].sort((a, b) => b.e.brandAffinity - a.e.brandAffinity);
   const loved = entities.filter((x) => x.e.brandAffinity >= INTERSECTION_MIN);
   const clashes = entities.filter((x) => x.e.brandAffinity < DIVERGENCE_MAX).sort((a, b) => a.e.brandAffinity - b.e.brandAffinity);
-  const clashDims = [...new Set(clashes.map((x) => x.dim))].sort(
-    (a, b) => clashes.filter((x) => x.dim === b).length - clashes.filter((x) => x.dim === a).length
-  );
+  const deciding = new Set(scored.map((d) => d.label));
+  const clashDims = [...new Set(clashes.map((x) => x.dim))]
+    .filter((d) => deciding.has(d))
+    .sort((a, b) => clashes.filter((x) => x.dim === b).length - clashes.filter((x) => x.dim === a).length);
   const realClash = clashes.length >= REAL_CLASH_MIN || (clashes.length > 0 && clashes.length / entities.length >= REAL_CLASH_SHARE);
   const audience = possessive(ctx.brand) + ' audience';
 
@@ -167,7 +185,7 @@ export function decisionSummary(c: Compatibility, ctx: SummaryContext): Decision
     : `No entity reaches ${INTERSECTION_MIN}; the highest is ${topText[0]}.`;
   const lowest = clashes[0];
   const cause = realClash
-    ? `A real clash: ${clashes.length} ${clashes.length === 1 ? 'entity is' : 'entities are'} below ${DIVERGENCE_MAX.toFixed(2)}, mostly in ${clashDims[0]} (lowest: ${lowest.e.name} ${fmt(lowest.e.brandAffinity)}).`
+    ? `A real clash: ${clashes.length} ${clashes.length === 1 ? 'entity is' : 'entities are'} below ${DIVERGENCE_MAX.toFixed(2)}${clashDims[0] ? `, mostly in ${clashDims[0]}` : ''} (lowest: ${lowest.e.name} ${fmt(lowest.e.brandAffinity)}).`
     : clashes.length
       ? `${clashes.length === 1 ? 'One clash' : `${clashes.length} clashes`} (${lowest.e.name} ${fmt(lowest.e.brandAffinity)}), ${
           loved.length * 2 >= entities.length ? (clashes.length === 1 ? 'an isolated one' : 'isolated ones') : 'but most entities are lukewarm'
@@ -177,25 +195,32 @@ export function decisionSummary(c: Compatibility, ctx: SummaryContext): Decision
         : `No clash: every entity is at ${DIVERGENCE_MAX.toFixed(2)} or above.`;
   const why = `${audience} is ${dimsText}. ${sharedText} ${cause}`;
 
-  // Decision and the one next step that follows from it.
-  const avoidDim = realClash ? clashDims[0] : worst.label;
+  // Decision and the one next step that follows from it. An unverified result (lib/unverified)
+  // is a Hold whatever its score; Low is one of those, with its own next step.
+  const unverified = ctx.unverified ?? [];
+  const otherReasons = unverified.filter((r) => r.code !== 'L');
+  const avoidDim = realClash && clashDims[0] ? clashDims[0] : worst.label;
   const bestTop = byAffinity.find((x) => x.dim === best.label);
   let verdict: DecisionSummary['verdict'];
   let condition: string;
   let next: string;
   if (low) {
     verdict = 'Hold';
-    condition = 'collect more evidence before deciding.';
+    condition = `collect more evidence before deciding${otherReasons.length ? ` (also unverified: ${list(otherReasons.map((r) => r.label))})` : ''}.`;
     next = lowNext;
+  } else if (unverified.length) {
+    verdict = 'Hold';
+    condition = `unverified, do not use for a decision (${list(unverified.map((r) => r.label))}).`;
+    next = unverified[0].next;
   } else if (c.fitScore >= 80) {
     verdict = 'Go';
-    condition = clashes.length ? `keep ${clashDims[0]} out of the brief.` : `lead the brief with ${best.label}.`;
+    condition = clashes.length && clashDims[0] ? `keep ${clashDims[0]} out of the brief.` : `lead the brief with ${best.label}.`;
     next = `Brief the creator on ${list(top.slice(0, 2).map((x) => x.e.name))}, the strongest shared tastes${lowest ? `, and leave ${lowest.e.name} out` : ''}.`;
   } else if (c.fitScore >= 60) {
     verdict = 'Conditional';
     condition = `go ahead if the brief leaves ${avoidDim} out.`;
     next = `Build the pitch on ${best.label} first${bestTop ? `, starting with ${bestTop.e.name}` : ''}.`;
-  } else if (realClash) {
+  } else if (realClash && clashDims[0]) {
     verdict = 'Hold';
     condition = `the audiences clash on ${clashDims[0]}.`;
     next = `Compare creators for ${ctx.brand} whose world sits in ${best.label} rather than ${clashDims[0]}.`;
@@ -206,6 +231,8 @@ export function decisionSummary(c: Compatibility, ctx: SummaryContext): Decision
   }
   return { verdict, condition, why, next, confidence, ...(low ? { lowReason } : {}) };
 }
+
+export const HOLD_RECOMMENDATION = 'None while the decision is Hold: see the next step in the Summary.';
 
 export function summaryText(d: DecisionSummary): string {
   return `Decision — ${d.verdict}: ${d.condition} Why: ${d.why} Next step: ${d.next} Confidence — ${d.confidence}`;
@@ -243,30 +270,26 @@ export function buildReport(
       `${missing.map((d) => d.label).join(', ')}: no scorable Qloo data, excluded from the score. Missing data is not evidence of a clash.`
     );
   }
+  const thin = scored.filter((d) => !isCounted(d));
+  if (thin.length) clash.push(`${thin.map((d) => d.label).join(', ')}: fewer than ${MIN_DIMENSION_ENTITIES} entities, shown but not counted in the score.`);
 
+  // No content recommendations while the decision is Hold (no fit, a clash, Low confidence or
+  // unverified): the Summary's next step says what to do instead (debate/decision.md).
   const strongest = items.filter((e) => e.brandAffinity >= INTERSECTION_MIN).sort((a, b) => b.brandAffinity - a.brandAffinity);
   const recommendations: string[] = [];
-  // Low confidence: the same entities, as themes to test rather than a brief (the Summary's
-  // next step already says what evidence to collect first).
-  const low = c.confidence === 'Low';
-  if (shared.length) {
-    recommendations.push(
-      `${quote(shared.map((e) => e.name))} appear both in the creator's taste graph and among ${brand}'s Qloo cultural proxies: ${
-        low ? 'a possible angle, to confirm once there is more evidence' : 'the most direct angle for a collaboration'
-      }.`
-    );
-  }
-  const themes = strongest.filter((e) => !shared.includes(e)).slice(0, 3 - recommendations.length);
-  if (low && themes.length) {
-    recommendations.push(
-      `Possible themes to test once there is more evidence, not yet a basis for a brief: ${list(themes.map((e) => `“${e.name}” (${labelOf(e)}, affinity ${fmt(e.brandAffinity)})`))}.`
-    );
+  if (decision?.verdict === 'Hold') {
+    recommendations.push(HOLD_RECOMMENDATION);
   } else {
-    for (const e of themes)
+    if (shared.length) {
+      recommendations.push(
+        `${quote(shared.map((e) => e.name))} appear both in the creator's taste graph and among ${brand}'s Qloo cultural proxies: the most direct angle for a collaboration.`
+      );
+    }
+    for (const e of strongest.filter((e) => !shared.includes(e)).slice(0, 3 - recommendations.length))
       recommendations.push(`Build content around “${e.name}” (${labelOf(e)}, affinity ${fmt(e.brandAffinity)}); ${brand}'s audience relates to it strongly.`);
-  }
-  if (!recommendations.length) {
-    recommendations.push(`No shared taste entity reaches affinity ${INTERSECTION_MIN}; taste fit should not be the basis for this collaboration.`);
+    if (!recommendations.length) {
+      recommendations.push(`No shared taste entity reaches affinity ${INTERSECTION_MIN}; taste fit should not be the basis for this collaboration.`);
+    }
   }
 
   const risks: string[] = items

@@ -1,4 +1,4 @@
-import type { Compatibility } from '@/lib/scoring';
+import { type Compatibility, isCounted, rankable } from '@/lib/scoring';
 
 // Win/lose controls for Find creators' default ranking ("Any YouTuber"). For each demo brand,
 // one creator who obviously fits and one who obviously doesn't are scored in the same request,
@@ -23,6 +23,7 @@ export interface ControlResult {
   weakest: string | null;
   rank: number | null; // its place in the ranking, when Qloo also ranked it
   missing: string[]; // profile types Qloo didn't answer for this control (timeouts)
+  namesakes?: number; // exact-name Qloo people the creator tag chose from; 2+ = identity unclear
 }
 
 export interface RankingValidation {
@@ -35,10 +36,11 @@ export interface RankingValidation {
   weakest: { label: string; count: number; of: number; top3: string[]; top3Without: string[] } | null;
 }
 
+// Only dimensions that may be named strongest or weakest (lib/scoring rankable).
 const extreme = (c: Compatibility, pick: 'max' | 'min') => {
-  const dims = c.dimensions.filter((d) => d.score !== null);
+  const dims = rankable(c.dimensions);
   if (!dims.length) return null;
-  const d = [...dims].sort((a, b) => (pick === 'max' ? b.score! - a.score! : a.score! - b.score!))[0];
+  const d = pick === 'max' ? dims[0] : dims[dims.length - 1];
   return `${d.label} ${d.score}`;
 };
 
@@ -48,7 +50,8 @@ export function controlResult(
   qlooId: string | null,
   c: Compatibility | null,
   rank: number | null,
-  missing: string[] = []
+  missing: string[] = [],
+  namesakes = 0
 ): ControlResult {
   return {
     role,
@@ -59,6 +62,7 @@ export function controlResult(
     weakest: c ? extreme(c, 'min') : null,
     rank,
     missing,
+    ...(namesakes > 1 ? { namesakes } : {}),
   };
 }
 
@@ -88,10 +92,14 @@ export function validateRanking(
     reasons.push(
       `${fit.name} (obvious fit) ${fit.rank === 1 ? 'is the top-ranked creator' : `scores ${fit.fitScore}, at least the top score`}; ${misfit.name} (obvious misfit) scores ${misfit.fitScore}, ${top.fitScore - misfit.fitScore!} below the top.`
     );
-  // A control scored from part of its profile can flag a ranking, but never vouch for one.
+  // A control scored from part of its profile, or picked by the creator tag among namesakes,
+  // can flag a ranking, but never vouch for one.
   const partial = controls.filter((c) => c.missing.length);
   for (const c of partial) reasons.push(`${c.name}’s profile is incomplete (Qloo didn’t answer for ${c.missing.join(', ')}).`);
-  const status = !(fitOk && misfitOk) ? 'unverified' : partial.length ? 'not-validated' : 'validated';
+  const unclear = controls.filter((c) => (c.namesakes ?? 0) > 1);
+  for (const c of unclear)
+    reasons.push(`${c.name}’s identity is unclear: Qloo has ${c.namesakes} people of that name, and only the creator tag picked this one.`);
+  const status = !(fitOk && misfitOk) ? 'unverified' : partial.length || unclear.length ? 'not-validated' : 'validated';
   return { status, reasons, top, controls, margin: CONTROL_MARGIN };
 }
 
@@ -111,7 +119,7 @@ export function weakestDimension(ranked: { name: string; compatibility: Compatib
   const [label, count] = [...counts].sort((a, b) => b[1] - a[1])[0];
   const without = scored
     .map((c) => {
-      const rest = c.compatibility.dimensions.filter((d) => d.score !== null && d.label !== label);
+      const rest = c.compatibility.dimensions.filter((d) => isCounted(d) && d.label !== label);
       return { name: c.name, score: rest.length ? rest.reduce((s, d) => s + d.score!, 0) / rest.length : -1 };
     })
     .sort((a, b) => b.score - a.score);

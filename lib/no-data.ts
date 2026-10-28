@@ -10,6 +10,7 @@ export type NoDataReason =
   | 'llm-unavailable' // no LLM could propose names (Gemini and Groq both failed)
   | 'too-few-creator-entities' // the videos name fewer than 3 Qloo entities
   | 'no-affinity' // Qloo scored none of the creator's entities against the brand
+  | 'too-few-dimensions' // fewer than 2 taste dimensions rest on 3+ scored entities
   | 'no-candidates' // Find creators: Qloo returned no creators for this brand and type
   | 'too-few-profile-entities'; // Find creators: too little of a creator's audience taste was scored
 
@@ -30,6 +31,10 @@ export const NO_DATA_NEXT_STEPS: Record<NoDataReason, string[]> = {
     'Or paste the creator’s channel URL: its latest 15 videos are read, not just the ones you picked.',
   ],
   'no-affinity': ['Try a different creator or brand; Qloo has no affinity data for this pair.'],
+  'too-few-dimensions': [
+    'Add 2–3 videos that cover other kinds of things (music, films, places, brands), so more than one area of taste is scored.',
+    'Or paste the creator’s channel URL: its latest 15 videos are read.',
+  ],
   'no-candidates': ['Choose “Any YouTuber” as the creator type, or a broader one.'],
   'too-few-profile-entities': ['Analyze this creator’s videos instead, which adds what the creator talks about.'],
 };
@@ -51,6 +56,7 @@ export function noDataCause(reason: NoDataReason, creator?: { keywords: string[]
     'llm-unavailable': 'No names extracted: no language model answered',
     'too-few-creator-entities': 'Fewer than 3 verified entities from the videos',
     'no-affinity': 'Qloo returned no affinity for this pair',
+    'too-few-dimensions': 'Fewer than 2 taste dimensions with 3+ scored entities',
     'no-candidates': 'Qloo returned no creators for this brand and type',
     'too-few-profile-entities': 'Too little of the creators’ audience taste was scored',
   };

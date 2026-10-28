@@ -1,6 +1,7 @@
 import type { Match } from '@/lib/match';
-import { VERDICT_LABELS, brandBasisNote, decisionSummary, summaryContext } from '@/lib/report';
-import type { ScoredEntity } from '@/lib/scoring';
+import { HOLD_RECOMMENDATION, VERDICT_LABELS, brandBasisNote, decisionSummary, summaryContext } from '@/lib/report';
+import { type ScoredEntity, isCounted } from '@/lib/scoring';
+import { matchUnverified } from '@/lib/unverified';
 import { isLlm, summarizeTrace } from '@/lib/trace';
 
 // The result page as a Markdown file, for judges and brand teams to take away.
@@ -21,6 +22,7 @@ function tier(title: string, items: ScoredEntity[] | undefined): string[] {
 
 export function matchToMarkdown(match: Match): string {
   const c = match.compatibility;
+  const unverified = matchUnverified(match);
   const brand = match.brand.entity?.name || match.brand.name;
   const creator = match.creator.channelName || 'Creator';
   const lines: string[] = [
@@ -30,7 +32,9 @@ export function matchToMarkdown(match: Match): string {
     '',
     `- **Fit Score:** ${c.fitScore ?? 'no score'}${c.fitScore !== null ? '/100' : ''}`,
     `- **Confidence:** ${typeof c.confidence === 'string' ? c.confidence : '—'}${c.confidenceBasis && 'entities' in c.confidenceBasis ? ` (based on ${c.confidenceBasis.entities} confirmed entities across ${c.confidenceBasis.dimensions} dimensions)` : ''}`,
-    `- **Verdict:** ${VERDICT_LABELS[c.verdict]}`,
+    unverified.length
+      ? `- **Verdict:** Unverified, do not use for a decision (${unverified.map((r) => `${r.code} ${r.label}: ${r.detail}`).join(' ')})`
+      : `- **Verdict:** ${VERDICT_LABELS[c.verdict]}`,
     `- **Date:** ${match.createdAt.slice(0, 10)} · Report ${match.id}`,
   ];
   const basisNote = brandBasisNote(match.brand);
@@ -58,6 +62,8 @@ export function matchToMarkdown(match: Match): string {
         lines.push('No scorable Qloo data; excluded from the total.', '');
         continue;
       }
+      if (!isCounted(d)) lines.push(`_Thin: ${d.itemCount} entit${d.itemCount === 1 ? 'y' : 'ies'}, shown but not counted in the Fit Score._`, '');
+      if (d.byDefault) lines.push('_Classified by default: none of these entities has a Qloo genre for this dimension, so it decides nothing._', '');
       lines.push(
         ...tier('Shared taste (affinity ≥ 0.85)', d.intersection),
         ...tier('Lukewarm (affinity 0.70–0.85)', d.weakLink),
@@ -79,7 +85,7 @@ export function matchToMarkdown(match: Match): string {
       '',
       '## Recommendations',
       '',
-      ...r.recommendations.map((x) => `- ${x}`),
+      ...(d?.verdict === 'Hold' ? [HOLD_RECOMMENDATION] : r.recommendations).map((x) => `- ${x}`),
       '',
       '## Risks',
       '',

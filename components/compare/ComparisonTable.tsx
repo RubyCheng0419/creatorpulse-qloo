@@ -1,13 +1,16 @@
 import Link from 'next/link';
 import type { Match } from '@/lib/match';
 import { VERDICT_LABELS } from '@/lib/report';
+import { rankable } from '@/lib/scoring';
+import { codesText, matchUnverified } from '@/lib/unverified';
 import { VERDICT_STYLE } from '@/components/discover/CandidateCard';
 import { formatAffinity } from '@/components/match/TasteComparison';
 
+// Only dimensions that may be named strongest or weakest (lib/scoring rankable).
 const dimText = (m: Match, pick: 'max' | 'min') => {
-  const dims = m.compatibility.dimensions.filter((d) => d.score !== null);
+  const dims = rankable(m.compatibility.dimensions);
   if (!dims.length) return '—';
-  const d = [...dims].sort((a, b) => (pick === 'max' ? b.score! - a.score! : a.score! - b.score!))[0];
+  const d = pick === 'max' ? dims[0] : dims[dims.length - 1];
   return `${d.label} ${d.score}`;
 };
 
@@ -34,6 +37,7 @@ export function ComparisonTable({ matches, linkRows = true }: { matches: Match[]
             const c = m.compatibility;
             const clashes = c.dimensions.flatMap((d) => d.divergence).sort((a, b) => a.brandAffinity - b.brandAffinity);
             const name = m.creator.channelName || m.creator.youtubeHandle || 'Creator';
+            const unverified = matchUnverified(m);
             return (
               <tr key={`${m.id}:${m.createdAt}`}>
                 <td className="py-2.5 pl-4 pr-2">
@@ -45,7 +49,9 @@ export function ComparisonTable({ matches, linkRows = true }: { matches: Match[]
                     <span className="font-medium text-slate-900">{name}</span>
                   )}
                   <span className="block text-xs text-slate-500">
-                    {m.scoreBasis === 'audience' ? 'Scored from audience taste in Qloo' : `${m.creator.entities.length} entities named in the videos`}
+                    {m.scoreBasis === 'audience'
+                      ? 'Scored from audience taste in Qloo'
+                      : `${c.confidenceBasis?.entities ?? m.creator.entities.length} named entities scored`}
                     {m.cachedAt ? ' · cached' : ''}
                   </span>
                 </td>
@@ -57,7 +63,14 @@ export function ComparisonTable({ matches, linkRows = true }: { matches: Match[]
                 </td>
                 <td className="px-2 py-2.5">
                   {c.confidence ?? '—'}
-                  {c.fitScore !== null ? (
+                  {c.fitScore !== null && unverified.length ? (
+                    <span
+                      title={unverified.map((r) => `${r.code} · ${r.label}: ${r.detail}`).join('\n')}
+                      className="mt-1 block w-fit rounded-full px-2 py-0.5 text-xs font-semibold text-rose-800 ring-1 ring-rose-200"
+                    >
+                      Unverified ({codesText(unverified)})
+                    </span>
+                  ) : c.fitScore !== null ? (
                     <span className={`mt-1 block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${VERDICT_STYLE[c.verdict]}`}>
                       {VERDICT_LABELS[c.verdict]}
                     </span>

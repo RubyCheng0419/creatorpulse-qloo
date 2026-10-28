@@ -7,7 +7,8 @@ import { TasteComparison, formatAffinity } from '@/components/match/TasteCompari
 import type { CreatorCandidate } from '@/lib/discover';
 import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
 import { VERDICT_LABELS } from '@/lib/report';
-import type { ScoredEntity } from '@/lib/scoring';
+import { type ScoredEntity, isCounted, rankable } from '@/lib/scoring';
+import { type UnverifiedReason, codesText } from '@/lib/unverified';
 
 export const VERDICT_STYLE: Record<string, string> = {
   high: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
@@ -19,11 +20,12 @@ export const VERDICT_STYLE: Record<string, string> = {
 
 const names = (list: ScoredEntity[]) => list.map((e) => `${e.name} ${formatAffinity(e.brandAffinity)}`).join(', ');
 
-// The strongest and weakest of the dimensions that have data; shared by the card and the overview.
+// The strongest and weakest of the dimensions that may be named so (lib/scoring rankable);
+// shared by the card, the overview and the creator page.
 export function extremes(c: CreatorCandidate) {
-  const dims = c.compatibility.dimensions.filter((d) => d.score !== null);
-  const best = [...dims].sort((a, b) => b.score! - a.score!)[0];
-  const worst = [...dims].sort((a, b) => a.score! - b.score!)[0];
+  const dims = rankable(c.compatibility.dimensions);
+  const best = dims[0];
+  const worst = dims[dims.length - 1];
   return { best, worst: worst !== best ? worst : undefined };
 }
 
@@ -56,14 +58,15 @@ export function roleKinds(c: CreatorCandidate): string[] {
 }
 
 // What a reviewer needs to tell what the score rests on: the entities behind the strongest
-// dimension, how much was scored, thin dimensions that still weigh a full share, and a main
-// identity whose dimension isn't strong.
+// dimension, how much was scored, thin dimensions left out of the score, dimensions classified
+// by default, and a main identity whose dimension isn't strong.
 export function EvidenceSummary({ c }: { c: CreatorCandidate }) {
   const dims = c.compatibility.dimensions;
   const withData = dims.filter((d) => d.score !== null).sort((a, b) => b.score! - a.score!);
-  const best = withData[0];
+  const { best } = extremes(c);
   const drivers = best ? [...best.intersection, ...best.weakLink, ...best.divergence].sort((a, b) => b.brandAffinity - a.brandAffinity).slice(0, 3) : [];
-  const thin = withData.filter((d) => d.itemCount < 3);
+  const thin = withData.filter((d) => !isCounted(d));
+  const byDefault = withData.filter((d) => d.byDefault && isCounted(d));
   const empty = dims.filter((d) => d.score === null);
   const identity = c.description ? IDENTITY_DIMENSION.find(([re]) => re.test(c.description!)) : undefined;
   const idDim = identity ? dims.find((d) => d.label === identity[1]) : undefined;
@@ -84,7 +87,13 @@ export function EvidenceSummary({ c }: { c: CreatorCandidate }) {
       )}
       {thin.map((d) => (
         <li key={d.dimension} className="text-amber-800">
-          {d.label} rests on {d.itemCount} entit{d.itemCount === 1 ? 'y' : 'ies'} ({d.score}) yet counts for {Math.round(d.weight * 100)}% of the Fit Score.
+          {d.label} rests on {d.itemCount} entit{d.itemCount === 1 ? 'y' : 'ies'} ({d.score}): shown, not counted in the Fit Score.
+        </li>
+      ))}
+      {byDefault.map((d) => (
+        <li key={`default-${d.dimension}`} className="text-slate-600">
+          {d.label} ({d.score}) is made of brands with no Qloo genre that places them, classified here by default: counted, but never named
+          strongest or weakest.
         </li>
       ))}
       {idDim && word && idRank !== 1 && (
@@ -103,12 +112,14 @@ export function CandidateCard({
   deepDiveHref,
   brandName,
   unverified = false,
+  reasons = [],
 }: {
   c: CreatorCandidate;
   href: string; // this creator's own page (/discover/<ranking>/<Qloo id>)
   deepDiveHref: string | null;
   brandName?: string;
   unverified?: boolean; // the ranking failed its controls: no fit verdict
+  reasons?: UnverifiedReason[]; // this creator's own (lib/unverified candidateUnverified)
 }) {
   const [open, setOpen] = useState(false);
   const roles = roleKinds(c).length;
@@ -142,8 +153,10 @@ export function CandidateCard({
             {comp.fitScore !== null && <span className="text-sm font-medium text-slate-400 sm:text-base">/100</span>}
           </p>
           {scored &&
-            (unverified ? (
-              <span className="mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold text-rose-800 ring-1 ring-rose-200">Unverified</span>
+            (unverified || reasons.length ? (
+              <span className="mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold text-rose-800 ring-1 ring-rose-200">
+                Unverified{reasons.length ? ` (${codesText(reasons)})` : ''}
+              </span>
             ) : (
               <span className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${VERDICT_STYLE[comp.verdict]}`}>
                 {VERDICT_LABELS[comp.verdict]}
@@ -154,6 +167,19 @@ export function CandidateCard({
       </div>
       {/* On a phone it goes full width under the header row, so the score doesn't squeeze it. */}
       <p className="mt-2 text-xs tabular-nums text-slate-500 sm:hidden">{taste}</p>
+      {scored && reasons.length > 0 && (
+        <ul className="mt-2 space-y-0.5 text-xs text-rose-900 sm:pl-14">
+          {reasons.map((r) => (
+            <li key={r.code}>
+              <span className="font-semibold">
+                {r.code} · {r.label}:
+              </span>{' '}
+              {r.detail}
+            </li>
+          ))}
+          <li className="font-medium">Do not use this score for a decision.</li>
+        </ul>
+      )}
 
       <dl className="mt-4 grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[8rem_1fr] sm:gap-y-1.5 sm:pl-14">
         <dt className="text-slate-500">Scored profile</dt>

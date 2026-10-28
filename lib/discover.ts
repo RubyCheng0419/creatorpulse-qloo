@@ -234,7 +234,7 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
     tool: 'Rule',
     input: `Per creator: up to ${PROXY_TYPES.length * PROFILE_PER_TYPE} audience-taste entities at weight ${PROXY_WEIGHT}, sorted into dimensions; affinity rescaled from [${AFFINITY_FLOOR}, 1] to [0, 100]; shared taste ≥ ${INTERSECTION_MIN}, clash < ${DIVERGENCE_MAX}`,
     output: ranked.map((c) => `${c.name} ${c.compatibility.fitScore ?? 'no score'}`).join(' · '),
-    decision: `Ranked by Fit Score, then audience overlap. Confidence: Medium with 20+ scored entities across 4+ dimensions, otherwise Low; fewer than ${MIN_PROFILE_ENTITIES} gets no score (${ranked.length - scoredCount} here)`,
+    decision: `Ranked by Fit Score, then audience overlap. A dimension counts with 3+ entities; confidence: Medium with 20+ scored entities across 4+ counted dimensions, otherwise Low; fewer than ${MIN_PROFILE_ENTITIES} scored, or fewer than 2 counted dimensions, gets no score (${ranked.length - scoredCount} here)`,
   });
   // The brand-side approximation, once for the whole list (each score already carries it).
   const why = approximation(brand);
@@ -255,7 +255,9 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
         const profile = person ? controlProfiles.get(person.id) : undefined;
         const scored = profile ? scoreProfile(profile.entities, affinities).compatibility : null;
         const rank = person ? ranked.findIndex((c) => c.qlooId === person.id) + 1 || null : null;
-        return controlResult(role, name, person?.id ?? null, scored ? brandConfidence(scored, brand) : null, rank, profile?.failedTypes ?? []);
+        // A control Qloo itself ranked came from the ranking, not from a name search.
+        const namesakes = (person as { namesakes?: number } | null)?.namesakes ?? 0;
+        return controlResult(role, name, person?.id ?? null, scored ? brandConfidence(scored, brand) : null, rank, profile?.failedTypes ?? [], namesakes);
       })
     : null;
   const validation: RankingValidation = { ...validateRanking(ranked, controls), weakest: weakestDimension(ranked) };
