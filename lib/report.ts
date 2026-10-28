@@ -246,14 +246,24 @@ export function buildReport(
 
   const strongest = items.filter((e) => e.brandAffinity >= INTERSECTION_MIN).sort((a, b) => b.brandAffinity - a.brandAffinity);
   const recommendations: string[] = [];
+  // Low confidence: the same entities, as themes to test rather than a brief (the Summary's
+  // next step already says what evidence to collect first).
+  const low = c.confidence === 'Low';
   if (shared.length) {
     recommendations.push(
-      `${quote(shared.map((e) => e.name))} appear both in the creator's taste graph and among ${brand}'s Qloo cultural proxies: the most direct angle for a collaboration.`
+      `${quote(shared.map((e) => e.name))} appear both in the creator's taste graph and among ${brand}'s Qloo cultural proxies: ${
+        low ? 'a possible angle, to confirm once there is more evidence' : 'the most direct angle for a collaboration'
+      }.`
     );
   }
-  for (const e of strongest.filter((e) => !shared.includes(e))) {
-    if (recommendations.length >= 3) break;
-    recommendations.push(`Build content around “${e.name}” (${labelOf(e)}, affinity ${fmt(e.brandAffinity)}); ${brand}'s audience relates to it strongly.`);
+  const themes = strongest.filter((e) => !shared.includes(e)).slice(0, 3 - recommendations.length);
+  if (low && themes.length) {
+    recommendations.push(
+      `Possible themes to test once there is more evidence, not yet a basis for a brief: ${list(themes.map((e) => `“${e.name}” (${labelOf(e)}, affinity ${fmt(e.brandAffinity)})`))}.`
+    );
+  } else {
+    for (const e of themes)
+      recommendations.push(`Build content around “${e.name}” (${labelOf(e)}, affinity ${fmt(e.brandAffinity)}); ${brand}'s audience relates to it strongly.`);
   }
   if (!recommendations.length) {
     recommendations.push(`No shared taste entity reaches affinity ${INTERSECTION_MIN}; taste fit should not be the basis for this collaboration.`);
