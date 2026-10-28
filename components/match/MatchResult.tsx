@@ -14,6 +14,7 @@ import { summarizeTrace } from '@/lib/trace';
 import { AgentTrace } from './AgentTrace';
 import { BrandFallbackForm, type BrandFallbackInput } from './BrandFallbackForm';
 import { CrossCheck } from './CrossCheck';
+import { PriorCoverage } from './PriorCoverage';
 import { ReportDetails } from './ReportDetails';
 import { ScoreCard } from './ScoreCard';
 import { SourcesPanel } from './SourcesPanel';
@@ -88,6 +89,8 @@ export function MatchResult({
           can land a few points away; a demo pair opens its saved result.
         </p>
       </div>
+
+      <PriorCoverage match={match} />
 
       {match.status === 'completed' && match.report ? (
         <>

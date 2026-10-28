@@ -16,6 +16,7 @@ import {
   verifyEntities,
 } from '@/lib/qloo';
 import type { NoDataReason } from '@/lib/no-data';
+import { PriorCoverage, brandTermsOf, priorCoverage, productTermsOf } from '@/lib/prior-coverage';
 import { Report, SummaryContext, VERDICT_LABELS, buildReport } from '@/lib/report';
 import {
   AFFINITY_FLOOR,
@@ -88,6 +89,9 @@ export interface Match {
   scoreBasis?: 'videos' | 'audience';
   compatibility: Compatibility;
   mentionsBrand: boolean; // the creator's videos name the brand itself (not scored: circular)
+  // Whether the videos read mention the brand or its products (lib/prior-coverage): from
+  // YouTube text, CreatorPulse's own tier, never part of the Fit Score. Absent on older results.
+  priorCoverage?: PriorCoverage;
   sharedEntities: ScoredEntity[];
   report: Report | null;
   warnings: string[];
@@ -153,6 +157,16 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   const referenceBrands = Array.isArray(input.referenceBrands) ? input.referenceBrands.map(String).filter((s) => s.trim()) : [];
   const description = String(input.brandDescription || '').trim();
   const channel = creator.channels[0];
+  // Prior coverage: from the videos already read, never part of the Fit Score.
+  const brandTerms = brandTermsOf(brandName, brand.found ? brand.brand.entity?.name : null);
+  const coverage = priorCoverage(creator.videos, creator.descriptions, brandTerms, productTermsOf(creator.products, brandTerms));
+  trace.add({
+    stage: 'creator',
+    tool: 'Rule',
+    input: `Prior coverage: ${creator.videos.length} video${creator.videos.length === 1 ? '' : 's'}’ titles, descriptions and tags searched for ${brandTerms.map((t) => `“${t}”`).join(', ')}${coverage.productTerms.length ? ` and its product names (${coverage.productTerms.join(', ')})` : ''}`,
+    output: `${coverage.mentioning.length} of ${coverage.videosRead} mention the brand · tier ${coverage.tier}`,
+    decision: 'Shown next to the Fit Score; never scored (the brand itself is not scored, and a mention is not an endorsement)',
+  });
   const base = {
     id: matchId(urls, brandName, description ? [...referenceBrands, description] : referenceBrands),
     createdAt: new Date().toISOString(),
@@ -171,6 +185,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
       unmatched: creator.unmatched,
     } as Match['creator'],
     mentionsBrand: false,
+    priorCoverage: coverage,
     sharedEntities: [],
     trace: trace.steps,
     liveRun: bypassCache(),
@@ -224,6 +239,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     scoreBasis,
     person: base.creator.qlooPerson?.name,
     fromChannel: urls.length === 1 && !parseVideoId(urls[0]),
+    coverage,
   });
 
   // The creator's own Qloo entity: for the audience overlap, and as the fallback evidence

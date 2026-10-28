@@ -568,7 +568,9 @@ export interface CreatorTaste {
     viewCount?: number | null;
   }[];
   channels: { channelId: string; title: string; handle: string; description: string }[];
+  descriptions: Record<string, string>; // by video id, for Prior coverage; not stored with the match
   keywords: string[];
+  products: string[]; // the names the LLM called a product, as written
   // Which LLM proposed the names. 'groq' is the fallback when Gemini is over quota or
   // overloaded. 'unavailable': neither answered. No guessed keywords are used instead
   // (they produced wrong evidence), so the match gets no score.
@@ -824,7 +826,9 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
       viewCount: v.statistics?.viewCount !== undefined ? Number(v.statistics.viewCount) : null, // hidden by some channels
     })),
     channels,
+    descriptions: Object.fromEntries(videos.map((v) => [v.id, String(v.snippet?.description || '')])),
     keywords,
+    products: queries.filter((q) => q.kind === 'product').map((q) => q.keyword),
     keywordSource,
     extractionModel,
     extractionFallback,

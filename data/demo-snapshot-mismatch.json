@@ -830,6 +830,13 @@
       "ms": 207,
       "ok": true,
       "t": 13543
+    },
+    {
+      "stage": "creator",
+      "tool": "Rule",
+      "input": "Prior coverage, added to this saved result on 2026-10-28: the same 5 videos’ titles, descriptions and tags searched for “Huggies”",
+      "output": "0 of 5 mention the brand · tier None",
+      "decision": "Shown next to the Fit Score; never scored. The saved scores are unchanged"
     }
   ],
   "liveRun": true,
@@ -2338,5 +2345,15 @@
   "expansion": {
     "popularityMin": 0.5,
     "excludesBrand": true
+  },
+  "priorCoverage": {
+    "videosRead": 5,
+    "brandTerms": [
+      "Huggies"
+    ],
+    "productTerms": [],
+    "mentioning": [],
+    "latest": null,
+    "tier": "None"
   }
 }

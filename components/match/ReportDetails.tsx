@@ -13,10 +13,19 @@ export function ReportDetails({ report, decision }: { report: Report; decision: 
           <dl className="mt-2 grid gap-x-4 gap-y-2 text-sm leading-relaxed text-slate-700 sm:grid-cols-[7rem_1fr] print:grid-cols-[7rem_1fr]">
             <dt className="font-semibold text-slate-900">Decision</dt>
             <dd>
-              <span className="font-semibold text-slate-900">{decision.verdict}:</span> {decision.condition}
+              <span className="font-semibold text-slate-900">
+                {decision.verdict} (Fit {decision.fitScore}, {decision.level} confidence):
+              </span>{' '}
+              {decision.condition}
             </dd>
             <dt className="font-semibold text-slate-900">Why</dt>
             <dd>{decision.why}</dd>
+            {decision.familiarity && (
+              <>
+                <dt className="font-semibold text-slate-900">Familiarity</dt>
+                <dd>{decision.familiarity}</dd>
+              </>
+            )}
             <dt className="font-semibold text-slate-900">Next step</dt>
             <dd>{decision.next}</dd>
             <dt className="font-semibold text-slate-900">Confidence</dt>

@@ -50,6 +50,12 @@ export function matchToMarkdown(match: Match): string {
         : `- **Cached demo result**: a real run of the full pipeline from ${match.cachedAt}, saved so the demo spends no API quota.`
     );
   if (match.mentionsBrand) lines.push(`- The creator already features ${brand} in these videos; that mention is not scored.`);
+  const cov = match.priorCoverage;
+  if (cov)
+    lines.push(
+      `- **Prior coverage (YouTube, CreatorPulse’s own tier, not part of the Fit Score):** ${cov.tier} · ${cov.mentioning.length} / ${cov.videosRead} videos mention ${brand}${cov.latest ? `, latest ${cov.latest.slice(0, 10)}` : ''}. Based on these ${cov.videosRead} videos only, not the creator’s full channel history.`,
+      ...cov.mentioning.map((m) => `  - [${m.title}](${m.url}) — ${m.snippet.place}: “${m.snippet.text}”`)
+    );
   lines.push('');
 
   if (match.status !== 'completed' || !match.report) {
@@ -76,7 +82,13 @@ export function matchToMarkdown(match: Match): string {
       '## Summary',
       '',
       ...(d
-        ? [`- **Decision — ${d.verdict}:** ${d.condition}`, `- **Why:** ${d.why}`, `- **Next step:** ${d.next}`, `- **Confidence — ${d.confidence.replace(/^(\w+): /, '$1:** ')}`]
+        ? [
+            `- **Decision — ${d.verdict} (Fit ${d.fitScore}, ${d.level} confidence):** ${d.condition}`,
+            `- **Why:** ${d.why}`,
+            ...(d.familiarity ? [`- **Familiarity:** ${d.familiarity}`] : []),
+            `- **Next step:** ${d.next}`,
+            `- **Confidence — ${d.confidence.replace(/^(\w+): /, '$1:** ')}`,
+          ]
         : [r.summary]),
       '',
       '## Culture clash',

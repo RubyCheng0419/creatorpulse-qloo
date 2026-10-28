@@ -973,6 +973,13 @@
       "ms": 221,
       "ok": true,
       "t": 14382
+    },
+    {
+      "stage": "creator",
+      "tool": "Rule",
+      "input": "Prior coverage, added to this saved result on 2026-10-28: the same 5 videos’ titles, descriptions and tags searched for “Apple”",
+      "output": "2 of 5 mention the brand · tier High",
+      "decision": "Shown next to the Fit Score; never scored. The saved scores are unchanged"
     }
   ],
   "liveRun": true,
@@ -2539,5 +2546,54 @@
   "expansion": {
     "popularityMin": 0.5,
     "excludesBrand": true
+  },
+  "priorCoverage": {
+    "videosRead": 5,
+    "brandTerms": [
+      "Apple"
+    ],
+    "productTerms": [
+      "Apple Homeview"
+    ],
+    "mentioning": [
+      {
+        "videoId": "ESABTN4VtrA",
+        "title": "iPhone Duo Review: First Generation Fun!",
+        "url": "https://www.youtube.com/watch?v=ESABTN4VtrA",
+        "publishedAt": "2026-10-21T12:00:52Z",
+        "viewCount": 12922578,
+        "brandPlaces": [
+          "description"
+        ],
+        "productPlaces": [],
+        "products": [],
+        "snippet": {
+          "place": "description",
+          "text": "…of MKBHD Intro music: https://goo.gl/B3AWV5 Phone provided by Apple for review. ~ http://twitter.com/MKBHD http://instagram.com/MKBHD…"
+        }
+      },
+      {
+        "videoId": "QVv3mQzlrN0",
+        "title": "Apple Homeview Impressions: Not Convinced!",
+        "url": "https://www.youtube.com/watch?v=QVv3mQzlrN0",
+        "publishedAt": "2026-10-13T22:42:38Z",
+        "viewCount": 11062438,
+        "brandPlaces": [
+          "description"
+        ],
+        "productPlaces": [
+          "title"
+        ],
+        "products": [
+          "Apple Homeview"
+        ],
+        "snippet": {
+          "place": "title",
+          "text": "Apple Homeview Impressions: Not Convinced!"
+        }
+      }
+    ],
+    "latest": "2026-10-21T12:00:52Z",
+    "tier": "High"
   }
 }

@@ -10,6 +10,7 @@ import {
   isCounted,
   rankable,
 } from '@/lib/scoring';
+import type { PriorCoverage } from '@/lib/prior-coverage';
 import { type UnverifiedReason, matchUnverified } from '@/lib/unverified';
 import { parseVideoId } from '@/lib/youtube-url';
 
@@ -68,10 +69,15 @@ const possessive = (name: string) => `${name}${/s$/i.test(name) ? '’' : '’s'
 // condition), Why (from the scored entities), one Next step tied to that evidence, and what
 // the confidence level means for the decision. Template-only, and every number in it is
 // already in the result (dimension scores, affinities, entity counts).
+// Prior coverage (lib/prior-coverage) is a second, separate signal: it never changes the verdict
+// and never hides a clash; it only changes the next step (the 2×2 in decisionSummary).
 export interface DecisionSummary {
   verdict: 'Go' | 'Conditional' | 'Hold';
+  fitScore: number;
+  level: string; // the confidence level, shown with the verdict
   condition: string;
   why: string;
+  familiarity?: string; // the exact Prior coverage count; absent on results saved without it
   next: string;
   confidence: string;
   lowReason?: string; // why confidence is Low, when it is
@@ -88,6 +94,7 @@ export interface SummaryContext {
   person?: string; // the creator's Qloo person, for an audience-taste score
   fromChannel: boolean; // the videos are a channel's latest uploads, not the user's picks
   unverified?: UnverifiedReason[]; // lib/unverified: any → the decision is Hold
+  coverage?: PriorCoverage; // YouTube-derived, never scored; changes only the next step
 }
 
 export function summaryContext(match: Match): SummaryContext {
@@ -102,7 +109,17 @@ export function summaryContext(match: Match): SummaryContext {
     person: match.creator.qlooPerson?.name,
     fromChannel: urls.length === 1 && !parseVideoId(urls[0]),
     unverified: matchUnverified(match),
+    coverage: match.priorCoverage,
   };
+}
+
+// The familiarity sentence: the exact count, from YouTube, never scored.
+function familiarityNote(brand: string, cov: PriorCoverage): string {
+  const latest = cov.mentioning.find((m) => m.publishedAt === cov.latest) ?? cov.mentioning[0];
+  const count = `${cov.mentioning.length} / ${cov.videosRead} video${cov.videosRead === 1 ? '' : 's'}`;
+  return cov.mentioning.length
+    ? `${count} mention ${brand} (Prior coverage ${cov.tier}${latest ? `; latest “${latest.title}”${cov.latest ? `, ${cov.latest.slice(0, 10)}` : ''}` : ''}). From YouTube, not part of the Fit Score.`
+    : `${count} mention ${brand} (Prior coverage None). From YouTube, not part of the Fit Score.`;
 }
 
 // Why the brand side only approximates the brand's audience, in a phrase, or null.
@@ -229,13 +246,36 @@ export function decisionSummary(c: Compatibility, ctx: SummaryContext): Decision
     condition = 'run one small test before signing.';
     next = `Compare 2–3 other creators for ${ctx.brand} first: a lukewarm score needs a reference point before a test integration.`;
   }
-  return { verdict, condition, why, next, confidence, ...(low ? { lowReason } : {}) };
+  // Familiarity: Prior coverage changes only the next step, never the verdict or the clash. High
+  // fit = Go or Conditional; only the High tier counts as familiar (Medium is treated as Low).
+  // A Low-confidence or unverified result keeps its own next step: get the evidence first.
+  const cov = ctx.coverage;
+  const familiarity = cov ? familiarityNote(ctx.brand, cov) : undefined;
+  if (cov && !low && !unverified.length) {
+    const highFit = verdict !== 'Hold';
+    const familiar = cov.tier === 'High';
+    // The video to reference: the latest one naming the brand in its title, else the latest.
+    const byDate = [...cov.mentioning].sort((a, b) => String(b.publishedAt).localeCompare(String(a.publishedAt)));
+    const ref = byDate.find((m) => m.brandPlaces.includes('title') || m.productPlaces.includes('title')) ?? byDate[0];
+    if (highFit && familiar)
+      next = `Reach out directly and reference “${ref.title}”, where ${ctx.brand} already appears in the ${
+        ref.brandPlaces.includes('title') || ref.productPlaces.includes('title') ? 'title' : ref.snippet.place
+      }. ${next}`;
+    else if (highFit)
+      next = `Start with a brand introduction or one test video, not a long-term signing: ${
+        cov.mentioning.length ? `${ctx.brand} appears in only ${cov.mentioning.length} of these videos and in no title` : `${ctx.brand} doesn’t appear in these videos`
+      }. ${next}`;
+    else if (familiar)
+      next = `Hold any long-term deal${realClash && clashDims[0] ? `: the audiences clash on ${clashDims[0]}` : ''}. One small product test is reasonable, since ${ctx.brand} already appears in the creator’s videos and outreach friction is low, even though taste overlap is weak.`;
+    else next = `Deprioritise: don’t reach out first. ${next}`;
+  }
+  return { verdict, fitScore: c.fitScore, level: c.confidence, condition, why, ...(familiarity ? { familiarity } : {}), next, confidence, ...(low ? { lowReason } : {}) };
 }
 
 export const HOLD_RECOMMENDATION = 'None while the decision is Hold: see the next step in the Summary.';
 
 export function summaryText(d: DecisionSummary): string {
-  return `Decision — ${d.verdict}: ${d.condition} Why: ${d.why} Next step: ${d.next} Confidence — ${d.confidence}`;
+  return `Decision — ${d.verdict} (Fit ${d.fitScore}, ${d.level} confidence): ${d.condition} Why: ${d.why}${d.familiarity ? ` Familiarity: ${d.familiarity}` : ''} Next step: ${d.next} Confidence — ${d.confidence}`;
 }
 
 export function buildReport(
