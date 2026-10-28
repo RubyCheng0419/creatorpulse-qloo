@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL, InlineImage, geminiJson, hasGemini } from '@/lib/gemini';
 import { GROQ_MODEL, groqJson, hasGroq } from '@/lib/groq';
-import { QlooEntity, resolveEntity, searchEntities } from '@/lib/qloo';
+import { QlooEntity, TraceCtx, compact, resolveEntity, searchEntities } from '@/lib/qloo';
 import { bypassCache } from '@/lib/request-context';
 import type { Trace } from '@/lib/trace';
 import type { OnStage } from '@/lib/stages';
@@ -64,6 +64,7 @@ const MENTION_SCHEMA = {
         type: 'object',
         properties: {
           name: { type: 'string' },
+          english: { type: 'string' },
           kind: { type: 'string', enum: Object.keys(KIND_TYPES) },
         },
         required: ['name', 'kind'],
@@ -74,11 +75,15 @@ const MENTION_SCHEMA = {
 };
 
 // The same rules for video metadata and for a brand's own description.
+// Qloo's catalogue is in English, so a name written in another language also gets its
+// established English name: 中華電信 is only findable as Chunghwa Telecom. Both are search
+// terms; Qloo's exact match still decides (resolveMention).
 const mentionPrompt = (source: string, skip: string) => `You list cultural entities that are explicitly named in ${source}.
 Include brands, products, artists, movies, TV shows, books, podcasts, video games, destinations and public figures.
 Rules:
 - Only entities whose name actually appears in the text. Never infer, guess or add related entities.
-- Use the entity's official English name when the text names it in another language (e.g. 蘋果 → Apple); otherwise copy it as written.
+- name: copy it exactly as the text writes it.
+- english: the entity's established English name or title, as an English catalogue lists it (e.g. 蘋果 → Apple, 中華電信 → Chunghwa Telecom, 甄嬛傳 → Empresses in the Palace). The same as name when the text already uses it. Leave it empty when there is no established English name; never make up a translation.
 - Skip generic words (review, unboxing, camera, coffee), ${skip}.
 - At most 20 entities.`;
 
@@ -184,24 +189,127 @@ async function withFallback<T>(ask: (json: JsonCall) => Promise<T>): Promise<Llm
 // A readable reason for any LLM failure, with or without the fallback.
 export const llmFailure = (e: any) => (e instanceof ExtractionFailed ? e.message : geminiError(e));
 
-type Mentions = { name: string; kind: string }[];
+// name: as the text writes it; english: its English name, when the LLM gave a different one.
+export type Mention = { name: string; english?: string; kind: string };
+type Mentions = Mention[];
 
-function extractMentions(videos: any[]): Promise<LlmAnswer<Mentions>> {
+// The text sent to the LLM is held under this many tokens. Groq's free tier allows about
+// 8,000 tokens per minute and refuses a larger request outright ("Request too large"):
+// 15 Chinese video descriptions at 600 characters each were about 9,000 tokens, so every
+// Chinese channel got no score whenever Gemini was over quota. The budget leaves room for
+// the system prompt and the answer.
+export const PROMPT_TOKEN_BUDGET = 4500;
+
+// Chinese, Japanese, Korean and other wide scripts take about one token per character in
+// current tokenizers; Latin text about four characters per token. Errs on the high side.
+const tokenCost = (ch: string) => (ch.codePointAt(0)! >= 0x2e80 ? 1 : 0.25);
+
+export function estimateTokens(s: string): number {
+  let n = 0;
+  for (const ch of s) n += tokenCost(ch);
+  return Math.ceil(n);
+}
+
+export function truncateToTokens(s: string, budget: number): string {
+  let n = 0;
+  let i = 0;
+  for (const ch of s) {
+    n += tokenCost(ch);
+    if (n > budget) return s.slice(0, i);
+    i += ch.length;
+  }
+  return s;
+}
+
+// Description lines say little a link or a timestamp adds, and a channel repeats the same
+// footer (gear list, socials, sponsor codes) under every video. Links, emails and chapter
+// timestamps are removed, and a line already sent with an earlier video is kept only once,
+// so the budget goes to text that can name something. Only lines reached within maxChars
+// count as sent: a footer cut off under one video is still read under the next.
+export function cleanDescription(description: string, seen: Set<string>, maxChars = Infinity): string {
+  const kept: string[] = [];
+  let size = 0;
+  for (const raw of description.split('\n')) {
+    const line = raw
+      .replace(/https?:\/\/\S+|\bwww\.\S+/gi, ' ')
+      .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, ' ')
+      .replace(/^\s*\(?(?:\d{1,2}:)?\d{1,2}:\d{2}\)?\s*[-–—:|]?\s*/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const key = line.toLocaleLowerCase();
+    if (!/[\p{L}\p{N}]/u.test(line) || seen.has(key)) continue;
+    if (size >= maxChars) break;
+    const fits = line.slice(0, maxChars - size);
+    kept.push(fits);
+    size += fits.length + 1;
+    seen.add(key);
+  }
+  return kept.join('\n');
+}
+
+// Titles and tags first: they name the most per token. The descriptions share what is left
+// of the budget, a short one leaving its unused share to the longer ones.
+export function videoPrompt(videos: any[]): { text: string; tokens: number; rawTokens: number } {
   // Up to MAX_VIDEOS videos get 1,500 description characters each, as always; a channel's
-  // longer list gets less per video so the prompt stays about the same size.
+  // longer list gets less per video.
   const perVideo = videos.length > MAX_VIDEOS ? 600 : 1500;
-  const text = videos
-    .map((v, i) => {
-      const s = v.snippet || {};
-      return `Video ${i + 1}\nTitle: ${s.title || ''}\nTags: ${(s.tags || []).join(', ')}\nDescription: ${String(s.description || '').slice(0, perVideo)}`;
-    })
-    .join('\n\n');
+  const seen = new Set<string>();
+  const heads = videos.map((v, i) => {
+    const s = v.snippet || {};
+    return `Video ${i + 1}\nTitle: ${truncateToTokens(String(s.title || ''), 80)}\nTags: ${truncateToTokens((s.tags || []).join(', '), 60)}`;
+  });
+  const raw = videos.map((v) => String(v.snippet?.description || ''));
+  const bodies = raw.map((d) => cleanDescription(d, seen, perVideo));
+
+  let left = PROMPT_TOKEN_BUDGET - heads.reduce((n, h) => n + estimateTokens(h) + 4, 0);
+  const share = new Array<number>(bodies.length).fill(0);
+  const order = bodies.map((b, i) => ({ i, need: estimateTokens(b) })).sort((a, b) => a.need - b.need);
+  order.forEach(({ i, need }, k) => {
+    share[i] = Math.max(0, Math.min(need, Math.floor(left / (order.length - k))));
+    left -= share[i];
+  });
+  const text = heads.map((h, i) => `${h}\nDescription: ${truncateToTokens(bodies[i], share[i])}`).join('\n\n');
+  const rawText = heads.map((h, i) => `${h}\nDescription: ${raw[i].slice(0, perVideo)}`).join('\n\n');
+  return { text, tokens: estimateTokens(text), rawTokens: estimateTokens(rawText) };
+}
+
+function extractMentions(text: string): Promise<LlmAnswer<Mentions>> {
   return withFallback((json) => namedEntities(MENTION_PROMPT, text, json));
 }
 
 // Names explicitly mentioned in a brand's description or website text (same rules).
 export function extractBrandMentions(text: string): Promise<LlmAnswer<Mentions>> {
-  return withFallback((json) => namedEntities(BRAND_MENTION_PROMPT, text, json));
+  return withFallback((json) => namedEntities(BRAND_MENTION_PROMPT, truncateToTokens(text, PROMPT_TOKEN_BUDGET), json));
+}
+
+// A Qloo entity for a mention: the name as written first (an exact name or Qloo alias match
+// is the strongest evidence), then its English name. Either must match exactly.
+export async function resolveMention(m: Mention, ctx?: TraceCtx): Promise<QlooEntity | null> {
+  const types = KIND_TYPES[m.kind];
+  const entity = await resolveEntity(m.name, types, undefined, ctx);
+  if (entity || !m.english) return entity;
+  const english = await resolveEntity(m.english, types, undefined, ctx);
+  return english && { ...english, query: `${m.name} → ${m.english}` };
+}
+
+// A brand name typed in another language (蘋果) → its English name, only to offer as a
+// suggestion: the user picks it, and Qloo must still match it exactly.
+const BRAND_NAME_PROMPT = `The user typed a brand's name in a language other than English. Give the brand's established English name, as it is known internationally (e.g. 蘋果 → Apple, 耐吉 → Nike, 全聯 → PX Mart).
+Rules:
+- Only names of that same brand. Never a similar, related or parent brand.
+- At most 2 names, when the input could mean two brands; none when you don't know the brand.`;
+
+const BRAND_NAME_SCHEMA = {
+  type: 'object',
+  properties: { names: { type: 'array', items: { type: 'string' } } },
+  required: ['names'],
+};
+
+export function translateBrandName(name: string): Promise<LlmAnswer<string[]>> {
+  return withFallback(async (json) => {
+    const d = await json<{ names: string[] }>(BRAND_NAME_PROMPT, name, BRAND_NAME_SCHEMA);
+    return [...new Set((d.names || []).map((n) => String(n || '').trim()).filter((n) => n.length > 1))].slice(0, 2);
+  });
 }
 
 // Style and culture keywords a brand states about itself. They are only looked up as Qloo
@@ -221,7 +329,7 @@ const KEYWORD_SCHEMA = {
 
 export function extractBrandKeywords(text: string): Promise<LlmAnswer<string[]>> {
   return withFallback(async (json) => {
-    const d = await json<{ keywords: string[] }>(KEYWORD_PROMPT, text, KEYWORD_SCHEMA);
+    const d = await json<{ keywords: string[] }>(KEYWORD_PROMPT, truncateToTokens(text, PROMPT_TOKEN_BUDGET), KEYWORD_SCHEMA);
     const seen = new Set<string>();
     return (d.keywords || [])
       .map((k) => String(k || '').trim().toLocaleLowerCase())
@@ -250,11 +358,15 @@ export async function extractImageKeywords(image: InlineImage): Promise<LlmAnswe
 }
 
 async function namedEntities(prompt: string, text: string, json: JsonCall): Promise<Mentions> {
-  const d = await json<{ entities: { name: string; kind: string }[] }>(prompt, text, MENTION_SCHEMA);
+  const d = await json<{ entities: { name: string; english?: string; kind: string }[] }>(prompt, text, MENTION_SCHEMA);
 
   const seen = new Set<string>();
   return (d.entities || [])
-    .map((e) => ({ name: String(e.name || '').trim(), kind: KIND_TYPES[e.kind] ? e.kind : 'brand' }))
+    .map((e) => {
+      const name = String(e.name || '').trim();
+      const english = String(e.english || '').trim();
+      return { name, ...(english && compact(english) !== compact(name) ? { english } : {}), kind: KIND_TYPES[e.kind] ? e.kind : 'brand' };
+    })
     .filter((e) => e.name.length > 1 && !seen.has(e.name.toLocaleLowerCase()) && seen.add(e.name.toLocaleLowerCase()))
     .slice(0, 20);
 }
@@ -287,18 +399,21 @@ const RETRY_SCHEMA = {
 
 async function retryUnmatched(
   videoKey: string,
-  queries: { keyword: string; types: string[] }[],
+  queries: { keyword: string; english?: string; types: string[] }[],
   resolved: { keyword: string; entity: QlooEntity | null; error?: string }[],
   trace?: Trace
 ): Promise<void> {
   // Candidates come from the same cached /search the first attempt made: no extra Qloo calls.
-  const pending: { row: (typeof resolved)[number]; types: string[]; candidates: any[] }[] = [];
+  // A name with an English name is asked about under that one: Qloo's results for 甄嬛傳
+  // are unrelated, its results for Empresses in the Palace are not.
+  const pending: { row: (typeof resolved)[number]; term: string; types: string[]; candidates: any[] }[] = [];
   for (const row of resolved) {
     if (row.entity || row.error) continue;
-    const types = queries.find((q) => q.keyword === row.keyword)!.types;
-    const found = await searchEntities(row.keyword, types, 5, trace && { trace, stage: 'creator' }, 'candidates for the retry decision').catch(() => []);
+    const q = queries.find((x) => x.keyword === row.keyword)!;
+    const term = q.english || row.keyword;
+    const found = await searchEntities(term, q.types, 5, trace && { trace, stage: 'creator' }, 'candidates for the retry decision').catch(() => []);
     const candidates = found.filter((x) => x.entity_id && x.name).slice(0, 5);
-    if (candidates.length) pending.push({ row, types, candidates });
+    if (candidates.length) pending.push({ row, term, types: q.types, candidates });
   }
   if (!pending.length) return;
 
@@ -311,7 +426,7 @@ async function retryUnmatched(
   let retryAt = 0;
   try {
     const payload = pending.map((p) => ({
-      name: p.row.keyword,
+      name: p.term,
       candidates: p.candidates.map((c, i) => ({
         index: i,
         name: c.name,
@@ -321,7 +436,7 @@ async function retryUnmatched(
     }));
     // Keyed by the videos and the exact question (names and candidate ids), so a change
     // in Qloo's results asks Gemini again.
-    const key = `retry:${videoKey}|${JSON.stringify(pending.map((p) => [p.row.keyword, p.candidates.map((c) => c.entity_id)]))}`;
+    const key = `retry:${videoKey}|${JSON.stringify(pending.map((p) => [p.term, p.candidates.map((c) => c.entity_id)]))}`;
     const r = await cachedAnswer(key, () =>
       withFallback(
         async (json) => (await json<{ decisions: typeof decisions }>(RETRY_PROMPT, JSON.stringify(payload), RETRY_SCHEMA)).decisions || []
@@ -337,7 +452,7 @@ async function retryUnmatched(
   }
 
   const picks = pending.map((p) => {
-    const d = decisions.find((x) => x.name === p.row.keyword);
+    const d = decisions.find((x) => x.name === p.term);
     const candidate = d && d.choice >= 0 ? p.candidates[d.choice] : undefined;
     return { ...p, candidate, reason: d?.reason || 'no answer' };
   });
@@ -502,7 +617,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
 
   // 3. Keywords → Qloo entities. Only name-matched Qloo results count as evidence.
   // lib/qloo throttles these under Qloo's 10 req/s limit.
-  let queries: { keyword: string; types: string[] }[] = [];
+  let queries: { keyword: string; english?: string; kind: string; types: string[] }[] = [];
   let keywordSource: CreatorTaste['keywordSource'] = 'unavailable';
   let extractionError: string | undefined = hasGemini() || hasGroq() ? undefined : 'GEMINI_API_KEY is not set';
   let extractionModel: string | undefined;
@@ -514,8 +629,11 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
   const videoKey = videos.map((v) => v.id).sort().join(',');
   if (!extractionError) {
     const g0 = Date.now();
+    const prompt = videoPrompt(videos);
+    const promptNote = `(~${prompt.tokens.toLocaleString('en-US')} tokens, from ~${prompt.rawTokens.toLocaleString('en-US')} before removing links, timestamps and repeated lines; budget ${PROMPT_TOKEN_BUDGET.toLocaleString('en-US')})`;
     try {
-      const r = await cachedAnswer(`mentions:${videoKey}`, () => extractMentions(videos));
+      // v2: answers carry English names; earlier cached answers don't.
+      const r = await cachedAnswer(`mentions:v2:${videoKey}`, () => extractMentions(prompt.text));
       const { value: mentions, llm, model, geminiFailure } = r.value;
       extractionModel = model;
       extractionFallback = geminiFailure;
@@ -534,15 +652,20 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
       // The prompt asks Gemini to skip these, but it doesn't always: the channel's own
       // name and YouTube itself say nothing about the audience's taste.
       const skip = new Set(['youtube', ...channels.flatMap((c: any) => [c.title, c.handle.replace(/^@/, '')])].map((x) => x.toLocaleLowerCase()));
-      const dropped = mentions.filter((m) => skip.has(m.name.toLocaleLowerCase())).map((m) => m.name);
-      queries = mentions.filter((m) => !skip.has(m.name.toLocaleLowerCase())).map((m) => ({ keyword: m.name, types: KIND_TYPES[m.kind] }));
+      const skipped = (m: Mention) => skip.has(m.name.toLocaleLowerCase()) || Boolean(m.english && skip.has(m.english.toLocaleLowerCase()));
+      const dropped = mentions.filter(skipped).map((m) => m.name);
+      queries = mentions
+        .filter((m) => !skipped(m))
+        .map((m) => ({ keyword: m.name, ...(m.english ? { english: m.english } : {}), kind: m.kind, types: KIND_TYPES[m.kind] }));
       keywordSource = llm;
       trace?.add({
         stage: 'creator',
         tool: `${llm === 'groq' ? 'Groq' : 'Gemini'} (${model})`,
-        input: `Titles, tags and descriptions of ${videos.length} video${videos.length === 1 ? '' : 's'}: list names explicitly mentioned`,
+        input: `Titles, tags and descriptions of ${videos.length} video${videos.length === 1 ? '' : 's'}: list names explicitly mentioned ${promptNote}`,
         output:
-          (mentions.length ? `Proposed ${mentions.length}: ${mentions.map((m) => `${m.name} (${m.kind})`).join(', ')}` : 'Proposed none') +
+          (mentions.length
+            ? `Proposed ${mentions.length}: ${mentions.map((m) => `${m.name}${m.english ? ` → ${m.english}` : ''} (${m.kind})`).join(', ')}`
+            : 'Proposed none') +
           cachedNote(r.cached, r.at),
         decision: dropped.length
           ? `Dropped ${dropped.join(', ')} (the channel itself or YouTube); ${queries.length} names go to Qloo as search terms`
@@ -553,7 +676,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
     } catch (e: any) {
       const failed = e instanceof ExtractionFailed ? e : new ExtractionFailed(geminiError(e), undefined);
       extractionError = failed.message;
-      const input = `Titles, tags and descriptions of ${videos.length} videos`;
+      const input = `Titles, tags and descriptions of ${videos.length} videos ${promptNote}`;
       const stop = 'Stop: no guessed keywords are used instead, so no score is given';
       if (failed.geminiFailure) {
         trace?.add({
@@ -577,9 +700,9 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
 
   const keywords = queries.map((q) => q.keyword);
   const resolved: { keyword: string; entity: QlooEntity | null; error?: string }[] = await Promise.all(
-    queries.map(async ({ keyword: k, types }) => {
+    queries.map(async ({ keyword: k, english, kind }) => {
       try {
-        return { keyword: k, entity: await resolveEntity(k, types, undefined, trace && { trace, stage: 'creator' }) };
+        return { keyword: k, entity: await resolveMention({ name: k, english, kind }, trace && { trace, stage: 'creator' }) };
       } catch (e: any) {
         trace?.add({
           stage: 'creator',

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import {
-  KIND_TYPES,
   LlmAnswer,
+  Mention,
   cachedAnswer,
   cachedNote,
   extractBrandKeywords,
@@ -9,6 +9,8 @@ import {
   extractImageKeywords,
   llmFailure,
   llmLabel,
+  resolveMention,
+  translateBrandName,
 } from '@/lib/creator';
 import { ApiError } from '@/lib/errors';
 import { GEMINI_MODEL, InlineImage } from '@/lib/gemini';
@@ -218,9 +220,10 @@ async function describedEntities(description: string, trace?: Trace): Promise<{ 
 
   const g0 = Date.now();
   const input = 'The brand’s description: list names explicitly mentioned';
-  let mentions: { name: string; kind: string }[];
+  let mentions: Mention[];
   try {
-    const key = `brand-desc:${createHash('sha256').update(text).digest('hex')}`;
+    // v2: answers carry English names; earlier cached answers don't.
+    const key = `brand-desc:v2:${createHash('sha256').update(text).digest('hex')}`;
     const r = await cachedAnswer(key, () => extractBrandMentions(text));
     mentions = r.value.value;
     traceFallback(trace, input, r.value, r.cached);
@@ -229,7 +232,9 @@ async function describedEntities(description: string, trace?: Trace): Promise<{ 
       tool: llmLabel(r.value),
       input,
       output:
-        (mentions.length ? `Proposed ${mentions.length}: ${mentions.map((m) => `${m.name} (${m.kind})`).join(', ')}` : 'Proposed none') +
+        (mentions.length
+          ? `Proposed ${mentions.length}: ${mentions.map((m) => `${m.name}${m.english ? ` → ${m.english}` : ''} (${m.kind})`).join(', ')}`
+          : 'Proposed none') +
         cachedNote(r.cached, r.at),
       decision: 'Names go to Qloo as search terms, not as evidence',
       cached: r.cached,
@@ -242,7 +247,7 @@ async function describedEntities(description: string, trace?: Trace): Promise<{ 
   }
 
   const resolved = await Promise.all(
-    mentions.map((m) => resolveEntity(m.name, KIND_TYPES[m.kind], undefined, trace && { trace, stage: 'brand' }).catch(() => null))
+    mentions.map((m) => resolveMention(m, trace && { trace, stage: 'brand' }).catch(() => null))
   );
   return { entities: [...new Map(resolved.filter((e): e is QlooEntity => Boolean(e)).map((e) => [e.id, e])).values()] };
 }
@@ -286,9 +291,15 @@ export function brandConfidence(
   return { ...c, confidence: after };
 }
 
+// A letter from a script other than Latin: 蘋果, ナイキ, 삼성.
+const NON_LATIN = /(?!\p{Script=Latin})\p{L}/u;
+
 // Qloo brands whose name starts with the input: Qloo names often carry a suffix the user
 // doesn't type ("Le Labo" is "Le Labo Fragrances", with no aliases).
+// A name in another script has no such prefix in Qloo's English catalogue, so its English
+// name is offered instead (englishSuggestions).
 async function suggestionsFor(name: string, trace?: Trace): Promise<string[]> {
+  if (NON_LATIN.test(name)) return englishSuggestions(name, trace);
   const q = compact(name);
   if (q.length < 3) return [];
   const found = await searchEntities(name, ['urn:entity:brand'], 5, trace && { trace, stage: 'brand' }, 'names starting with it').catch(() => []);
@@ -296,6 +307,35 @@ async function suggestionsFor(name: string, trace?: Trace): Promise<string[]> {
     .map((r) => String(r.name || ''))
     .filter((n) => n && compact(n).startsWith(q))
     .slice(0, 3);
+}
+
+// 蘋果 → the LLM proposes Apple → Qloo must have a brand named exactly that. The result is
+// only offered ("Did you mean Apple Inc?"), never substituted: the user picks it.
+async function englishSuggestions(name: string, trace?: Trace): Promise<string[]> {
+  const g0 = Date.now();
+  const input = `Brand name “${name}” isn’t in English: its English name`;
+  let english: string[];
+  try {
+    const r = await cachedAnswer(`brand-en:${compact(name)}`, () => translateBrandName(name));
+    english = r.value.value;
+    traceFallback(trace, input, r.value, r.cached);
+    trace?.add({
+      stage: 'brand',
+      tool: llmLabel(r.value),
+      input,
+      output: (english.length ? `Proposed ${english.join(', ')}` : 'Proposed none') + cachedNote(r.cached, r.at),
+      decision: 'Search terms only: offered as a suggestion if Qloo has a brand by exactly that name',
+      cached: r.cached,
+      ms: Date.now() - g0,
+    });
+  } catch (e: any) {
+    trace?.add({ stage: 'brand', tool: `Gemini (${GEMINI_MODEL})`, input, output: `Failed: ${llmFailure(e)}`, decision: 'No suggestion', ms: Date.now() - g0, ok: false });
+    return [];
+  }
+  const found = await Promise.all(
+    english.map((n) => resolveEntity(n, ['urn:entity:brand'], undefined, trace && { trace, stage: 'brand' }).catch(() => null))
+  );
+  return [...new Set(found.filter((e): e is QlooEntity => Boolean(e)).map((e) => e.name))];
 }
 
 export interface MissingReference {
