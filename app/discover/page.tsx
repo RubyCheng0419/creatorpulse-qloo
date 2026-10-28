@@ -1,8 +1,9 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { CopyLinkButton } from '@/components/CopyLinkButton';
 import { SiteHeader } from '@/components/SiteHeader';
 import { CandidateCard } from '@/components/discover/CandidateCard';
 import { RankingOverview } from '@/components/discover/RankingOverview';
@@ -13,9 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { CREATOR_CATEGORIES, type CreatorCategory } from '@/lib/creator-categories';
 import type { Discovery } from '@/lib/discover';
+import { creatorPageHref, getDiscovery, saveDiscovery } from '@/lib/discoveries';
 import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
 import { type ProjectInputs, addRun, createProject, getProject, updateInputs, useProjects } from '@/lib/projects';
 import { brandBasisNote } from '@/lib/report';
+import { discoverShareLink } from '@/lib/share-link';
 
 // "Find creators": the brand goes in, Qloo's YouTubers come out ranked by how their
 // audience's taste relates to the brand's. Each one links to the video deep dive on "/".
@@ -62,6 +65,29 @@ async function loadImage(file: File): Promise<Image> {
 
 const NEW_PROJECT = '__new';
 const threeRefs = (list: string[]) => Array.from({ length: 3 }, (_, i) => list[i] ?? '');
+// What a link or a stored ranking keeps of a request: no key visual, no live flag.
+const shareable = (r: Request) => ({
+  brandName: r.brandName,
+  creatorCategory: r.creatorCategory,
+  ...(r.referenceBrands ? { referenceBrands: r.referenceBrands } : {}),
+  ...(r.brandDescription ? { brandDescription: r.brandDescription } : {}),
+});
+
+// A shared ranking link (lib/share-link discoverShareLink): ?brand=…&type=…&refs=a|b&desc=…
+// prefills the form and finds the creators again.
+function linkedDiscovery(params: URLSearchParams): Request | null {
+  const brandName = params.get('brand');
+  if (!brandName) return null;
+  const type = params.get('type');
+  const refs = params.get('refs')?.split('|').filter(Boolean);
+  const desc = params.get('desc');
+  return {
+    brandName,
+    creatorCategory: type && type in CREATOR_CATEGORIES ? (type as CreatorCategory) : 'any',
+    ...(refs?.length ? { referenceBrands: refs } : {}),
+    ...(desc ? { brandDescription: desc } : {}),
+  };
+}
 
 // useSearchParams needs a Suspense boundary for the static build.
 export default function Page() {
@@ -79,21 +105,31 @@ function DiscoverPage() {
     const id = params.get('project');
     return id ? (getProject(id) ?? null) : null;
   });
+  // ?brand=… (a shared link) runs the ranking again; ?run=<id> reopens one this browser found,
+  // which is where a creator's page links back to.
+  const [linked] = useState(() => linkedDiscovery(params));
+  const [stored] = useState(() => {
+    const id = params.get('run');
+    return id ? getDiscovery(id) : null;
+  });
+  const seed = initial?.inputs ?? linked ?? (stored?.request as Request | undefined) ?? null;
+  const linkedRan = useRef(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const projects = useProjects();
   const [projectId, setProjectId] = useState(initial?.id ?? '');
   const [newProjectName, setNewProjectName] = useState('');
-  const [brandName, setBrandName] = useState(initial?.inputs.brandName ?? '');
-  const [creatorCategory, setCreatorCategory] = useState<CreatorCategory>(initial?.inputs.creatorCategory ?? 'any');
-  const [moreOpen, setMoreOpen] = useState(Boolean(initial?.inputs.referenceBrands.length || initial?.inputs.brandDescription));
-  const [refs, setRefs] = useState(threeRefs(initial?.inputs.referenceBrands ?? []));
-  const [description, setDescription] = useState(initial?.inputs.brandDescription ?? '');
+  const [brandName, setBrandName] = useState(seed?.brandName ?? '');
+  const [creatorCategory, setCreatorCategory] = useState<CreatorCategory>(seed?.creatorCategory ?? 'any');
+  const [moreOpen, setMoreOpen] = useState(Boolean(seed?.referenceBrands?.length || seed?.brandDescription));
+  const [refs, setRefs] = useState(threeRefs(seed?.referenceBrands ?? []));
+  const [description, setDescription] = useState(seed?.brandDescription ?? '');
   const [image, setImage] = useState<Image | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [result, setResult] = useState<Discovery | null>(null);
+  const [result, setResult] = useState<Discovery | null>(stored);
   const [error, setError] = useState<string | null>(null);
-  const [last, setLast] = useState<Request | null>(null); // the request behind the result
+  const [last, setLast] = useState<Request | null>((stored?.request as Request | undefined) ?? null); // the request behind the result
 
   useEffect(() => {
     if (!running) return;
@@ -101,6 +137,24 @@ function DiscoverPage() {
     const t = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
     return () => clearInterval(t);
   }, [running]);
+
+  // A new ranking scrolls into view with its action row; the form stays above it.
+  // The results render once running is over, so both are watched.
+  useEffect(() => {
+    if (!result || running) return;
+    // After this render (and Next's own scroll on navigation); instant, because the page's
+    // smooth scrolling and animation frames don't advance in a background tab.
+    const t = setTimeout(() => resultsRef.current?.scrollIntoView({ block: 'start', behavior: 'instant' }), 50);
+    return () => clearTimeout(t);
+  }, [result, running]);
+
+  // Runs once for a shared link (the ref guards against React running effects twice).
+  useEffect(() => {
+    if (!linked || linkedRan.current) return;
+    linkedRan.current = true;
+    find(linked);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const project = projects?.find((p) => p.id === projectId) ?? null;
   const inputs = (): ProjectInputs => ({
@@ -148,6 +202,7 @@ function DiscoverPage() {
       if (!r.ok) setError(d.error || `Server returned ${r.status}`);
       else {
         setResult(d);
+        if (d.status === 'completed') saveDiscovery(d, shareable(req));
         if (d.status !== 'completed' && !d.brand?.basis) setMoreOpen(true); // the brand side needs help
         if (project) addRun(project.id, d, brandBasisNote(d.brand));
       }
@@ -405,12 +460,30 @@ function DiscoverPage() {
         )}
 
         {result && !running && (
-          <div className="mt-8 space-y-4">
+          <div ref={resultsRef} className="mt-8 scroll-mt-4 space-y-4">
             <div>
               <h2 className="text-xl font-semibold text-slate-900">
                 Creators for {result.brand.entity?.name || result.brand.name}
                 {result.creatorCategory !== 'any' && ` · ${CREATOR_CATEGORIES[result.creatorCategory].label} YouTubers`}
               </h2>
+              {/* The same actions, in the same style, as a creator check's result (MatchResult). */}
+              {last && (
+                <div className="mt-3 print:hidden">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      href={`/compare?brand=${encodeURIComponent(last.brandName)}`}
+                      className="inline-flex items-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+                    >
+                      Compare creators
+                    </Link>
+                    <CopyLinkButton link={() => discoverShareLink(shareable(last), window.location.origin)} />
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">
+                    The share link carries this ranking’s inputs and finds the creators again on any device, so a re-run can differ
+                    slightly{last.image ? '; the key visual isn’t included' : ''}. Each creator opens its own page in this browser.
+                  </p>
+                </div>
+              )}
               {basisNote && (
                 <p className="mt-2 rounded-md bg-violet-50 px-3 py-2 text-sm font-medium text-violet-900 ring-1 ring-violet-200">
                   {basisNote} <span className="font-normal">Confidence is one level lower than the evidence alone would give.</span>
@@ -421,7 +494,11 @@ function DiscoverPage() {
             {result.status === 'completed' ? (
               <>
                 {result.validation && <RankingValidationNote v={result.validation} />}
-                <RankingOverview candidates={result.candidates} unverified={result.validation?.status === 'unverified'} />
+                <RankingOverview
+                  candidates={result.candidates}
+                  hrefOf={(c) => creatorPageHref(result.id, c.qlooId)}
+                  unverified={result.validation?.status === 'unverified'}
+                />
                 <dl className="grid gap-x-6 gap-y-3 px-1 text-sm sm:grid-cols-3">
                   <div>
                     <dt className="font-medium text-slate-900">Fit Score</dt>
@@ -446,6 +523,7 @@ function DiscoverPage() {
                     <CandidateCard
                       key={c.qlooId}
                       c={c}
+                      href={creatorPageHref(result.id, c.qlooId)}
                       deepDiveHref={deepDive(c)}
                       brandName={result.brand.entity?.name || result.brand.name}
                       unverified={result.validation?.status === 'unverified'}

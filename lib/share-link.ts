@@ -12,3 +12,20 @@ export function shareLink(match: Match, origin: string): string {
   if (match.brand.description) q.set('desc', match.brand.description);
   return `${origin}/?${q}`;
 }
+
+// A ranking's inputs, read back by linkedDiscovery in app/discover/page.tsx. A key visual
+// can't travel in a URL, so a ranking found with one re-runs without it.
+export interface DiscoverRequest {
+  brandName: string;
+  creatorCategory: string;
+  referenceBrands?: string[];
+  brandDescription?: string;
+}
+
+export function discoverShareLink(req: DiscoverRequest, origin: string): string {
+  const q = new URLSearchParams({ brand: req.brandName });
+  if (req.creatorCategory !== 'any') q.set('type', req.creatorCategory);
+  if (req.referenceBrands?.length) q.set('refs', req.referenceBrands.join('|'));
+  if (req.brandDescription) q.set('desc', req.brandDescription);
+  return `${origin}/discover?${q}`;
+}

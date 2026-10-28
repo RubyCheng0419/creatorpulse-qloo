@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronDown, ExternalLink } from 'lucide-react';
 import { TasteComparison, formatAffinity } from '@/components/match/TasteComparison';
@@ -27,9 +27,6 @@ export function extremes(c: CreatorCandidate) {
   return { best, worst: worst !== best ? worst : undefined };
 }
 
-export const cardId = (c: CreatorCandidate) => `creator-${c.rank}`;
-export const OPEN_CARD_EVENT = 'creatorpulse:open-card'; // detail: a cardId, from the ranking table
-
 // One ranked creator: the score, what it rests on, and the way into the video deep dive.
 // The main identity Qloo's description gives a creator, and the dimension that identity
 // should be strong in. Only words Qloo itself wrote are matched; no match, no check.
@@ -41,10 +38,27 @@ const IDENTITY_DIMENSION: [RegExp, string][] = [
   [/\b(technology|tech)\b/i, 'Tech & Innovation'],
 ];
 
+// Qloo's description lists every role ("singer, actor and YouTuber"): the person-level
+// profile then mixes the audiences of all of them. Roles of one kind ("YouTuber and
+// Internet personality") are one audience; a role no pattern knows counts as its own kind.
+const ROLE_KINDS: [RegExp, string][] = [
+  [/\b(youtuber|internet personality|streamer|vlogger|influencer|content creator|podcaster|gamer|reviewer)\b/i, 'online'],
+  ...IDENTITY_DIMENSION,
+];
+export function roleKinds(c: CreatorCandidate): string[] {
+  if (!c.description) return [];
+  const parts = c.description
+    .replace(/\([^)]*\)/g, '')
+    .split(/,|\band\b/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return [...new Set(parts.map((p) => ROLE_KINDS.find(([re]) => re.test(p))?.[1] ?? p.toLowerCase()))];
+}
+
 // What a reviewer needs to tell what the score rests on: the entities behind the strongest
 // dimension, how much was scored, thin dimensions that still weigh a full share, and a main
 // identity whose dimension isn't strong.
-function EvidenceSummary({ c }: { c: CreatorCandidate }) {
+export function EvidenceSummary({ c }: { c: CreatorCandidate }) {
   const dims = c.compatibility.dimensions;
   const withData = dims.filter((d) => d.score !== null).sort((a, b) => b.score! - a.score!);
   const best = withData[0];
@@ -85,26 +99,19 @@ function EvidenceSummary({ c }: { c: CreatorCandidate }) {
 
 export function CandidateCard({
   c,
+  href,
   deepDiveHref,
   brandName,
   unverified = false,
 }: {
   c: CreatorCandidate;
+  href: string; // this creator's own page (/discover/<ranking>/<Qloo id>)
   deepDiveHref: string | null;
   brandName?: string;
   unverified?: boolean; // the ranking failed its controls: no fit verdict
 }) {
   const [open, setOpen] = useState(false);
-  useEffect(() => {
-    const onOpen = (e: Event) => {
-      if ((e as CustomEvent<string>).detail === cardId(c)) setOpen(true);
-    };
-    window.addEventListener(OPEN_CARD_EVENT, onOpen);
-    return () => window.removeEventListener(OPEN_CARD_EVENT, onOpen);
-  }, [c]);
-  // Qloo's description lists every role ("singer, actor and YouTuber"): the person-level
-  // profile then mixes the audiences of all of them.
-  const roles = c.description ? c.description.split(/,|\band\b/).filter((s) => s.trim()).length : 0;
+  const roles = roleKinds(c).length;
   const comp = c.compatibility;
   const { best, worst } = extremes(c);
   const all = comp.dimensions.flatMap((d) => [...d.intersection, ...d.weakLink, ...d.divergence]);
@@ -117,11 +124,15 @@ export function CandidateCard({
     (c.profile.failedTypes.length ? ` · Qloo didn’t answer this time for: ${c.profile.failedTypes.join(', ')}` : '');
 
   return (
-    <li id={cardId(c)} className="scroll-mt-6 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+    <li className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
       <div className="flex items-start gap-3 sm:gap-4">
         <span className="w-8 shrink-0 pt-0.5 text-lg font-semibold tabular-nums text-slate-400 sm:w-10 sm:text-xl">#{c.rank}</span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold leading-snug text-slate-900">{c.name}</h3>
+          <h3 className="text-lg font-semibold leading-snug text-slate-900">
+            <Link href={href} className="hover:text-teal-700 hover:underline">
+              {c.name}
+            </Link>
+          </h3>
           {c.description && <p className="text-sm text-slate-500">{c.description}</p>}
           <p className="mt-1 hidden text-xs tabular-nums text-slate-500 sm:block">{taste}</p>
         </div>
@@ -194,6 +205,10 @@ export function CandidateCard({
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 pt-3 text-sm sm:pl-14">
+        <Link href={href} className="inline-flex items-center gap-1 font-medium text-teal-700 hover:underline">
+          Creator page
+          <ArrowRight aria-hidden className="size-4" />
+        </Link>
         {scored && (
           <button
             type="button"

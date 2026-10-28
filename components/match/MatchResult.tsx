@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { CopyLinkButton } from '@/components/CopyLinkButton';
 import { decisionSummary, summaryContext } from '@/lib/report';
 import { shareLink } from '@/lib/share-link';
 import Link from 'next/link';
@@ -74,7 +75,7 @@ export function MatchResult({
           >
             Compare creators
           </Link>
-          <CopyLinkButton match={match} />
+          <CopyLinkButton link={() => shareLink(match, window.location.origin)} />
           {onReset && (
             <Button className="sm:ml-auto" onClick={onReset}>
               Run another match
@@ -171,26 +172,6 @@ export function MatchResult({
         )}
       </div>
     </div>
-  );
-}
-
-function CopyLinkButton({ match }: { match: Match }) {
-  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
-  return (
-    <Button
-      variant="outline"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(shareLink(match, window.location.origin));
-          setState('copied');
-        } catch {
-          setState('failed'); // clipboard blocked: the link is still the page's own inputs
-        }
-        setTimeout(() => setState('idle'), 2500);
-      }}
-    >
-      {state === 'copied' ? 'Link copied' : state === 'failed' ? 'Copy failed' : 'Copy share link'}
-    </Button>
   );
 }
 

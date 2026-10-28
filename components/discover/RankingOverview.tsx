@@ -1,10 +1,23 @@
-import { OPEN_CARD_EVENT, VERDICT_STYLE, cardId, extremes } from '@/components/discover/CandidateCard';
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { VERDICT_STYLE, extremes } from '@/components/discover/CandidateCard';
 import type { CreatorCandidate } from '@/lib/discover';
 import { VERDICT_LABELS } from '@/lib/report';
 
-// The whole ranking on one screen; each name jumps to that creator's card below.
+// The whole ranking on one screen; each row opens that creator's own page.
 // An unverified ranking (lib/ranking-controls) shows no fit verdicts.
-export function RankingOverview({ candidates, unverified = false }: { candidates: CreatorCandidate[]; unverified?: boolean }) {
+export function RankingOverview({
+  candidates,
+  hrefOf,
+  unverified = false,
+}: {
+  candidates: CreatorCandidate[];
+  hrefOf: (c: CreatorCandidate) => string;
+  unverified?: boolean;
+}) {
+  const router = useRouter();
   return (
     <section aria-label="Ranking at a glance" className="overflow-hidden rounded-xl border border-slate-200 bg-white">
       <table className="w-full text-sm">
@@ -38,21 +51,18 @@ export function RankingOverview({ candidates, unverified = false }: { candidates
               <tr
                 key={c.qlooId}
                 className="cursor-pointer transition-colors hover:bg-slate-50"
-                onClick={() => {
-                  // The whole row opens that creator's card with its evidence (CandidateCard listens).
-                  // The browser's own anchor jump does the scrolling; setting the hash it already
-                  // has wouldn't jump, so that case scrolls by hand.
-                  const id = cardId(c);
-                  if (window.location.hash === `#${id}`) document.getElementById(id)?.scrollIntoView({ block: 'start' });
-                  else window.location.hash = id;
-                  window.dispatchEvent(new CustomEvent(OPEN_CARD_EVENT, { detail: id }));
-                }}
+                // The whole row opens the page; the name is the real link (keyboard, new tab).
+                onClick={() => router.push(hrefOf(c))}
               >
                 <td className="py-2.5 pl-4 pr-1 tabular-nums text-slate-400">{c.rank}</td>
                 <td className="px-2 py-2.5">
-                  <a href={`#${cardId(c)}`} className="font-medium text-slate-900 hover:text-teal-700 hover:underline">
+                  <Link
+                    href={hrefOf(c)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="font-medium text-slate-900 hover:text-teal-700 hover:underline"
+                  >
                     {c.name}
-                  </a>
+                  </Link>
                 </td>
                 <td className="px-2 py-2.5 text-right text-base font-semibold tabular-nums text-slate-900">{c.compatibility.fitScore ?? '—'}</td>
                 <td className="hidden px-3 py-2.5 sm:table-cell">
