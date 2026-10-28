@@ -17,7 +17,7 @@ const isCurrent = (href: string, path: string | null) =>
 // `path` is null while prerendering, where no page is marked as current.
 export function NavLinks({ path }: { path: string | null }) {
   return (
-    <nav aria-label="Main" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+    <nav aria-label="Main" data-tour="nav" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       {/* On a phone the nav gets its own row and scrolls sideways instead of wrapping. */}
       <ul className="flex gap-5 whitespace-nowrap text-sm">
         {NAV.map((item) => {

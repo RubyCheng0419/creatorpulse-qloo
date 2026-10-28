@@ -4,6 +4,8 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
+import { Tour } from '@/components/Tour';
+import { CHECK_TOUR } from '@/components/tours';
 import { ComparisonTable } from '@/components/compare/ComparisonTable';
 import { MatchResult } from '@/components/match/MatchResult';
 import { ProgressPanel } from '@/components/match/ProgressPanel';
@@ -203,6 +205,9 @@ function MatchPage() {
               products, shows or people (tech reviewers, for example). Channels that rarely name anything, like many kids’ or cooking
               channels, may get “insufficient data” instead of a score.
             </p>
+            <Link href="/how-it-works" data-tour="how-it-works" className="mt-3 inline-block text-sm font-medium text-teal-700 hover:underline">
+              How the score works →
+            </Link>
           </div>
         )}
 
@@ -227,7 +232,7 @@ function MatchPage() {
 
         {step === 1 && (
           <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
-            <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
+            <section data-tour="check-brand" className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
               <label htmlFor="brand" className="text-base font-semibold text-slate-900">
                 Your brand
               </label>
@@ -267,7 +272,7 @@ function MatchPage() {
             </section>
 
             {/* First on a phone: the demo is what most first-time visitors are here for. */}
-            <aside className="order-first rounded-xl border border-teal-200 bg-teal-50 p-4 sm:p-6 lg:order-none">
+            <aside data-tour="check-demo" className="order-first rounded-xl border border-teal-200 bg-teal-50 p-4 sm:p-6 lg:order-none">
               <h2 className="text-base font-semibold text-teal-900">Try the demo</h2>
               <p className="mt-2 text-sm text-teal-900">
                 The same {DEMO_PAIRS[0].creatorLabel} videos against two brands. Each click runs the full pipeline live.
@@ -377,6 +382,8 @@ function MatchPage() {
 
         {step === 4 && results.length > 1 && <TwoCreators matches={results} onReset={reset} />}
       </main>
+      {/* Only on the form: a linked or shared run goes straight to its result. */}
+      {step === 1 && <Tour id="check" steps={CHECK_TOUR} autoStart={!linked} />}
     </>
   );
 }
