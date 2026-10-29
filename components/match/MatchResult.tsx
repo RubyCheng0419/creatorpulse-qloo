@@ -13,12 +13,16 @@ import { downloadMarkdown } from '@/lib/report-markdown';
 import { summarizeTrace } from '@/lib/trace';
 import { AgentTrace } from './AgentTrace';
 import { BrandFallbackForm, type BrandFallbackInput } from './BrandFallbackForm';
+import { CreatorRetryForm } from './CreatorRetryForm';
 import { CrossCheck } from './CrossCheck';
 import { PriorCoverage } from './PriorCoverage';
 import { ReportDetails } from './ReportDetails';
 import { ScoreCard } from './ScoreCard';
 import { SourcesPanel } from './SourcesPanel';
 import { TasteComparison } from './TasteComparison';
+
+// No score because of what the videos named: more or other videos can fix it on the same page.
+const CREATOR_SIDE = new Set<string>(['too-few-creator-entities', 'too-few-dimensions']);
 
 export const DISCLAIMER =
   'Scores are based on Qloo’s taste graph and the creator’s public video metadata. No audience personal data is used. Dimensions without data are excluded from the score.';
@@ -40,6 +44,7 @@ export function MatchResult({
   onRunLive,
   onUseBrand,
   onBrandFallback,
+  onRerunCreator,
   running,
   autoPrint,
 }: {
@@ -48,6 +53,7 @@ export function MatchResult({
   onRunLive?: () => void; // re-run this match with every Qloo and YouTube cache bypassed
   onUseBrand?: (brandName: string) => void; // re-run with a brand name the user picked
   onBrandFallback?: (fallback: BrandFallbackInput) => void; // re-run against reference brands or a description
+  onRerunCreator?: (videoUrls: string[]) => void; // re-run the same brand side with other videos or a channel
   running?: boolean;
   autoPrint?: boolean;
 }) {
@@ -157,6 +163,21 @@ export function MatchResult({
               )}
             </div>
           )}
+          {onRerunCreator && match.noDataReason && CREATOR_SIDE.has(match.noDataReason) && (
+            <CreatorRetryForm key={`${match.id}:${match.createdAt}`} match={match} onRerun={onRerunCreator} running={running} />
+          )}
+          {/* Back to the form with this run's brand and videos filled in, to edit rather than retype. */}
+          <p className="mt-3 text-sm print:hidden">
+            {onReset ? (
+              <button type="button" onClick={onReset} className="text-teal-700 underline">
+                Edit the brand or videos of this run
+              </button>
+            ) : (
+              <Link href={`${shareLink(match, '')}&edit=1`} className="text-teal-700 underline">
+                Edit the brand or videos of this run
+              </Link>
+            )}
+          </p>
           {brandProblem && onBrandFallback && (
             <BrandFallbackForm key={`${match.id}:${match.createdAt}`} match={match} onSubmit={onBrandFallback} />
           )}

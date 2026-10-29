@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Suspense, useState, useSyncExternalStore } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { MatchResult } from '@/components/match/MatchResult';
@@ -54,32 +54,37 @@ function SavedMatch() {
 
 // "Run live" re-runs the stored inputs with every cache bypassed. The match id comes
 // from the inputs, so saving the new result replaces this entry and the page updates.
+// From an insufficient-data result, the same brand side can be re-run with other videos or the
+// channel; that is a new match (its id comes from the videos), so the page moves to it.
 function SavedMatchResult({ match, autoPrint }: { match: Match; autoPrint: boolean }) {
-  const [running, setRunning] = useState(false);
+  const router = useRouter();
+  const [running, setRunning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function runLive() {
-    setRunning(true);
+  async function run(videoUrls: string[], live: boolean) {
+    setRunning(live ? 'Running live…' : `Re-running ${match.brand.entity?.name || match.brand.name} with the new videos…`);
     setError(null);
     try {
       const outcome = await requestMatch(
         {
-          videoUrls: match.creator.videoUrls,
+          videoUrls,
           brandName: match.brand.name,
           category: match.brand.category ?? undefined,
           referenceBrands: match.brand.referenceBrands,
           brandDescription: match.brand.description,
-          live: true,
+          ...(live ? { live: true } : {}),
         },
         () => {},
         new AbortController().signal
       );
-      if (outcome.ok) saveMatch(outcome.match);
-      else setError(outcome.error);
+      if (outcome.ok) {
+        saveMatch(outcome.match);
+        if (outcome.match.id !== match.id) router.push(`/match/${outcome.match.id}`);
+      } else setError(outcome.error);
     } catch (e: any) {
       setError(`Connection failed: ${e?.message || e}`);
     } finally {
-      setRunning(false);
+      setRunning(null);
     }
   }
 
@@ -90,7 +95,18 @@ function SavedMatchResult({ match, autoPrint }: { match: Match; autoPrint: boole
           {error}
         </p>
       )}
-      <MatchResult match={match} autoPrint={autoPrint} onRunLive={runLive} running={running} />
+      {running && (
+        <p role="status" className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+          {running} This takes about 10–30 seconds.
+        </p>
+      )}
+      <MatchResult
+        match={match}
+        autoPrint={autoPrint}
+        onRunLive={() => run(match.creator.videoUrls, true)}
+        onRerunCreator={(videoUrls) => run(videoUrls, false)}
+        running={running !== null}
+      />
     </>
   );
 }

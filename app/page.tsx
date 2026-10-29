@@ -83,7 +83,7 @@ function MatchPage() {
   const [mode, setMode] = useState<Mode>('one');
   const [creatorTexts, setCreatorTexts] = useState(() => [linked?.videoUrls.join('\n') ?? '', '']);
   const [brandName, setBrandName] = useState(linked?.brandName ?? '');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState(linked?.category ?? '');
   const [done, setDone] = useState<MatchStage[]>([]);
   const [doneAt, setDoneAt] = useState<Partial<Record<MatchStage, number>>>({}); // ms since the request started
   const [startedAt, setStartedAt] = useState(0);
@@ -159,8 +159,9 @@ function MatchPage() {
   const runForm = () => analyse(brandInput(), creators.map((c) => c.lines));
 
   // Runs once for a linked request (the ref guards against React running effects twice).
+  // ?edit=1 (from a saved result's "Edit the brand or videos") only fills the form in.
   useEffect(() => {
-    if (!linked || linkedRan.current) return;
+    if (!linked || linkedRan.current || params.get('edit') === '1') return;
     linkedRan.current = true;
     const { videoUrls, ...brand } = linked;
     analyse(brand, [videoUrls]);
@@ -177,6 +178,15 @@ function MatchPage() {
 
   // Re-runs the last request with a changed brand side (the same creators).
   const rerun = (change: Partial<BrandInput>) => lastRun.current && analyse({ ...lastRun.current.brand, ...change }, lastRun.current.creators);
+
+  // Re-runs the last brand side with other videos or a channel, from an insufficient-data
+  // result; the form keeps them, so going back shows what actually ran.
+  function rerunCreator(videoUrls: string[]) {
+    if (!lastRun.current) return;
+    setMode('one');
+    setCreatorTexts([videoUrls.join('\n'), creatorTexts[1]]);
+    analyse(lastRun.current.brand, [videoUrls]);
+  }
 
   function cancel() {
     abortRef.current?.abort();
@@ -377,6 +387,7 @@ function MatchPage() {
               rerun({ brandName: brand, referenceBrands: undefined, brandDescription: undefined });
             }}
             onBrandFallback={(fallback) => rerun(fallback)}
+            onRerunCreator={rerunCreator}
           />
         )}
 
