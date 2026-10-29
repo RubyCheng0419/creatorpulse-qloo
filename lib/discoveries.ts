@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import type { Discovery } from '@/lib/discover';
 import type { DiscoverRequest } from '@/lib/share-link';
+import type { YouTubeChannel } from '@/lib/youtube-channel';
 
 // The last few rankings, browser-only like the match history (lib/history), so each ranked
 // creator can open its own page (/discover/<ranking id>/<Qloo id>). The request is kept for
@@ -37,6 +38,19 @@ export function saveDiscovery(d: Discovery, request: DiscoverRequest): void {
     window.dispatchEvent(new Event(CHANGE_EVENT));
   } catch {
     // Too big for the quota or storage blocked: the ranking is still shown, its pages won't open.
+  }
+}
+
+// The channel the user linked for one creator of a stored ranking (creator page), kept with it.
+export function linkChannel(discoveryId: string, qlooId: string, channel: YouTubeChannel): void {
+  try {
+    const list = parse(readRaw()).map((d) =>
+      d.id !== discoveryId ? d : { ...d, candidates: d.candidates.map((c) => (c.qlooId === qlooId ? { ...c, channel, channelLinked: true } : c)) }
+    );
+    window.localStorage.setItem(KEY, JSON.stringify(list));
+    window.dispatchEvent(new Event(CHANGE_EVENT));
+  } catch {
+    // Storage blocked: the link isn't kept.
   }
 }
 

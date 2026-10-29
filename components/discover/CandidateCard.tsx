@@ -198,7 +198,7 @@ export function CandidateCard({
               <span className="text-xs text-slate-500">({c.channel.title}; used only for the video deep dive, not in this score)</span>
             </>
           ) : (
-            <span className="text-slate-500">None matched this name</span>
+            <span className="text-slate-500">Not found automatically{c.channelTried?.length ? ` (tried ${c.channelTried.map((t) => t.split(':')[0]).join(', ')})` : ''}</span>
           )}
         </dd>
       </dl>
@@ -252,7 +252,7 @@ export function CandidateCard({
             <ArrowRight aria-hidden className="size-4" />
           </Link>
         ) : (
-          <span className="text-xs text-slate-500">No video deep dive without a matched channel.</span>
+          <span className="text-xs text-slate-500">Link the channel on the creator page for a video deep dive.</span>
         )}
       </div>
 

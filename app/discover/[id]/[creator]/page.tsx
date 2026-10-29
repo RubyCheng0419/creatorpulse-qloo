@@ -2,14 +2,17 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import { CopyLinkButton } from '@/components/CopyLinkButton';
 import { SiteHeader } from '@/components/SiteHeader';
 import { EvidenceSummary, VERDICT_STYLE, roleKinds } from '@/components/discover/CandidateCard';
 import { TasteComparison, formatAffinity } from '@/components/match/TasteComparison';
 import type { CreatorCandidate } from '@/lib/discover';
-import { type StoredDiscovery, useDiscoveries } from '@/lib/discoveries';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { type StoredDiscovery, linkChannel, useDiscoveries } from '@/lib/discoveries';
+import { parseChannelRef } from '@/lib/youtube-url';
 import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
 import { VERDICT_LABELS, brandBasisNote } from '@/lib/report';
 import { discoverShareLink } from '@/lib/share-link';
@@ -51,6 +54,49 @@ function StoredCreator() {
     );
   }
   return d && c ? <CreatorDetail d={d} c={c} /> : null;
+}
+
+// The user names the channel; YouTube confirms it exists, and it is kept with the ranking.
+// That clears "unclear identity" and opens the video deep dive; the Qloo score doesn't change.
+function LinkChannelForm({ d, c }: { d: StoredDiscovery; c: CreatorCandidate }) {
+  const [url, setUrl] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const ok = Boolean(parseChannelRef(url));
+  return (
+    <form
+      className="mt-2 flex flex-wrap items-center gap-2"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!ok) return;
+        setBusy(true);
+        setError(null);
+        try {
+          const r = await fetch('/api/channel', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ url }) });
+          const j = await r.json().catch(() => ({}));
+          if (r.ok && j.channel) linkChannel(d.id, c.qlooId, j.channel);
+          else setError(j.error || `HTTP ${r.status}`);
+        } catch (err: any) {
+          setError(`Connection failed: ${err?.message || err}`);
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <Input
+        aria-label={`${c.name}’s YouTube channel URL`}
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        placeholder="https://www.youtube.com/@channel"
+        className="max-w-xs"
+      />
+      <Button type="submit" variant="outline" disabled={!ok || busy}>
+        {busy ? 'Checking…' : 'Link the channel'}
+      </Button>
+      {error && <span className="basis-full text-xs text-rose-700">{error}</span>}
+      {!error && url.trim() && !ok && <span className="basis-full text-xs text-rose-700">Use youtube.com/@handle or youtube.com/channel/UC…</span>}
+    </form>
+  );
 }
 
 function CreatorDetail({ d, c }: { d: StoredDiscovery; c: CreatorCandidate }) {
@@ -153,10 +199,20 @@ function CreatorDetail({ d, c }: { d: StoredDiscovery; c: CreatorCandidate }) {
                   {c.channel.handle}
                   <ExternalLink aria-hidden className="size-3" />
                 </a>{' '}
-                <span className="text-xs text-slate-500">({c.channel.title}; matched by name, used only for the video deep dive, not in this score)</span>
+                <span className="text-xs text-slate-500">
+                  ({c.channel.title}; {c.channelLinked ? 'linked by you, not matched by CreatorPulse' : 'matched by name'}, used only for the video deep dive,
+                  not in this score)
+                </span>
               </>
             ) : (
-              <span className="text-slate-500">None matched this name, so no video deep dive.</span>
+              <>
+                <span className="text-slate-500">
+                  Not found automatically
+                  {c.channelTried?.length ? ` (tried ${c.channelTried.join(' · ')})` : ''}. Qloo gives no YouTube link, so its Instagram and Twitter
+                  names and the person’s name are tried as YouTube handles.
+                </span>
+                <LinkChannelForm d={d} c={c} />
+              </>
             )}
           </dd>
           <dt className="text-slate-500">Audience overlap</dt>

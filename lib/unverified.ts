@@ -68,8 +68,17 @@ export function candidateUnverified(c: CreatorCandidate, d: Pick<Discovery, 'tra
   if (c.profile.failedTypes.length) out.push(reason('E', `Qloo didn’t answer for ${c.profile.failedTypes.join(', ')}, so part of the profile is missing.`, rerun));
   else if (failed) out.push(reason('E', `${queries(failed)} failed after a retry, so part of the evidence is missing.`, rerun));
   if (c.compatibility.confidence === 'Low') out.push(reason('L', 'Low confidence: too little evidence to decide on.', MORE_EVIDENCE));
-  if (!c.channel)
-    out.push(reason('I', `No YouTube channel matched ${c.name}, so it isn’t clear which channel this person is.`, 'Check the creator’s channel by hand before using this score.'));
+  // No channel is a lookup that found nothing, not a doubtful person: say what was tried.
+  if (!c.channel) {
+    const tried = (c.channelTried ?? []).map((t) => t.split(':')[0]);
+    out.push(
+      reason(
+        'I',
+        `Couldn’t find ${c.name}’s YouTube channel automatically${tried.length ? ` (tried ${tried.join(', ')}; Qloo gives no YouTube link, so its Instagram and Twitter names are tried as handles)` : ''}, so this score isn’t tied to a channel you can check.`,
+        'Link the channel on the creator page, then use its videos for a deep dive.'
+      )
+    );
+  }
   return out;
 }
 

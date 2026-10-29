@@ -38,6 +38,10 @@ export interface CreatorCandidate {
   // creator can't be a signal for the type (400), which a retry won't change.
   profile: { entities: number; scored: number; failedTypes: string[]; unsupportedTypes: string[] };
   channel: YouTubeChannel | null;
+  // The YouTube handles tried for the channel and what each had ("@msyeah: none"); absent on
+  // rankings saved before. channelLinked: the user linked the channel on the creator page.
+  channelTried?: string[];
+  channelLinked?: boolean;
 }
 
 export interface Discovery {
@@ -304,7 +308,10 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
     status: scoredCount ? 'completed' : 'insufficient-data',
     ...(scoredCount ? {} : { errorMessage: 'Qloo scored too little of every candidate’s audience taste to rank them.', noDataReason: 'too-few-profile-entities' as const }),
     brand: brandSide,
-    candidates: ranked.map((c, i) => ({ ...c, rank: i + 1, channel: channelOf.get(c.qlooId) ?? null })),
+    candidates: ranked.map((c, i) => {
+      const lookup = channelOf.get(c.qlooId);
+      return { ...c, rank: i + 1, channel: lookup?.channel ?? null, channelTried: lookup?.tried ?? [] };
+    }),
     validation,
   };
 }

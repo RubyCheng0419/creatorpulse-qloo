@@ -21,12 +21,18 @@ export interface YouTubeChannel {
   subscribers: number | null; // null when the channel hides its count
 }
 
-const cache = new Map<string, { at: number; channel: YouTubeChannel | null }>();
+// `tried`: each handle asked and what YouTube had, so "no channel" says how it was looked for.
+export interface ChannelLookup {
+  channel: YouTubeChannel | null;
+  tried: string[];
+}
 
-export async function findChannel(qlooId: string, name: string, key: string | undefined, trace?: Trace): Promise<YouTubeChannel | null> {
-  if (!key) return null;
+const cache = new Map<string, { at: number } & ChannelLookup>();
+
+export async function findChannel(qlooId: string, name: string, key: string | undefined, trace?: Trace): Promise<ChannelLookup> {
+  if (!key) return { channel: null, tried: [] };
   const hit = bypassCache() ? undefined : cache.get(qlooId);
-  if (hit && Date.now() - hit.at < CACHE_MS) return hit.channel;
+  if (hit && Date.now() - hit.at < CACHE_MS) return { channel: hit.channel, tried: hit.tried };
 
   const t0 = Date.now();
   // The same entity through /search, which (unlike /v2/insights) carries external ids and aliases.
@@ -59,6 +65,17 @@ export async function findChannel(qlooId: string, name: string, key: string | un
     decision: channel ? `Use ${channel.handle} for the video deep dive` : 'No channel whose title is this person’s name; no deep dive, the Qloo score stands',
     ms: Date.now() - t0,
   });
-  if (!failed || channel) cache.set(qlooId, { at: Date.now(), channel });
-  return channel;
+  if (!failed || channel) cache.set(qlooId, { at: Date.now(), channel, tried });
+  return { channel, tried };
+}
+
+// A channel the user named for a creator (the creator page's "Link the channel"): read with
+// channels.list (1 quota unit), never guessed. Shown as linked by the user, not matched by name.
+export async function readChannel(ref: { handle: string } | { id: string }, key: string): Promise<YouTubeChannel | null> {
+  const res = await youtube('channels', { part: 'snippet,statistics', ...('handle' in ref ? { forHandle: ref.handle } : { id: ref.id }) }, key);
+  const item = res?.items?.[0];
+  if (!item) return null;
+  const subs = item.statistics?.hiddenSubscriberCount ? null : Number(item.statistics?.subscriberCount ?? 0);
+  const h = item.snippet?.customUrl || ('handle' in ref ? `@${ref.handle}` : '');
+  return { id: item.id, title: item.snippet?.title || '', handle: h || item.id, url: `https://www.youtube.com/${h.startsWith('@') ? h : `channel/${item.id}`}`, subscribers: subs };
 }
