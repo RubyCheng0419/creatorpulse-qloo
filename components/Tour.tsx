@@ -162,7 +162,11 @@ export function Tour({ id, steps, autoStart = true }: { id: string; steps: TourS
           }}
         />
       )}
+      {/* Keyed by step so each step gets a new card. Google Translate replaces text nodes with
+          <font> elements; updating the old card's text in place makes React remove a node that is
+          no longer there, and the page crashes. Replacing the card element avoids that. */}
       <div
+        key={index}
         ref={cardRef}
         role="dialog"
         aria-modal="true"
