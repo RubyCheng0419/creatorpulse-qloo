@@ -458,6 +458,58 @@ function longerNameOf(term: string, candidate: string): boolean {
   return rest.some((w) => !NAME_FILLER.has(w));
 }
 
+// A sponsor line names a brand and links its site: "Don’t miss Ridge’s friends and family sale
+// at https://ridge.com/MKBHD". A proposed name (or its English name) that is the domain name of
+// a link on a description line is that brand: searched as a brand whatever kind the LLM gave it,
+// which once made "Ridge" the stoner-rock band or the 2019 film. Fixed rule, no LLM.
+// "ridge.com" → ridge, "go.nordvpn.net" → nordvpn, "www.pxmart.com.tw" → pxmart.
+function domainName(host: string): string {
+  const parts = host.toLowerCase().replace(/^www\./, '').split('.');
+  const n = parts.length;
+  if (n >= 3 && parts[n - 1].length === 2 && /^(com|co|org|net|gov|edu|ac)$/.test(parts[n - 2])) return parts[n - 3];
+  return n >= 2 ? parts[n - 2] : parts[0];
+}
+
+export function sponsorNames(videos: { snippet?: { description?: string } }[], queries: { keyword: string; english?: string }[]): Set<string> {
+  const out = new Set<string>();
+  for (const v of videos) {
+    for (const line of String(v.snippet?.description || '').split('\n')) {
+      const domains = [...line.matchAll(/https?:\/\/([^\s/?#]+)/gi)].map((m) => domainName(m[1]));
+      if (!domains.length) continue;
+      // The link's own line: "Protect your iPhone Duo at https://dbrand.com/duo" names dbrand
+      // only in its link, which is still that brand's site.
+      for (const q of queries) {
+        const named = [q.keyword, q.english].filter((n): n is string => Boolean(n));
+        if (named.some((n) => compact(n).length >= 3 && domains.includes(compact(n)))) out.add(q.keyword);
+      }
+    }
+  }
+  return out;
+}
+
+// A sponsor Qloo lists with a leading "The" ("Ridge" → "The Ridge", the wallet brand) is
+// taken by that fixed rule instead of the LLM retry, so it resolves the same way every run.
+// Qloo must still return "The …" as an exact brand name or alias.
+async function sponsorsWithThe(sponsors: Set<string>, resolved: { keyword: string; entity: QlooEntity | null; error?: string }[], trace?: Trace): Promise<void> {
+  const rows = resolved.filter((r) => !r.entity && !r.error && sponsors.has(r.keyword) && !/^the\s/i.test(r.keyword));
+  const found: string[] = [];
+  for (const row of rows) {
+    const entity = await resolveEntity(`The ${row.keyword}`, KIND_TYPES.brand, undefined, trace && { trace, stage: 'creator' }).catch(() => null);
+    if (entity) {
+      row.entity = { ...entity, query: `${row.keyword} → The ${row.keyword}` };
+      found.push(`“${row.keyword}” → ${entity.name}`);
+    }
+  }
+  if (!rows.length) return;
+  trace?.add({
+    stage: 'creator',
+    tool: 'Rule',
+    input: `${rows.length} sponsor${rows.length === 1 ? '' : 's'} with no exact Qloo brand: tried with a leading “The”`,
+    output: found.length ? found.join(', ') : 'No “The …” brand either',
+    decision: found.length ? 'Confirmed by Qloo’s exact name; not left to the LLM retry' : 'Left for the retry decision',
+  });
+}
+
 async function retryUnmatched(
   videoKey: string,
   queries: { keyword: string; english?: string; kind: string; types: string[] }[],
@@ -786,6 +838,21 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
   }
   if (extractionError) warnings.push(`Name extraction unavailable: ${extractionError}`);
 
+  const sponsors = sponsorNames(videos, queries);
+  const recast = queries.filter((q) => sponsors.has(q.keyword) && q.kind !== 'brand' && q.kind !== 'product');
+  for (const q of recast) Object.assign(q, { kind: 'brand', types: KIND_TYPES.brand });
+  if (sponsors.size) {
+    trace?.add({
+      stage: 'creator',
+      tool: 'Rule',
+      input: 'Names a description links to their own domain (“Ridge … at https://ridge.com/…”) are sponsors: brands, whatever kind the LLM gave',
+      output: [...sponsors].join(', '),
+      decision: recast.length
+        ? `Searched as brands only: ${recast.map((q) => q.keyword).join(', ')} (the LLM had another kind)`
+        : 'Already searched as brands',
+    });
+  }
+
   const keywords = queries.map((q) => q.keyword);
   const resolved: { keyword: string; entity: QlooEntity | null; error?: string; http?: string }[] = await Promise.all(
     queries.map(async ({ keyword: k, english, kind }) => {
@@ -809,6 +876,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
   const exact = new Set(resolved.filter((r) => r.entity).map((r) => r.keyword));
   await makersOfProducts(queries, resolved, trace);
   const byMaker = new Set(resolved.filter((r) => r.entity && !exact.has(r.keyword)).map((r) => r.keyword));
+  await sponsorsWithThe(sponsors, resolved, trace);
   await retryUnmatched(videoKey, queries, resolved, trace);
   const resolution: NameResolution[] = [
     ...skippedNames.map((name) => ({ name, kind: '', status: 'skipped' as const, note: 'the channel itself or YouTube' })),
