@@ -13,6 +13,7 @@ import { downloadMarkdown } from '@/lib/report-markdown';
 import { summarizeTrace } from '@/lib/trace';
 import { AgentTrace } from './AgentTrace';
 import { BrandFallbackForm, type BrandFallbackInput } from './BrandFallbackForm';
+import { CauseDetails } from './CauseDetails';
 import { CreatorRetryForm } from './CreatorRetryForm';
 import { CrossCheck } from './CrossCheck';
 import { PriorCoverage } from './PriorCoverage';
@@ -123,7 +124,8 @@ export function MatchResult({
             </div>
           ) : null}
           <p className="mt-2 text-amber-800">We would rather give no score than one without Qloo evidence.</p>
-          {match.noDataReason === 'too-few-creator-entities' && (
+          {match.cause && <CauseDetails cause={match.cause} />}
+          {match.noDataReason === 'too-few-creator-entities' && !match.cause && (
             // What the videos gave, so the user sees how far short it fell, not just "no".
             <dl className="mt-3 space-y-1 text-amber-900">
               <div>
@@ -143,7 +145,7 @@ export function MatchResult({
           )}
           {match.noDataReason && (
             <div className="mt-3 space-y-2">
-              <p>
+              <p className={match.cause ? 'hidden' : ''}>
                 <span className="font-semibold">Cause:</span> {noDataCause(match.noDataReason, match.creator, brandIdsOf(match))}
               </p>
               <p className="rounded-md bg-white/70 px-3 py-2 ring-1 ring-amber-200">

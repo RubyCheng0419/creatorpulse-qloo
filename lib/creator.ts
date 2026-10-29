@@ -582,7 +582,20 @@ export interface CreatorTaste {
   geminiAt?: string; // when that extraction was produced
   entities: QlooEntity[];
   unmatched: string[];
+  resolution: NameResolution[];
   warnings: string[];
+}
+
+// What happened to each name the LLM proposed: confirmed by Qloo as written ('exact'), as its
+// maker ('maker', lib/creator makersOfProducts), under a Qloo-confirmed alias the LLM retry
+// picked ('alias'), or dropped ('no-match', 'failed' Qloo call, 'skipped' as the channel
+// itself, 'unverified' when GET /entities no longer confirmed it).
+export interface NameResolution {
+  name: string;
+  kind: string;
+  status: 'exact' | 'maker' | 'alias' | 'no-match' | 'failed' | 'skipped' | 'unverified';
+  entity?: { id: string; name: string };
+  note?: string;
 }
 
 // A channel's latest CHANNEL_VIDEOS uploads: channels.list for its uploads playlist, then
@@ -700,6 +713,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
   // The set of readable videos, order-independent: the key for the extraction and retry
   // caches. Whichever LLM answered, its answer is reused for these videos for 24 hours.
   const videoKey = videos.map((v) => v.id).sort().join(',');
+  let skippedNames: string[] = [];
   if (!extractionError) {
     const g0 = Date.now();
     const prompt = videoPrompt(videos);
@@ -727,6 +741,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
       const skip = new Set(['youtube', ...channels.flatMap((c: any) => [c.title, c.handle.replace(/^@/, '')])].map((x) => x.toLocaleLowerCase()));
       const skipped = (m: Mention) => skip.has(m.name.toLocaleLowerCase()) || Boolean(m.english && skip.has(m.english.toLocaleLowerCase()));
       const dropped = mentions.filter(skipped).map((m) => m.name);
+      skippedNames = dropped;
       queries = mentions
         .filter((m) => !skipped(m))
         .map((m) => ({ keyword: m.name, ...(m.english ? { english: m.english } : {}), kind: m.kind, types: KIND_TYPES[m.kind] }));
@@ -772,7 +787,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
   if (extractionError) warnings.push(`Name extraction unavailable: ${extractionError}`);
 
   const keywords = queries.map((q) => q.keyword);
-  const resolved: { keyword: string; entity: QlooEntity | null; error?: string }[] = await Promise.all(
+  const resolved: { keyword: string; entity: QlooEntity | null; error?: string; http?: string }[] = await Promise.all(
     queries.map(async ({ keyword: k, english, kind }) => {
       try {
         return { keyword: k, entity: await resolveMention({ name: k, english, kind }, trace && { trace, stage: 'creator' }) };
@@ -786,12 +801,25 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
           http: e?.http || 'no response',
           ok: false,
         });
-        return { keyword: k, entity: null, error: e.message as string };
+        return { keyword: k, entity: null, error: e.message as string, http: e?.http || 'no response' };
       }
     })
   );
+  // Which step confirmed each name, for the insufficient-data cause (lib/no-data-cause).
+  const exact = new Set(resolved.filter((r) => r.entity).map((r) => r.keyword));
   await makersOfProducts(queries, resolved, trace);
+  const byMaker = new Set(resolved.filter((r) => r.entity && !exact.has(r.keyword)).map((r) => r.keyword));
   await retryUnmatched(videoKey, queries, resolved, trace);
+  const resolution: NameResolution[] = [
+    ...skippedNames.map((name) => ({ name, kind: '', status: 'skipped' as const, note: 'the channel itself or YouTube' })),
+    ...resolved.map((r): NameResolution => {
+      const kind = queries.find((q) => q.keyword === r.keyword)?.kind ?? '';
+      if (r.error) return { name: r.keyword, kind, status: 'failed', note: `Qloo /search failed (HTTP ${r.http})` };
+      if (!r.entity) return { name: r.keyword, kind, status: 'no-match', note: 'no exact name or alias match in Qloo' };
+      const status = exact.has(r.keyword) ? 'exact' : byMaker.has(r.keyword) ? 'maker' : 'alias';
+      return { name: r.keyword, kind, status, entity: { id: r.entity.id, name: r.entity.name } };
+    }),
+  ];
 
   onStage?.('creator');
 
@@ -837,6 +865,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
     geminiAt,
     entities,
     unmatched,
+    resolution,
     warnings,
   };
 }

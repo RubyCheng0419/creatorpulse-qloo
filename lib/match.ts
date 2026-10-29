@@ -16,6 +16,7 @@ import {
   verifyEntities,
 } from '@/lib/qloo';
 import type { NoDataReason } from '@/lib/no-data';
+import { InsufficientCause, causeCounts, insufficientCause } from '@/lib/no-data-cause';
 import { PriorCoverage, brandTermsOf, priorCoverage, productTermsOf } from '@/lib/prior-coverage';
 import { Report, SummaryContext, VERDICT_LABELS, buildReport } from '@/lib/report';
 import {
@@ -50,6 +51,8 @@ export interface Match {
   status: 'completed' | 'insufficient-data';
   errorMessage?: string;
   noDataReason?: NoDataReason; // why there is no score, as a countable category
+  // For too few entities from the videos: the one cause, with its counts (lib/no-data-cause).
+  cause?: InsufficientCause;
   brand: {
     name: string;
     category: string | null;
@@ -274,7 +277,22 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     const why: [NoDataReason, string] = creator.extractionError
       ? ['llm-unavailable', `Couldn’t extract the names mentioned in the videos (${creator.extractionError}). No score is given rather than one built on guessed keywords. Please try again later.`]
       : ['too-few-creator-entities', tooFewMessage(direct, brandSignal)];
-    if (!person) return insufficient(why[0], why[1], brandSide);
+    // One cause, from what this run logged; the same object goes to the trace and the page.
+    const classify = () => {
+      const names = creator.resolution.map((n) =>
+        n.entity && !keptIds.has(n.entity.id) ? { ...n, status: 'unverified' as const, note: 'GET /entities no longer confirmed it' } : n
+      );
+      const cause = insufficientCause({ ...creator, names, brandIds: [...brandIds], trace: trace.steps });
+      trace.add({
+        stage: 'creator',
+        tool: 'Rule',
+        input: 'Insufficient-data cause, from this run’s logged calls',
+        output: `${cause.title}: ${causeCounts(cause)} · LLM: ${cause.llm}${cause.failedCalls.length ? ` · failed: ${cause.failedCalls.join('; ')}` : ''}`,
+        decision: cause.detail,
+      });
+      return cause;
+    };
+    if (!person) return { ...insufficient(why[0], why[1], brandSide), cause: classify() };
 
     // Fallback: the creator's audience taste, scored like a Find creators candidate.
     const [profile] = await audienceProfiles([person], brandIds, trace);
@@ -294,7 +312,8 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
       decision: fromAudience ? 'Scored from audience taste; labelled as such' : 'Stop: not enough audience-taste evidence either',
     });
     onStage?.('score');
-    if (!fromAudience) return insufficient(why[0], `${why[1]} ${person.name}’s audience taste in Qloo was too thin to score as well.`, brandSide);
+    if (!fromAudience)
+      return { ...insufficient(why[0], `${why[1]} ${person.name}’s audience taste in Qloo was too thin to score as well.`, brandSide), cause: classify() };
     const audienceCompat = brandConfidence(fromAudience, brand, trace);
     const proxyIds = new Set(brand.entities.map((e) => e.id));
     const shared = profileItems.filter((e) => proxyIds.has(e.id));
