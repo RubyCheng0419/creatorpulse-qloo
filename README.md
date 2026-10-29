@@ -180,6 +180,20 @@ Measured on 2026-10-27 with ten channels of different kinds (cooking, kids, food
 
 The two channels the fallback recovered (a beauty channel and a Taiwanese one) named only 0–1 Qloo entities in 15 videos. The remaining one was a run where neither Gemini nor Groq answered; the same channel scored on the run before. Every no-score result carries a reason category, so this can be re-measured.
 
+### Is the score right?
+
+There is no answer key for cultural fit, so what was checked (2026-10-29) is consistency and direction. Details, limits and scripts: [docs/VALIDATION.md](docs/VALIDATION.md).
+
+| Check | Result (0.50 = chance) |
+|---|---|
+| Same confirmed entities, repeated live runs | Identical score every time |
+| Known groups: 12 brands, creator type that should fit vs one that shouldn’t (Find creators, 10 creators each) | Right direction for **11 of 12**, mean win rate **0.85**; Huggies is the miss (Qloo has no family creator type) |
+| Real sponsorships: 8 brands creators link in their descriptions, each scored against the same 8 creators | The partner ranks in the top half **9 of 9** times, mean percentile **0.81**; small sample, often 1–3 points apart |
+| Blind human ranking | Survey and scorer ready, raters needed |
+| Campaign outcomes | Needs partnership data; not done |
+
+This shows the score is reproducible and points the right way; it doesn’t show that it predicts campaign results.
+
 ## Run it locally
 
 Requirements: Node.js 20+, and API keys for YouTube Data API v3, the Qloo hackathon API and Google Gemini.

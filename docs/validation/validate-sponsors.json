@@ -1,0 +1,594 @@
+{
+ "The Ridge": {
+  "@mkbhd": {
+   "status": 200,
+   "fit": 44,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@LinusTechTips": {
+   "status": 200,
+   "fit": 43,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@Joeman": {
+   "status": 200,
+   "fit": 45,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@MrBeast": {
+   "status": 200,
+   "fit": 44,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@dcrainmaker": {
+   "status": 200,
+   "fit": 52,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@JoshuaWeissman": {
+   "status": 200,
+   "fit": 46,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@aliabdaal": {
+   "status": 200,
+   "fit": 41,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@NikkieTutorials": {
+   "status": 200,
+   "fit": 37,
+   "conf": "Medium",
+   "basis": "audience",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  }
+ },
+ "Dbrand": {
+  "@mkbhd": {
+   "status": 200,
+   "fit": 74,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@LinusTechTips": {
+   "status": 200,
+   "fit": 77,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@Joeman": {
+   "status": 200,
+   "fit": 73,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@MrBeast": {
+   "status": 200,
+   "fit": 61,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@dcrainmaker": {
+   "status": 200,
+   "fit": 53,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@JoshuaWeissman": {
+   "status": 200,
+   "fit": 58,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@aliabdaal": {
+   "status": 200,
+   "fit": 65,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@NikkieTutorials": {
+   "status": 200,
+   "fit": 41,
+   "conf": "Medium",
+   "basis": "audience",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  }
+ },
+ "Proton": {
+  "@mkbhd": {
+   "status": 200,
+   "fit": 44,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@LinusTechTips": {
+   "status": 200,
+   "fit": 45,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@Joeman": {
+   "status": 200,
+   "fit": 49,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@MrBeast": {
+   "status": 200,
+   "fit": 36,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@dcrainmaker": {
+   "status": 200,
+   "fit": 44,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@JoshuaWeissman": {
+   "status": 200,
+   "fit": 40,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@aliabdaal": {
+   "status": 200,
+   "fit": 46,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@NikkieTutorials": {
+   "status": 200,
+   "fit": 35,
+   "conf": "Medium",
+   "basis": "audience",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  }
+ },
+ "Sony": {
+  "@mkbhd": {
+   "status": 200,
+   "fit": 77,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@LinusTechTips": {
+   "status": 200,
+   "fit": 82,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@Joeman": {
+   "status": 200,
+   "fit": 74,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@MrBeast": {
+   "status": 200,
+   "fit": 63,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@dcrainmaker": {
+   "status": 200,
+   "fit": 54,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@JoshuaWeissman": {
+   "status": 200,
+   "fit": 64,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@aliabdaal": {
+   "status": 200,
+   "fit": 68,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@NikkieTutorials": {
+   "status": 200,
+   "fit": 42,
+   "conf": "Medium",
+   "basis": "audience",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  }
+ },
+ "iFit": {
+  "@mkbhd": {
+   "status": 200,
+   "fit": 48,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@LinusTechTips": {
+   "status": 200,
+   "fit": 46,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@Joeman": {
+   "status": 200,
+   "fit": 49,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@MrBeast": {
+   "status": 200,
+   "fit": 52,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@dcrainmaker": {
+   "status": 200,
+   "fit": 53,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@JoshuaWeissman": {
+   "status": 200,
+   "fit": 42,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@aliabdaal": {
+   "status": 200,
+   "fit": 50,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@NikkieTutorials": {
+   "status": 200,
+   "fit": 43,
+   "conf": "Medium",
+   "basis": "audience",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  }
+ },
+ "Marriott Hotels": {
+  "@mkbhd": {
+   "status": 200,
+   "fit": 49,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@LinusTechTips": {
+   "status": 200,
+   "fit": 52,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@Joeman": {
+   "status": 200,
+   "fit": 56,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@MrBeast": {
+   "status": 200,
+   "fit": 54,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@dcrainmaker": {
+   "status": 200,
+   "fit": 45,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@JoshuaWeissman": {
+   "status": 200,
+   "fit": 43,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@aliabdaal": {
+   "status": 200,
+   "fit": 53,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@NikkieTutorials": {
+   "status": 200,
+   "fit": 41,
+   "conf": "Medium",
+   "basis": "audience",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  }
+ },
+ "Krispy Kreme": {
+  "@mkbhd": {
+   "status": 200,
+   "fit": 53,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@LinusTechTips": {
+   "status": 200,
+   "fit": 51,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@Joeman": {
+   "status": 200,
+   "fit": 56,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@MrBeast": {
+   "status": 200,
+   "fit": 61,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@dcrainmaker": {
+   "status": 200,
+   "fit": 46,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@JoshuaWeissman": {
+   "status": 200,
+   "fit": 65,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@aliabdaal": {
+   "status": 200,
+   "fit": 63,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@NikkieTutorials": {
+   "status": 200,
+   "fit": 57,
+   "conf": "Medium",
+   "basis": "audience",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  }
+ },
+ "Lowe's": {
+  "@mkbhd": {
+   "status": 200,
+   "fit": 50,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@LinusTechTips": {
+   "status": 200,
+   "fit": 48,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@Joeman": {
+   "status": 200,
+   "fit": 49,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@MrBeast": {
+   "status": 200,
+   "fit": 59,
+   "conf": "Medium",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@dcrainmaker": {
+   "status": 200,
+   "fit": 54,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@JoshuaWeissman": {
+   "status": 200,
+   "fit": 49,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@aliabdaal": {
+   "status": 200,
+   "fit": 56,
+   "conf": "Low",
+   "basis": "videos",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  },
+  "@NikkieTutorials": {
+   "status": 200,
+   "fit": 45,
+   "conf": "Medium",
+   "basis": "audience",
+   "reason": null,
+   "failed": 0,
+   "brandBasis": "brand"
+  }
+ }
+}

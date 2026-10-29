@@ -1,0 +1,1442 @@
+[
+ {
+  "brand": "Razer",
+  "basis": "brand",
+  "fitCat": "gaming",
+  "misCat": "beauty",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 69.1,
+  "misMean": 54.3,
+  "winRate": 0.99,
+  "fitTop": "Shroud 74",
+  "misTop": "Belle Delphine 63",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "Shroud",
+    "fit": 74,
+    "conf": "Medium"
+   },
+   {
+    "name": "DrLupo",
+    "fit": 72,
+    "conf": "Medium"
+   },
+   {
+    "name": "Valkyrae",
+    "fit": 71,
+    "conf": "Medium"
+   },
+   {
+    "name": "Dr DisRespect",
+    "fit": 70,
+    "conf": "Medium"
+   },
+   {
+    "name": "Nickmercs",
+    "fit": 70,
+    "conf": "Medium"
+   },
+   {
+    "name": "Pokimane",
+    "fit": 70,
+    "conf": "Medium"
+   },
+   {
+    "name": "MrBeast",
+    "fit": 70,
+    "conf": "Medium"
+   },
+   {
+    "name": "Myth",
+    "fit": 66,
+    "conf": "Medium"
+   },
+   {
+    "name": "FaZe Banks",
+    "fit": 66,
+    "conf": "Medium"
+   },
+   {
+    "name": "Ninja",
+    "fit": 62,
+    "conf": "Low"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "Belle Delphine",
+    "fit": 63,
+    "conf": "Medium"
+   },
+   {
+    "name": "Chrissy Costanza",
+    "fit": 56,
+    "conf": "Medium"
+   },
+   {
+    "name": "Addison Rae",
+    "fit": 55,
+    "conf": "Medium"
+   },
+   {
+    "name": "Shane Dawson",
+    "fit": 55,
+    "conf": "Low"
+   },
+   {
+    "name": "Zoe Sugg",
+    "fit": 55,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 54,
+    "conf": "Medium"
+   },
+   {
+    "name": "James Charles",
+    "fit": 53,
+    "conf": "Medium"
+   },
+   {
+    "name": "Eugenia Cooney",
+    "fit": 52,
+    "conf": "Medium"
+   },
+   {
+    "name": "Simply Nailogical",
+    "fit": 50,
+    "conf": "Medium"
+   },
+   {
+    "name": "Rachel Levin",
+    "fit": 50,
+    "conf": "Medium"
+   }
+  ],
+  "gap": 14.8,
+  "direction": "correct"
+ },
+ {
+  "brand": "Logitech",
+  "basis": "brand",
+  "fitCat": "gaming",
+  "misCat": "fashion",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 69.5,
+  "misMean": 50.9,
+  "winRate": 0.99,
+  "fitTop": "Shroud 76",
+  "misTop": "MatPat 63",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "Shroud",
+    "fit": 76,
+    "conf": "Medium"
+   },
+   {
+    "name": "Pokimane",
+    "fit": 73,
+    "conf": "Medium"
+   },
+   {
+    "name": "Valkyrae",
+    "fit": 72,
+    "conf": "Medium"
+   },
+   {
+    "name": "DrLupo",
+    "fit": 71,
+    "conf": "Medium"
+   },
+   {
+    "name": "Dr DisRespect",
+    "fit": 70,
+    "conf": "Medium"
+   },
+   {
+    "name": "Nickmercs",
+    "fit": 70,
+    "conf": "Medium"
+   },
+   {
+    "name": "Myth",
+    "fit": 70,
+    "conf": "Medium"
+   },
+   {
+    "name": "NiceWigg",
+    "fit": 66,
+    "conf": "Medium"
+   },
+   {
+    "name": "Asmongold",
+    "fit": 65,
+    "conf": "Medium"
+   },
+   {
+    "name": "Ninja",
+    "fit": 62,
+    "conf": "Low"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "MatPat",
+    "fit": 63,
+    "conf": "Medium"
+   },
+   {
+    "name": "Byre",
+    "fit": 53,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 52,
+    "conf": "Medium"
+   },
+   {
+    "name": "Zoe Sugg",
+    "fit": 52,
+    "conf": "Medium"
+   },
+   {
+    "name": "Erika Costell",
+    "fit": 50,
+    "conf": "Medium"
+   },
+   {
+    "name": "James Charles",
+    "fit": 50,
+    "conf": "Medium"
+   },
+   {
+    "name": "Eugenia Cooney",
+    "fit": 49,
+    "conf": "Medium"
+   },
+   {
+    "name": "Safiya Nygaard",
+    "fit": 48,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jim Chapman",
+    "fit": 47,
+    "conf": "Medium"
+   },
+   {
+    "name": "Kimberly Loaiza",
+    "fit": 45,
+    "conf": "Medium"
+   }
+  ],
+  "gap": 18.6,
+  "direction": "correct"
+ },
+ {
+  "brand": "Fenty Beauty",
+  "basis": "brand",
+  "fitCat": "beauty",
+  "misCat": "gaming",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 74,
+  "misMean": 60.1,
+  "winRate": 0.95,
+  "fitTop": "Jackie Aina 83",
+  "misTop": "Berleezy 67",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "Jackie Aina",
+    "fit": 83,
+    "conf": "Medium"
+   },
+   {
+    "name": "Bretman Rock",
+    "fit": 80,
+    "conf": "Medium"
+   },
+   {
+    "name": "Manny MUA",
+    "fit": 79,
+    "conf": "Medium"
+   },
+   {
+    "name": "Gigi Gorgeous",
+    "fit": 78,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jeffree Star",
+    "fit": 75,
+    "conf": "Medium"
+   },
+   {
+    "name": "Tati Westbrook",
+    "fit": 74,
+    "conf": "Medium"
+   },
+   {
+    "name": "Nikkie de Jager",
+    "fit": 71,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jaclyn Hill",
+    "fit": 69,
+    "conf": "Medium"
+   },
+   {
+    "name": "Mykie",
+    "fit": 66,
+    "conf": "Medium"
+   },
+   {
+    "name": "Hyram Yarbro",
+    "fit": 65,
+    "conf": "Medium"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "Berleezy",
+    "fit": 67,
+    "conf": "Low"
+   },
+   {
+    "name": "Joey Graceffa",
+    "fit": 66,
+    "conf": "Low"
+   },
+   {
+    "name": "Rosanna Pansino",
+    "fit": 66,
+    "conf": "Low"
+   },
+   {
+    "name": "Corpse Husband",
+    "fit": 64,
+    "conf": "Medium"
+   },
+   {
+    "name": "Lia Marie Johnson",
+    "fit": 60,
+    "conf": "Medium"
+   },
+   {
+    "name": "Daniel Howell",
+    "fit": 57,
+    "conf": "Low"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 56,
+    "conf": "Medium"
+   },
+   {
+    "name": "Markiplier",
+    "fit": 56,
+    "conf": "Medium"
+   },
+   {
+    "name": "SSSniperwolf",
+    "fit": 56,
+    "conf": "Medium"
+   },
+   {
+    "name": "Phil Lester",
+    "fit": 53,
+    "conf": "Medium"
+   }
+  ],
+  "gap": 13.9,
+  "direction": "correct"
+ },
+ {
+  "brand": "Sephora",
+  "basis": "brand",
+  "fitCat": "beauty",
+  "misCat": "technology",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 66.4,
+  "misMean": 46.7,
+  "winRate": 0.99,
+  "fitTop": "Wayne Goss 74",
+  "misTop": "Justine Ezarik 54",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "Wayne Goss",
+    "fit": 74,
+    "conf": "Medium"
+   },
+   {
+    "name": "Samantha Chapman",
+    "fit": 73,
+    "conf": "Medium"
+   },
+   {
+    "name": "Tati Westbrook",
+    "fit": 72,
+    "conf": "Medium"
+   },
+   {
+    "name": "Nikkie de Jager",
+    "fit": 71,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jaclyn Hill",
+    "fit": 68,
+    "conf": "Medium"
+   },
+   {
+    "name": "Manny MUA",
+    "fit": 68,
+    "conf": "Medium"
+   },
+   {
+    "name": "Michelle Phan",
+    "fit": 65,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jeffree Star",
+    "fit": 65,
+    "conf": "Medium"
+   },
+   {
+    "name": "Pony",
+    "fit": 55,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jenn Im",
+    "fit": 53,
+    "conf": "Medium"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "Justine Ezarik",
+    "fit": 54,
+    "conf": "Medium"
+   },
+   {
+    "name": "SuperSaf",
+    "fit": 52,
+    "conf": "Medium"
+   },
+   {
+    "name": "ZHC",
+    "fit": 50,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marques Brownlee",
+    "fit": 50,
+    "conf": "Medium"
+   },
+   {
+    "name": "Gaurav Chaudhary",
+    "fit": 48,
+    "conf": "Medium"
+   },
+   {
+    "name": "William Osman",
+    "fit": 45,
+    "conf": "Low"
+   },
+   {
+    "name": "Patrick Shyu",
+    "fit": 42,
+    "conf": "Medium"
+   },
+   {
+    "name": "Trisha Hershberger",
+    "fit": 42,
+    "conf": "Medium"
+   },
+   {
+    "name": "Austin Evans",
+    "fit": 42,
+    "conf": "Medium"
+   },
+   {
+    "name": "Michael Reeves",
+    "fit": 42,
+    "conf": "Medium"
+   }
+  ],
+  "gap": 19.7,
+  "direction": "correct"
+ },
+ {
+  "brand": "Apple",
+  "basis": "brand",
+  "fitCat": "technology",
+  "misCat": "beauty",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 63,
+  "misMean": 57.8,
+  "winRate": 0.7,
+  "fitTop": "Marques Brownlee 78",
+  "misTop": "Chrissy Costanza 62",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "Marques Brownlee",
+    "fit": 78,
+    "conf": "Medium"
+   },
+   {
+    "name": "SuperSaf",
+    "fit": 77,
+    "conf": "Medium"
+   },
+   {
+    "name": "Gaurav Chaudhary",
+    "fit": 64,
+    "conf": "Medium"
+   },
+   {
+    "name": "Austin Evans",
+    "fit": 63,
+    "conf": "Medium"
+   },
+   {
+    "name": "Linus Sebastian",
+    "fit": 63,
+    "conf": "Medium"
+   },
+   {
+    "name": "Justine Ezarik",
+    "fit": 61,
+    "conf": "Medium"
+   },
+   {
+    "name": "ZHC",
+    "fit": 60,
+    "conf": "Medium"
+   },
+   {
+    "name": "Patrick Shyu",
+    "fit": 57,
+    "conf": "Medium"
+   },
+   {
+    "name": "William Osman",
+    "fit": 55,
+    "conf": "Low"
+   },
+   {
+    "name": "Michael Reeves",
+    "fit": 52,
+    "conf": "Medium"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "Chrissy Costanza",
+    "fit": 62,
+    "conf": "Medium"
+   },
+   {
+    "name": "Addison Rae",
+    "fit": 61,
+    "conf": "Medium"
+   },
+   {
+    "name": "Belle Delphine",
+    "fit": 61,
+    "conf": "Medium"
+   },
+   {
+    "name": "Zoe Sugg",
+    "fit": 61,
+    "conf": "Medium"
+   },
+   {
+    "name": "Eva Gutowski",
+    "fit": 58,
+    "conf": "Medium"
+   },
+   {
+    "name": "James Charles",
+    "fit": 56,
+    "conf": "Medium"
+   },
+   {
+    "name": "Rachel Levin",
+    "fit": 56,
+    "conf": "Medium"
+   },
+   {
+    "name": "Kimberly Loaiza",
+    "fit": 55,
+    "conf": "Medium"
+   },
+   {
+    "name": "Nikkie de Jager",
+    "fit": 55,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 53,
+    "conf": "Medium"
+   }
+  ],
+  "gap": 5.2,
+  "direction": "correct"
+ },
+ {
+  "brand": "Samsung",
+  "basis": "brand",
+  "fitCat": "technology",
+  "misCat": "fashion",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 57.9,
+  "misMean": 51.7,
+  "winRate": 0.72,
+  "fitTop": "SuperSaf 71",
+  "misTop": "Amanda Steele 57",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "SuperSaf",
+    "fit": 71,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marques Brownlee",
+    "fit": 69,
+    "conf": "Medium"
+   },
+   {
+    "name": "Gaurav Chaudhary",
+    "fit": 64,
+    "conf": "Medium"
+   },
+   {
+    "name": "Justine Ezarik",
+    "fit": 62,
+    "conf": "Medium"
+   },
+   {
+    "name": "Austin Evans",
+    "fit": 57,
+    "conf": "Medium"
+   },
+   {
+    "name": "Linus Sebastian",
+    "fit": 54,
+    "conf": "Medium"
+   },
+   {
+    "name": "Michael Reeves",
+    "fit": 53,
+    "conf": "Medium"
+   },
+   {
+    "name": "ZHC",
+    "fit": 52,
+    "conf": "Medium"
+   },
+   {
+    "name": "Patrick Shyu",
+    "fit": 49,
+    "conf": "Medium"
+   },
+   {
+    "name": "Trisha Hershberger",
+    "fit": 48,
+    "conf": "Medium"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "Amanda Steele",
+    "fit": 57,
+    "conf": "Medium"
+   },
+   {
+    "name": "Bethany Mota",
+    "fit": 56,
+    "conf": "Medium"
+   },
+   {
+    "name": "MatPat",
+    "fit": 55,
+    "conf": "Medium"
+   },
+   {
+    "name": "Zoe Sugg",
+    "fit": 54,
+    "conf": "Medium"
+   },
+   {
+    "name": "Rachel Levin",
+    "fit": 53,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jim Chapman",
+    "fit": 51,
+    "conf": "Medium"
+   },
+   {
+    "name": "Eva Gutowski",
+    "fit": 49,
+    "conf": "Medium"
+   },
+   {
+    "name": "Tanya Burr",
+    "fit": 48,
+    "conf": "Medium"
+   },
+   {
+    "name": "Erika Costell",
+    "fit": 48,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 46,
+    "conf": "Medium"
+   }
+  ],
+  "gap": 6.2,
+  "direction": "correct"
+ },
+ {
+  "brand": "Gucci",
+  "basis": "brand",
+  "fitCat": "fashion",
+  "misCat": "gaming",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 64.2,
+  "misMean": 61,
+  "winRate": 0.69,
+  "fitTop": "Zoe Sugg 69",
+  "misTop": "Alfie Deyes 67",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "Zoe Sugg",
+    "fit": 69,
+    "conf": "Medium"
+   },
+   {
+    "name": "Amanda Steele",
+    "fit": 69,
+    "conf": "Medium"
+   },
+   {
+    "name": "Bethany Mota",
+    "fit": 67,
+    "conf": "Medium"
+   },
+   {
+    "name": "Gigi Gorgeous",
+    "fit": 67,
+    "conf": "Medium"
+   },
+   {
+    "name": "Tanya Burr",
+    "fit": 66,
+    "conf": "Medium"
+   },
+   {
+    "name": "Rachel Levin",
+    "fit": 65,
+    "conf": "Medium"
+   },
+   {
+    "name": "Eva Gutowski",
+    "fit": 64,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jim Chapman",
+    "fit": 59,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 59,
+    "conf": "Medium"
+   },
+   {
+    "name": "Bunny Meyer",
+    "fit": 57,
+    "conf": "Medium"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "Alfie Deyes",
+    "fit": 67,
+    "conf": "Low"
+   },
+   {
+    "name": "Joey Graceffa",
+    "fit": 66,
+    "conf": "Low"
+   },
+   {
+    "name": "Oli White",
+    "fit": 65,
+    "conf": "Medium"
+   },
+   {
+    "name": "Rosanna Pansino",
+    "fit": 64,
+    "conf": "Low"
+   },
+   {
+    "name": "Lia Marie Johnson",
+    "fit": 63,
+    "conf": "Medium"
+   },
+   {
+    "name": "Phil Lester",
+    "fit": 60,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 59,
+    "conf": "Medium"
+   },
+   {
+    "name": "Germán Garmendia",
+    "fit": 59,
+    "conf": "Medium"
+   },
+   {
+    "name": "PewDiePie",
+    "fit": 54,
+    "conf": "Medium"
+   },
+   {
+    "name": "MatPat",
+    "fit": 53,
+    "conf": "Medium"
+   }
+  ],
+  "gap": 3.2,
+  "direction": "correct"
+ },
+ {
+  "brand": "Zara",
+  "basis": "brand",
+  "fitCat": "fashion",
+  "misCat": "technology",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 67.7,
+  "misMean": 50.1,
+  "winRate": 1,
+  "fitTop": "Bethany Mota 74",
+  "misTop": "SuperSaf 58",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "Bethany Mota",
+    "fit": 74,
+    "conf": "Medium"
+   },
+   {
+    "name": "Amanda Steele",
+    "fit": 72,
+    "conf": "Medium"
+   },
+   {
+    "name": "Zoe Sugg",
+    "fit": 71,
+    "conf": "Medium"
+   },
+   {
+    "name": "Tanya Burr",
+    "fit": 68,
+    "conf": "Medium"
+   },
+   {
+    "name": "Eva Gutowski",
+    "fit": 67,
+    "conf": "Medium"
+   },
+   {
+    "name": "Rachel Levin",
+    "fit": 67,
+    "conf": "Medium"
+   },
+   {
+    "name": "Gigi Gorgeous",
+    "fit": 67,
+    "conf": "Medium"
+   },
+   {
+    "name": "Juana",
+    "fit": 65,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jackie Aina",
+    "fit": 65,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 61,
+    "conf": "Medium"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "SuperSaf",
+    "fit": 58,
+    "conf": "Medium"
+   },
+   {
+    "name": "Justine Ezarik",
+    "fit": 57,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marques Brownlee",
+    "fit": 56,
+    "conf": "Medium"
+   },
+   {
+    "name": "The 8-Bit Guy",
+    "fit": 54,
+    "conf": "Medium"
+   },
+   {
+    "name": "Gaurav Chaudhary",
+    "fit": 53,
+    "conf": "Medium"
+   },
+   {
+    "name": "ZHC",
+    "fit": 52,
+    "conf": "Medium"
+   },
+   {
+    "name": "Austin Evans",
+    "fit": 45,
+    "conf": "Medium"
+   },
+   {
+    "name": "Patrick Shyu",
+    "fit": 43,
+    "conf": "Medium"
+   },
+   {
+    "name": "Trisha Hershberger",
+    "fit": 42,
+    "conf": "Medium"
+   },
+   {
+    "name": "Michael Reeves",
+    "fit": 41,
+    "conf": "Medium"
+   }
+  ],
+  "gap": 17.6,
+  "direction": "correct"
+ },
+ {
+  "brand": "Spotify",
+  "basis": "brand",
+  "fitCat": "music",
+  "misCat": "beauty",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 56.5,
+  "misMean": 52,
+  "winRate": 0.79,
+  "fitTop": "La Divaza 64",
+  "misTop": "Kimberly Loaiza 64",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "La Divaza",
+    "fit": 64,
+    "conf": "Low"
+   },
+   {
+    "name": "Fede Vigevani",
+    "fit": 59,
+    "conf": "Medium"
+   },
+   {
+    "name": "Logan Paul",
+    "fit": 58,
+    "conf": "Medium"
+   },
+   {
+    "name": "Huddy",
+    "fit": 58,
+    "conf": "Medium"
+   },
+   {
+    "name": "Lele Pons",
+    "fit": 57,
+    "conf": "Medium"
+   },
+   {
+    "name": "Justin Bieber",
+    "fit": 55,
+    "conf": "Medium"
+   },
+   {
+    "name": "TBJZL",
+    "fit": 55,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jake Paul",
+    "fit": 54,
+    "conf": "Medium"
+   },
+   {
+    "name": "Sabrina Carpenter",
+    "fit": 53,
+    "conf": "Medium"
+   },
+   {
+    "name": "Vikram Barn",
+    "fit": 52,
+    "conf": "Medium"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "Kimberly Loaiza",
+    "fit": 64,
+    "conf": "Medium"
+   },
+   {
+    "name": "Yuya",
+    "fit": 60,
+    "conf": "Medium"
+   },
+   {
+    "name": "Addison Rae",
+    "fit": 54,
+    "conf": "Medium"
+   },
+   {
+    "name": "Zoe Sugg",
+    "fit": 52,
+    "conf": "Medium"
+   },
+   {
+    "name": "Eva Gutowski",
+    "fit": 51,
+    "conf": "Medium"
+   },
+   {
+    "name": "James Charles",
+    "fit": 50,
+    "conf": "Medium"
+   },
+   {
+    "name": "Nikkie de Jager",
+    "fit": 50,
+    "conf": "Medium"
+   },
+   {
+    "name": "Rachel Levin",
+    "fit": 50,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 46,
+    "conf": "Medium"
+   },
+   {
+    "name": "Hyram Yarbro",
+    "fit": 43,
+    "conf": "Medium"
+   }
+  ],
+  "gap": 4.5,
+  "direction": "correct"
+ },
+ {
+  "brand": "Fender",
+  "basis": "brand",
+  "fitCat": "music",
+  "misCat": "beauty",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 70.7,
+  "misMean": 48.9,
+  "winRate": 1,
+  "fitTop": "Sophie Lloyd 78",
+  "misTop": "Eugenia Cooney 52",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "Sophie Lloyd",
+    "fit": 78,
+    "conf": "Medium"
+   },
+   {
+    "name": "Mary Spender",
+    "fit": 78,
+    "conf": "Medium"
+   },
+   {
+    "name": "Laura Cox",
+    "fit": 77,
+    "conf": "Medium"
+   },
+   {
+    "name": "Rick Beato",
+    "fit": 73,
+    "conf": "Medium"
+   },
+   {
+    "name": "Tora Dahle Aagård",
+    "fit": 73,
+    "conf": "Medium"
+   },
+   {
+    "name": "Rob Scallon",
+    "fit": 72,
+    "conf": "Medium"
+   },
+   {
+    "name": "Ola Englund",
+    "fit": 71,
+    "conf": "Medium"
+   },
+   {
+    "name": "Sarah Longfield",
+    "fit": 67,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jared Dines",
+    "fit": 59,
+    "conf": "Medium"
+   },
+   {
+    "name": "Charlie Parra del Riego",
+    "fit": 59,
+    "conf": "Medium"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "Eugenia Cooney",
+    "fit": 52,
+    "conf": "Medium"
+   },
+   {
+    "name": "Chrissy Costanza",
+    "fit": 51,
+    "conf": "Medium"
+   },
+   {
+    "name": "Shane Dawson",
+    "fit": 50,
+    "conf": "Low"
+   },
+   {
+    "name": "Belle Delphine",
+    "fit": 49,
+    "conf": "Medium"
+   },
+   {
+    "name": "Mykie",
+    "fit": 49,
+    "conf": "Medium"
+   },
+   {
+    "name": "Yuya",
+    "fit": 49,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 48,
+    "conf": "Medium"
+   },
+   {
+    "name": "Bunny Meyer",
+    "fit": 48,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jeffree Star",
+    "fit": 47,
+    "conf": "Medium"
+   },
+   {
+    "name": "Safiya Nygaard",
+    "fit": 46,
+    "conf": "Medium"
+   }
+  ],
+  "gap": 21.8,
+  "direction": "correct"
+ },
+ {
+  "brand": "Huggies",
+  "basis": "brand",
+  "fitCat": "lifestyle",
+  "misCat": "gaming",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 53.7,
+  "misMean": 55.3,
+  "winRate": 0.42,
+  "fitTop": "Rachel Levin 59",
+  "misTop": "Dan Gheesling 68",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "Rachel Levin",
+    "fit": 59,
+    "conf": "Medium"
+   },
+   {
+    "name": "GloZell Green",
+    "fit": 58,
+    "conf": "Medium"
+   },
+   {
+    "name": "Bethany Mota",
+    "fit": 58,
+    "conf": "Medium"
+   },
+   {
+    "name": "Andrea Russett",
+    "fit": 56,
+    "conf": "Medium"
+   },
+   {
+    "name": "Baby Ariel",
+    "fit": 54,
+    "conf": "Medium"
+   },
+   {
+    "name": "Connor Franta",
+    "fit": 53,
+    "conf": "Medium"
+   },
+   {
+    "name": "Bunny Meyer",
+    "fit": 52,
+    "conf": "Medium"
+   },
+   {
+    "name": "Juana",
+    "fit": 50,
+    "conf": "Medium"
+   },
+   {
+    "name": "Molly Burke",
+    "fit": 49,
+    "conf": "Medium"
+   },
+   {
+    "name": "Zoe Sugg",
+    "fit": 48,
+    "conf": "Medium"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "Dan Gheesling",
+    "fit": 68,
+    "conf": "Low"
+   },
+   {
+    "name": "Joey Graceffa",
+    "fit": 64,
+    "conf": "Low"
+   },
+   {
+    "name": "Meghan Camarena",
+    "fit": 62,
+    "conf": "Low"
+   },
+   {
+    "name": "Lia Marie Johnson",
+    "fit": 61,
+    "conf": "Medium"
+   },
+   {
+    "name": "Rosanna Pansino",
+    "fit": 60,
+    "conf": "Low"
+   },
+   {
+    "name": "Alfie Deyes",
+    "fit": 55,
+    "conf": "Low"
+   },
+   {
+    "name": "Odell Beckham Jr.",
+    "fit": 49,
+    "conf": "Low"
+   },
+   {
+    "name": "Daniel Howell",
+    "fit": 45,
+    "conf": "Low"
+   },
+   {
+    "name": "Phil Lester",
+    "fit": 45,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 44,
+    "conf": "Medium"
+   }
+  ],
+  "gap": -1.6,
+  "direction": "WRONG"
+ },
+ {
+  "brand": "Nintendo",
+  "basis": "brand",
+  "fitCat": "gaming",
+  "misCat": "fashion",
+  "fitN": 10,
+  "misN": 10,
+  "fitMean": 60.4,
+  "misMean": 48.7,
+  "winRate": 0.92,
+  "fitTop": "TheRadBrad 65",
+  "misTop": "MatPat 62",
+  "notes": "",
+  "fitScores": [
+   {
+    "name": "TheRadBrad",
+    "fit": 65,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jordan Maron",
+    "fit": 65,
+    "conf": "Medium"
+   },
+   {
+    "name": "Markiplier",
+    "fit": 64,
+    "conf": "Medium"
+   },
+   {
+    "name": "JonTron",
+    "fit": 63,
+    "conf": "Medium"
+   },
+   {
+    "name": "MatPat",
+    "fit": 62,
+    "conf": "Medium"
+   },
+   {
+    "name": "VanossGaming",
+    "fit": 61,
+    "conf": "Medium"
+   },
+   {
+    "name": "PewDiePie",
+    "fit": 60,
+    "conf": "Medium"
+   },
+   {
+    "name": "Arin Hanson",
+    "fit": 58,
+    "conf": "Medium"
+   },
+   {
+    "name": "Videogamedunkey",
+    "fit": 57,
+    "conf": "Medium"
+   },
+   {
+    "name": "LeafyIsHere",
+    "fit": 49,
+    "conf": "Medium"
+   }
+  ],
+  "misScores": [
+   {
+    "name": "MatPat",
+    "fit": 62,
+    "conf": "Medium"
+   },
+   {
+    "name": "Eugenia Cooney",
+    "fit": 50,
+    "conf": "Medium"
+   },
+   {
+    "name": "Bethany Mota",
+    "fit": 50,
+    "conf": "Medium"
+   },
+   {
+    "name": "Rachel Levin",
+    "fit": 49,
+    "conf": "Medium"
+   },
+   {
+    "name": "Zoe Sugg",
+    "fit": 49,
+    "conf": "Medium"
+   },
+   {
+    "name": "Marzia Kjellberg",
+    "fit": 48,
+    "conf": "Medium"
+   },
+   {
+    "name": "Bunny Meyer",
+    "fit": 46,
+    "conf": "Medium"
+   },
+   {
+    "name": "Erika Costell",
+    "fit": 45,
+    "conf": "Medium"
+   },
+   {
+    "name": "Jim Chapman",
+    "fit": 44,
+    "conf": "Medium"
+   },
+   {
+    "name": "Safiya Nygaard",
+    "fit": 44,
+    "conf": "Medium"
+   }
+  ],
+  "gap": 11.7,
+  "direction": "correct"
+ }
+]

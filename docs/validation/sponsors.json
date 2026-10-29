@@ -1,0 +1,433 @@
+{
+ "@mkbhd": {
+  "title": "Marques Brownlee",
+  "videos": 15,
+  "sponsors": [
+   {
+    "domain": "ridge",
+    "videos": 2,
+    "brand": {
+     "name": "The Ridge",
+     "id": "A926389A-C444-4052-A845-D592876F9CB7",
+     "popularity": 0.8066908511467851
+    }
+   },
+   {
+    "domain": "dbrand",
+    "videos": 2,
+    "brand": {
+     "name": "Dbrand",
+     "id": "3180A68A-2853-4675-886E-CB05CDF3F63A",
+     "popularity": 0.9878710311742469
+    }
+   }
+  ]
+ },
+ "@LinusTechTips": {
+  "title": "Linus Tech Tips",
+  "videos": 15,
+  "sponsors": [
+   {
+    "domain": "lmg",
+    "videos": 12,
+    "brand": null
+   },
+   {
+    "domain": "piavpn",
+    "videos": 12,
+    "brand": null
+   },
+   {
+    "domain": "dbrand",
+    "videos": 12,
+    "brand": {
+     "name": "Dbrand",
+     "id": "3180A68A-2853-4675-886E-CB05CDF3F63A",
+     "popularity": 0.9878710311742469
+    }
+   },
+   {
+    "domain": "lttstore",
+    "videos": 12,
+    "brand": null
+   },
+   {
+    "domain": "affilimate",
+    "videos": 12,
+    "brand": null
+   },
+   {
+    "domain": "lttlabs",
+    "videos": 3,
+    "brand": null
+   },
+   {
+    "domain": "meter",
+    "videos": 2,
+    "brand": null
+   },
+   {
+    "domain": "threatlocker",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "xreal",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "deltahub",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "solidcraft",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "deepmagic",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "getartcraft",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "opencadstudio",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "shortlinus",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "ugreen",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "kaleidescape",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "boot",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "playwt",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "wtm",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "rheem",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "proton",
+    "videos": 1,
+    "brand": {
+     "name": "Proton",
+     "id": "5C264B9B-E450-485D-B26D-20768018618A",
+     "popularity": 0.727238053262362
+    }
+   }
+  ]
+ },
+ "@NikkieTutorials": {
+  "title": "NikkieTutorials",
+  "videos": 15,
+  "sponsors": []
+ },
+ "@dcrainmaker": {
+  "title": "DC Rainmaker",
+  "videos": 15,
+  "sponsors": [
+   {
+    "domain": "pfandh",
+    "videos": 1,
+    "brand": null
+   }
+  ]
+ },
+ "@Joeman": {
+  "title": "Joeman",
+  "videos": 15,
+  "sponsors": [
+   {
+    "domain": "99bio",
+    "videos": 5,
+    "brand": null
+   },
+   {
+    "domain": "reurl",
+    "videos": 5,
+    "brand": null
+   },
+   {
+    "domain": "linkgoods",
+    "videos": 5,
+    "brand": null
+   },
+   {
+    "domain": "msi",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "sony",
+    "videos": 1,
+    "brand": {
+     "name": "Sony",
+     "id": "AA620FF2-87D7-43EC-BFAE-36631D076D8D",
+     "popularity": 0.9993134545947687
+    }
+   },
+   {
+    "domain": "saily",
+    "videos": 1,
+    "brand": null
+   }
+  ]
+ },
+ "@MrBeast": {
+  "title": "MrBeast",
+  "videos": 15,
+  "sponsors": [
+   {
+    "domain": "viewstats",
+    "videos": 6,
+    "brand": null
+   },
+   {
+    "domain": "extrememusic",
+    "videos": 6,
+    "brand": {
+     "name": "Extreme Music",
+     "id": "68875BEB-0674-4710-98CE-5DB1CE2ADE5F",
+     "popularity": 0.2974521537183638
+    }
+   },
+   {
+    "domain": "ifit",
+    "videos": 2,
+    "brand": {
+     "name": "iFit",
+     "id": "BB18EF6F-6539-48BA-A904-A945C3F6BD7C",
+     "popularity": 0.8182943160821142
+    }
+   },
+   {
+    "domain": "goodranchers",
+    "videos": 2,
+    "brand": null
+   },
+   {
+    "domain": "functionhealth",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "step",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "chillygoattubs",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "polynesia",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "marriott",
+    "videos": 1,
+    "brand": {
+     "name": "Marriott Hotels",
+     "id": "1F0DDB2A-F168-46C9-9F7E-748313C03050",
+     "popularity": 0.945856147547931
+    }
+   },
+   {
+    "domain": "climbworks",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "curatedevents",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "skylinetentcompany",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "elizabethflakeevents",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "nybride",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "jdoqocy",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "kizik",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "gotoaisle",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "rockefellerfoundation",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "energyalliance",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "onelink",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "krispykreme",
+    "videos": 1,
+    "brand": {
+     "name": "Krispy Kreme",
+     "id": "A16489A3-A51E-4DD6-9966-934C86D80FE9",
+     "popularity": 0.994363546981743
+    }
+   },
+   {
+    "domain": "themostdangerousgames",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "lowes",
+    "videos": 1,
+    "brand": {
+     "name": "Lowe's",
+     "id": "47C670FE-29A2-4F52-8570-1A97355C3FD0",
+     "popularity": 0.9785730026614229
+    }
+   },
+   {
+    "domain": "com",
+    "videos": 1,
+    "brand": null
+   }
+  ]
+ },
+ "@JoshuaWeissman": {
+  "title": "Joshua Weissman",
+  "videos": 15,
+  "sponsors": [
+   {
+    "domain": "cometeer",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "benandlynns",
+    "videos": 1,
+    "brand": null
+   }
+  ]
+ },
+ "@aliabdaal": {
+  "title": "Ali Abdaal",
+  "videos": 15,
+  "sponsors": [
+   {
+    "domain": "lifestylebusiness",
+    "videos": 14,
+    "brand": null
+   },
+   {
+    "domain": "superfocus",
+    "videos": 14,
+    "brand": null
+   },
+   {
+    "domain": "feelgoodproductivity",
+    "videos": 14,
+    "brand": null
+   },
+   {
+    "domain": "linkedin",
+    "videos": 14,
+    "brand": {
+     "name": "Linkedin",
+     "id": "5A74299B-F812-422C-9EA9-8DF260ADBC8E",
+     "popularity": 0.98925259785391
+    }
+   },
+   {
+    "domain": "wisprflow",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "sparkle",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "heygen",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "remotion",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "blackmagicdesign",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "firecut",
+    "videos": 1,
+    "brand": null
+   },
+   {
+    "domain": "manychat",
+    "videos": 1,
+    "brand": null
+   }
+  ]
+ }
+}
