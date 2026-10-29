@@ -450,13 +450,17 @@ export async function lookupBrand(
         output: style.length ? `${style.length}: ${style.map((t) => `${t.name} (${t.id})`).join(', ')}` : s.error || 'No style word is exactly a Qloo taste tag',
         decision:
           style.length >= MIN_STYLE_TAGS
-            ? `Use them${verified.length ? `, with ${verified.map((e) => e.name).join(', ')},` : ''} as the brand-side signal`
+            ? `Use the tags alone as the brand-side signal${verified.length ? `; ${verified.map((e) => e.name).join(', ')} (below the minimum of ${MIN_DESCRIPTION_ENTITIES}) left out` : ''}`
             : 'Stop: ask for reference brands instead',
       });
     }
     if (!enough && style.length >= MIN_STYLE_TAGS) {
+      // Tags instead of the entities, not with them: entities below the minimum are as thin as
+      // evidence gets, and one can be a namesake (CMoney's page named the columnist 自由人; Qloo's
+      // 自由人 is a Japanese rock band). With tags alone, places are also left out of scoring
+      // (lib/qloo scoreEntities), which with 1 entity + tags timed out twice.
       basis = 'style';
-      signal = verified;
+      signal = [];
       styleTags = style;
     } else if (!enough) {
       return notFound(

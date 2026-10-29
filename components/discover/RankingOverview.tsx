@@ -17,11 +17,13 @@ export function RankingOverview({
   hrefOf,
   unverified = false,
   reasonsOf,
+  highlightId,
 }: {
   candidates: CreatorCandidate[];
   hrefOf: (c: CreatorCandidate) => string;
   unverified?: boolean;
   reasonsOf: (c: CreatorCandidate) => UnverifiedReason[];
+  highlightId?: string | null; // the creator whose page linked back here
 }) {
   const router = useRouter();
   const top = candidates[0]?.compatibility.fitScore ?? null;
@@ -60,7 +62,9 @@ export function RankingOverview({
             return (
               <tr
                 key={c.qlooId}
-                className="cursor-pointer transition-colors hover:bg-slate-50"
+                id={`rank-${c.qlooId}`}
+                aria-current={c.qlooId === highlightId ? 'true' : undefined}
+                className={`cursor-pointer transition-colors ${c.qlooId === highlightId ? 'bg-teal-50 hover:bg-teal-100' : 'hover:bg-slate-50'}`}
                 // The whole row opens the page; the name is the real link (keyboard, new tab).
                 onClick={() => router.push(hrefOf(c))}
               >

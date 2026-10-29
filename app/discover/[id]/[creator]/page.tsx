@@ -72,10 +72,13 @@ function CreatorDetail({ d, c }: { d: StoredDiscovery; c: CreatorCandidate }) {
     return `/?${q}`;
   })();
 
+  // Back to this ranking, with this creator's row shown and marked.
+  const backToRanking = `/discover?run=${encodeURIComponent(d.id)}&highlight=${encodeURIComponent(c.qlooId)}`;
+
   return (
     <div className="space-y-4">
       {/* scroll={false}: the ranking page scrolls to its own results (Next would reset to the top). */}
-      <Link href={`/discover?run=${encodeURIComponent(d.id)}`} scroll={false} className="text-sm font-medium text-teal-700 hover:underline">
+      <Link href={backToRanking} scroll={false} className="text-sm font-medium text-teal-700 hover:underline">
         ← Ranking for {brand}
       </Link>
 
@@ -179,11 +182,13 @@ function CreatorDetail({ d, c }: { d: StoredDiscovery; c: CreatorCandidate }) {
               <ArrowRight aria-hidden className="size-4" />
             </Link>
           )}
+          {/* The ranking is the comparison: same brand, same basis, no re-run. */}
           <Link
-            href={`/compare?brand=${encodeURIComponent(d.request.brandName)}`}
+            href={backToRanking}
+            scroll={false}
             className="inline-flex items-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
           >
-            Compare creators
+            Back to the ranking
           </Link>
           <CopyLinkButton link={() => discoverShareLink(d.request, window.location.origin)} />
         </div>

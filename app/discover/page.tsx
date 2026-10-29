@@ -115,6 +115,7 @@ function DiscoverPage() {
     const id = params.get('run');
     return id ? getDiscovery(id) : null;
   });
+  const [highlight] = useState(() => params.get('highlight'));
   const seed = initial?.inputs ?? linked ?? (stored?.request as Request | undefined) ?? null;
   const linkedRan = useRef(false);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -147,9 +148,11 @@ function DiscoverPage() {
     if (!result || running) return;
     // After this render (and Next's own scroll on navigation); instant, because the page's
     // smooth scrolling and animation frames don't advance in a background tab.
-    const t = setTimeout(() => resultsRef.current?.scrollIntoView({ block: 'start', behavior: 'instant' }), 50);
+    // Back from a creator's page (?highlight=<qlooId>), that creator's row is shown instead.
+    const row = highlight && result === stored ? document.getElementById(`rank-${highlight}`) : null;
+    const t = setTimeout(() => (row ?? resultsRef.current)?.scrollIntoView({ block: row ? 'center' : 'start', behavior: 'instant' }), 50);
     return () => clearTimeout(t);
-  }, [result, running]);
+  }, [result, running, highlight, stored]);
 
   // Runs once for a shared link (the ref guards against React running effects twice).
   useEffect(() => {
@@ -474,13 +477,8 @@ function DiscoverPage() {
               {/* The same actions, in the same style, as a creator check's result (MatchResult). */}
               {last && (
                 <div className="mt-3 print:hidden">
+                  {/* No "Compare creators": the ranking is already the comparison, on one basis. */}
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`/compare?brand=${encodeURIComponent(last.brandName)}`}
-                      className="inline-flex items-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
-                    >
-                      Compare creators
-                    </Link>
                     <CopyLinkButton link={() => discoverShareLink(shareable(last), window.location.origin)} />
                   </div>
                   <p className="mt-2 text-xs text-slate-500">
@@ -504,6 +502,7 @@ function DiscoverPage() {
                   hrefOf={(c) => creatorPageHref(result.id, c.qlooId)}
                   reasonsOf={(c) => candidateUnverified(c, result)}
                   unverified={result.validation?.status === 'unverified'}
+                  highlightId={result === stored ? highlight : null}
                 />
                 <dl className="grid gap-x-6 gap-y-3 px-1 text-sm sm:grid-cols-3">
                   <div>

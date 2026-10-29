@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { Suspense, useState, useSyncExternalStore } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
+import { ComparisonTable } from '@/components/compare/ComparisonTable';
 import { MatchResult } from '@/components/match/MatchResult';
+import { Button } from '@/components/ui/button';
 import { saveMatch, useMatches } from '@/lib/history';
 import type { Match } from '@/lib/match';
 import { requestMatch } from '@/lib/match-client';
@@ -60,9 +62,12 @@ function SavedMatchResult({ match, autoPrint }: { match: Match; autoPrint: boole
   const router = useRouter();
   const [running, setRunning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [compared, setCompared] = useState<Match | null>(null); // creator B, next to this result
 
-  async function run(videoUrls: string[], live: boolean) {
-    setRunning(live ? 'Running live…' : `Re-running ${match.brand.entity?.name || match.brand.name} with the new videos…`);
+  async function run(videoUrls: string[], live: boolean, compare = false) {
+    setRunning(
+      live ? 'Running live…' : compare ? 'Analysing creator B for the same brand…' : `Re-running ${match.brand.entity?.name || match.brand.name} with the new videos…`
+    );
     setError(null);
     try {
       const outcome = await requestMatch(
@@ -79,7 +84,11 @@ function SavedMatchResult({ match, autoPrint }: { match: Match; autoPrint: boole
       );
       if (outcome.ok) {
         saveMatch(outcome.match);
-        if (outcome.match.id !== match.id) router.push(`/match/${outcome.match.id}`);
+        if (compare) {
+          setCompared(outcome.match);
+          window.scrollTo({ top: 0, behavior: 'instant' }); // the comparison sits above the result
+        }
+        else if (outcome.match.id !== match.id) router.push(`/match/${outcome.match.id}`);
       } else setError(outcome.error);
     } catch (e: any) {
       setError(`Connection failed: ${e?.message || e}`);
@@ -100,11 +109,26 @@ function SavedMatchResult({ match, autoPrint }: { match: Match; autoPrint: boole
           {running} This takes about 10–30 seconds.
         </p>
       )}
+      {compared && (
+        <section className="mb-4 space-y-3" aria-label="Comparison">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xl font-semibold text-slate-900">
+              {match.brand.entity?.name || match.brand.name}: {[match, compared].map((m) => m.creator.channelName || m.creator.youtubeHandle || 'Creator').join(' vs ')}
+            </h2>
+            <Button variant="outline" onClick={() => setCompared(null)}>
+              Close comparison
+            </Button>
+          </div>
+          <p className="text-sm text-slate-600">Same brand, same formula, side by side. This result is below; open the other row for its full result.</p>
+          <ComparisonTable matches={[match, compared]} />
+        </section>
+      )}
       <MatchResult
         match={match}
         autoPrint={autoPrint}
         onRunLive={() => run(match.creator.videoUrls, true)}
         onRerunCreator={(videoUrls) => run(videoUrls, false)}
+        onCompare={(videoUrls) => run(videoUrls, false, true)}
         running={running !== null}
       />
     </>

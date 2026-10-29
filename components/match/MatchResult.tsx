@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CopyLinkButton } from '@/components/CopyLinkButton';
 import { decisionSummary, summaryContext } from '@/lib/report';
 import { shareLink } from '@/lib/share-link';
@@ -14,6 +14,7 @@ import { summarizeTrace } from '@/lib/trace';
 import { AgentTrace } from './AgentTrace';
 import { BrandFallbackForm, type BrandFallbackInput } from './BrandFallbackForm';
 import { CauseDetails } from './CauseDetails';
+import { CompareWithAnother } from './CompareWithAnother';
 import { CreatorRetryForm } from './CreatorRetryForm';
 import { CrossCheck } from './CrossCheck';
 import { PriorCoverage } from './PriorCoverage';
@@ -46,6 +47,7 @@ export function MatchResult({
   onUseBrand,
   onBrandFallback,
   onRerunCreator,
+  onCompare,
   running,
   autoPrint,
 }: {
@@ -55,12 +57,14 @@ export function MatchResult({
   onUseBrand?: (brandName: string) => void; // re-run with a brand name the user picked
   onBrandFallback?: (fallback: BrandFallbackInput) => void; // re-run against reference brands or a description
   onRerunCreator?: (videoUrls: string[]) => void; // re-run the same brand side with other videos or a channel
+  onCompare?: (videoUrls: string[]) => void; // analyse a second creator for the same brand side, shown next to this one
   running?: boolean;
   autoPrint?: boolean;
 }) {
   useEffect(() => {
     if (autoPrint) printMatch(match);
   }, [autoPrint, match]);
+  const [comparing, setComparing] = useState(false);
   // No brand side at all: neither the brand nor (verified) reference brands are in Qloo.
   const brandProblem = !match.brand.entity && !match.brand.basis;
 
@@ -77,12 +81,11 @@ export function MatchResult({
           <Button variant="outline" onClick={() => downloadMarkdown(match)}>
             Download as Markdown
           </Button>
-          <Link
-            href={`/compare?brand=${encodeURIComponent(match.brand.name)}`}
-            className="inline-flex items-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
-          >
-            Compare creators
-          </Link>
+          {onCompare && match.status === 'completed' && (
+            <Button variant="outline" onClick={() => setComparing(true)} aria-expanded={comparing}>
+              Compare with another creator
+            </Button>
+          )}
           <CopyLinkButton link={() => shareLink(match, window.location.origin)} />
           {onReset && (
             <Button className="sm:ml-auto" onClick={onReset}>
@@ -90,6 +93,7 @@ export function MatchResult({
             </Button>
           )}
         </div>
+        {comparing && onCompare && <CompareWithAnother match={match} onCompare={onCompare} onCancel={() => setComparing(false)} running={running} />}
         <p className="mt-2 text-xs text-slate-500">
           PDF opens the print dialog: choose “Save as PDF”. Both include the scores, every entity with its affinity, and the Agent Trace
           summary. The share link carries this analysis’s inputs and re-runs it on any device (History stays in this browser), so a re-run

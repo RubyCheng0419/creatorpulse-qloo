@@ -52,7 +52,11 @@ function Start() {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 sm:p-6">
       <p>
-        Open a result and choose <span className="font-medium">Compare creators</span>, or{' '}
+        Open a result and choose <span className="font-medium">Compare with another creator</span>, or choose two creators in{' '}
+        <Link href="/" className="font-medium text-teal-700 hover:underline">
+          Check a creator
+        </Link>
+        , or{' '}
         <Link href="/compare?demo=1" className="font-medium text-teal-700 hover:underline">
           see the demo comparison for Apple
         </Link>

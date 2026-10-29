@@ -105,8 +105,9 @@ function MatchPage() {
 
   // Each creator is its own request, one after the other: one analysis fits the function time
   // limit, two in one request might not, and both share the Qloo rate limit.
-  async function analyse(brand: BrandInput, creatorUrls: string[][]) {
-    lastRun.current = { brand, creators: creatorUrls };
+  // `keep`: results already in hand that lead the comparison as they are (not re-run).
+  async function analyse(brand: BrandInput, creatorUrls: string[][], keep: Match[] = []) {
+    lastRun.current = { brand, creators: [...keep.map((m) => m.creator.videoUrls), ...creatorUrls] };
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -114,14 +115,15 @@ function MatchPage() {
     setResults([]);
     setStep(3);
 
-    const matches: Match[] = [];
-    for (const [i, videoUrls] of creatorUrls.entries()) {
+    const matches: Match[] = [...keep];
+    for (const [j, videoUrls] of creatorUrls.entries()) {
+      const i = j + keep.length;
       setDone([]);
       setDoneAt({});
       const start = now();
       setStartedAt(start);
       setElapsed(0);
-      setRunning({ index: i, total: creatorUrls.length, label: parseCreator(videoUrls.join('\n')).label });
+      setRunning({ index: i, total: creatorUrls.length + keep.length, label: parseCreator(videoUrls.join('\n')).label });
       try {
         const outcome = await requestMatch(
           { ...brand, videoUrls },
@@ -134,7 +136,7 @@ function MatchPage() {
         if (!outcome.ok) {
           // Video problems send the user back to the creator step, everything else to the brand.
           const videoProblem = Boolean(outcome.invalid) || outcome.status === 422 || /video/i.test(outcome.error);
-          const who = creatorUrls.length > 1 ? `Creator ${i ? 'B' : 'A'}: ` : '';
+          const who = creatorUrls.length + keep.length > 1 ? `Creator ${i ? 'B' : 'A'}: ` : '';
           setError({ message: who + outcome.error, backTo: videoProblem ? 2 : 1, invalid: outcome.invalid });
           setStep(videoProblem ? 2 : 1);
           return;
@@ -181,6 +183,15 @@ function MatchPage() {
 
   // Re-runs the last brand side with other videos or a channel, from an insufficient-data
   // result; the form keeps them, so going back shows what actually ran.
+  // Creator B next to the result on screen (creator A, kept as it is), for the same brand side.
+  function compareWith(videoUrls: string[]) {
+    const a = results[0];
+    if (!lastRun.current || !a) return;
+    setMode('two');
+    setCreatorTexts([a.creator.videoUrls.join('\n'), videoUrls.join('\n')]);
+    analyse(lastRun.current.brand, [videoUrls], [a]);
+  }
+
   function rerunCreator(videoUrls: string[]) {
     if (!lastRun.current) return;
     setMode('one');
@@ -388,6 +399,7 @@ function MatchPage() {
             }}
             onBrandFallback={(fallback) => rerun(fallback)}
             onRerunCreator={rerunCreator}
+            onCompare={compareWith}
           />
         )}
 
@@ -482,12 +494,6 @@ function TwoCreators({ matches, onReset }: { matches: Match[]; onReset: () => vo
       </section>
       <ComparisonTable matches={matches} />
       <div className="flex flex-wrap gap-2 print:hidden">
-        <Link
-          href={`/compare?brand=${encodeURIComponent(matches[0].brand.name)}`}
-          className="inline-flex items-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
-        >
-          Open in Compare creators
-        </Link>
         <Button className="sm:ml-auto" onClick={onReset}>
           Run another match
         </Button>
