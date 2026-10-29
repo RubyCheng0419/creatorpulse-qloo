@@ -18,14 +18,29 @@ export interface DemoPair {
   category: string;
   creatorLabel: string;
   videoUrls: string[];
-  // Fit Scores of the live runs recorded in docs/DEMO_PAIR.md, shown as the pair's range.
-  recorded: { min: number; max: number; period: string };
+  // Fit Scores of the live runs recorded in docs/DEMO_PAIR.md, shown as the pair's range, and
+  // what moves it: which names the LLM proposes, not the scoring (same entities, same score).
+  recorded: { min: number; max: number; period: string; why: string };
 }
 
 // Same creator, two brands: shows the score follows the brand, not the creator's fame.
 export const DEMO_PAIRS: DemoPair[] = [
-  { key: 'fit', brandName: 'Apple', category: 'Technology', creatorLabel: 'MKBHD', videoUrls: MKBHD_VIDEOS, recorded: { min: 69, max: 75, period: 'Oct 25–27, 2026' } },
-  { key: 'mismatch', brandName: 'Huggies', category: '', creatorLabel: 'MKBHD', videoUrls: MKBHD_VIDEOS, recorded: { min: 36, max: 37, period: 'Oct 25–27, 2026' } },
+  {
+    key: 'fit',
+    brandName: 'Apple',
+    category: 'Technology',
+    creatorLabel: 'MKBHD',
+    videoUrls: MKBHD_VIDEOS,
+    recorded: { min: 68, max: 75, period: 'Oct 25–29, 2026', why: '68 when the LLM also lists the sponsor Ridge, which brings Lifestyle & Fashion to 3 entities' },
+  },
+  {
+    key: 'mismatch',
+    brandName: 'Huggies',
+    category: '',
+    creatorLabel: 'MKBHD',
+    videoUrls: MKBHD_VIDEOS,
+    recorded: { min: 36, max: 45, period: 'Oct 25–29, 2026', why: 'it moves with which sponsors and brands the LLM lists' },
+  },
 ];
 
 export const DEMO_PAIR = DEMO_PAIRS[0];

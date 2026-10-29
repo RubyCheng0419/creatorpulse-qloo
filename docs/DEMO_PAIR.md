@@ -20,7 +20,7 @@ The two buttons on the home page use the same five videos with two brands. They 
 
 - [x] Channel public; all five videos readable through YouTube Data API `videos.list`
 - [x] At least 3 Qloo entities: the LLM proposed names, Qloo confirmed 6–8 (Dbrand, Apple Inc, Tesla, Hagerty, Google, Asus, Dell Inc, sometimes The Ridge), several from sponsor mentions in descriptions
-- [x] Apple: moderate fit, all five dimensions with data. Live runs on 2026-10-25 to 2026-10-27 scored between 69 and 75, depending on which names the LLM proposed
+- [x] Apple: moderate fit, all five dimensions with data. Live runs on 2026-10-25 to 2026-10-29 scored between 68 and 75, depending on which names the LLM proposed (68 when it also lists the sponsor Ridge, Qloo’s The Ridge, which makes Lifestyle & Fashion count with 3 entities). Huggies × MKBHD: 36 to 45 over the same period
 - [x] Huggies: Fit 36–37, no fit, with clashes in Tech & Innovation and Lifestyle & Fashion
 
 ### Why this pair

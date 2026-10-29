@@ -32,7 +32,7 @@ export function ScoreRange({ match }: { match: Match }) {
         {demo && (
           <>
             {' '}
-            · {demo.recorded.min}–{demo.recorded.max} in recorded live runs ({demo.recorded.period})
+            · {demo.recorded.min}–{demo.recorded.max} in recorded live runs ({demo.recorded.period}): {demo.recorded.why}
           </>
         )}
         {runs.length > 1 ? (
