@@ -1,4 +1,5 @@
-import { PROXY_TYPES, QlooEntity, expansionParams, getInsights, namesMatch, searchEntities } from '@/lib/qloo';
+import { caught } from '@/lib/errors';
+import { type Named, PROXY_TYPES, QlooEntity, type RawEntity, expansionParams, getInsights, namesMatch, searchEntities } from '@/lib/qloo';
 import { Compatibility, ConfidenceLevel, PROXY_WEIGHT, ScoredEntity, computeCompatibility, dimensionOf, isCounted } from '@/lib/scoring';
 import type { Trace } from '@/lib/trace';
 
@@ -42,14 +43,14 @@ export async function audienceProfiles(
   exclude: Set<string>,
   trace?: Trace,
   control = false,
-  deadline?: number
+  deadline?: number,
+  onProfile?: (done: number, of: number) => void // after each person's first pass, for progress
 ): Promise<AudienceProfile[]> {
   const UNSUPPORTED = 'unsupported' as const;
   const abandoned: string[] = [];
   const profileOf = (c: QlooEntity, type: string, until?: number) => {
-    const call = getInsights([c], type, PROFILE_PER_TYPE, trace && { trace, stage: 'profile' }, [], expansionParams([...exclude])).catch((e: any) =>
-      e?.status === 400 ? UNSUPPORTED : null
-    );
+    const call = getInsights([c], type, PROFILE_PER_TYPE, trace && { trace, stage: 'profile' }, [], expansionParams([...exclude]))
+      .catch((e) => (caught(e).status === 400 ? UNSUPPORTED : null));
     if (until === undefined) return call;
     let timer: ReturnType<typeof setTimeout>;
     const giveUp = new Promise<null>((res) => {
@@ -61,7 +62,15 @@ export async function audienceProfiles(
     return Promise.race([call.finally(() => clearTimeout(timer)), giveUp]);
   };
   const firstUntil = control ? Date.now() + CONTROL_DEADLINE_MS : deadline;
-  const lists = await Promise.all(people.map((c) => Promise.all(PROXY_TYPES.map((type) => profileOf(c, type, firstUntil)))));
+  let profiled = 0;
+  const lists = await Promise.all(
+    people.map((c) =>
+      Promise.all(PROXY_TYPES.map((type) => profileOf(c, type, firstUntil))).then((l) => {
+        onProfile?.(++profiled, people.length);
+        return l;
+      })
+    )
+  );
   const failed = lists.flatMap((l, i) => l.map((x, j) => (x === null ? [i, j] : null)).filter((x): x is number[] => x !== null));
   if (control && failed.length) {
     trace?.add({
@@ -139,7 +148,7 @@ export function scoreProfile(entities: QlooEntity[], affinities: Map<string, num
 // youtuber, Nikkie de Jager only occupation:person:youtuber, Nick DiGiovanni only
 // internet_celebrity), so any of them counts. An actor namesake (Tom Holland) has none.
 const CREATOR_TAG = /^urn:tag:(genre:person:(youtuber|influencer)|occupation:person:(youtuber|video_blogger|vlogger|internet_celebrity|influencer)|wikipedia_category:wikidata:.*youtubers?(_|$).*)/;
-const isCreator = (r: any) => (r?.tags || []).some((t: any) => CREATOR_TAG.test(t?.tag_id || t?.id || ''));
+const isCreator = (r: RawEntity) => (r?.tags || []).some((t) => CREATOR_TAG.test(t?.tag_id || t?.id || ''));
 
 // The Qloo person behind a channel: the channel's title, then its handle, must be the
 // person's exact name or alias ("阿滴" is an alias of Ray Du, "Dr. Pimple Popper" of Sandra
@@ -149,14 +158,14 @@ const isCreator = (r: any) => (r?.tags || []).some((t: any) => CREATOR_TAG.test(
 export async function findCreatorPerson(title: string, handle: string, trace?: Trace): Promise<(QlooEntity & { namesakes: number }) | null> {
   const t0 = Date.now();
   const queries = [...new Set([title, handle.replace(/^@/, '')].filter((q) => q && q.trim()))];
-  let chosen: any = null;
+  let chosen: Named | null = null;
   let used = '';
   let namesakes = 0;
   const seen: string[] = [];
   for (const query of queries) {
     // A failed query is in the trace (with its HTTP attempts) and skipped: no person, not "none".
-    const results = await searchEntities(query, ['urn:entity:person'], 5, trace && { trace, stage: 'creator' }, 'the creator’s own entity').catch(() => []);
-    const exact = results.filter((r) => r?.entity_id && r?.name && namesMatch(query, r));
+    const results: RawEntity[] = await searchEntities(query, ['urn:entity:person'], 5, trace && { trace, stage: 'creator' }, 'the creator’s own entity').catch(() => []);
+    const exact = results.filter((r): r is Named => Boolean(r?.entity_id && r?.name && namesMatch(query, r)));
     seen.push(`“${query}”: ${exact.length ? exact.map((r) => `${r.name}${isCreator(r) ? ' (creator)' : ''}`).join(', ') : 'no exact match'}`);
     chosen = exact.find(isCreator) ?? null;
     if (chosen) {

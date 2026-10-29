@@ -205,7 +205,7 @@ Open http://localhost:3000 and click **Run demo**.
 | Endpoint | Purpose |
 |---|---|
 | `POST /api/match` | Full pipeline. Body: `{ "videoUrls": [...], "brandName": "Apple", "category"?: "Technology", "referenceBrands"?: ["Byredo"], "brandDescription"?: "text or https:// URL" }` (the last two are used only when the brand isn’t in Qloo). Send `Accept: application/x-ndjson` to stream progress stages. |
-| `POST /api/discover` | Find creators. Body: `{ "brandName": "Huggies", "creatorCategory"?: "technology", "referenceBrands"?: [...], "brandDescription"?: "...", "image"?: { "data": "<base64>", "mimeType": "image/jpeg" } }` |
+| `POST /api/discover` | Find creators. Body: `{ "brandName": "Huggies", "creatorCategory"?: "technology", "referenceBrands"?: [...], "brandDescription"?: "...", "image"?: { "data": "<base64>", "mimeType": "image/jpeg" } }`. Send `Accept: application/x-ndjson` to stream progress: each step as it finishes, and how many creators’ audience taste has been read. |
 | `POST /api/creator-taste` | Videos → Qloo-confirmed creator entities |
 | `POST /api/brand-lookup` | Brand → Qloo entity and cultural proxies |
 | `GET /api/health` | Which LLM keys this deployment has, and whether Groq accepts its key (never returns a key) |

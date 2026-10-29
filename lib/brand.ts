@@ -12,7 +12,7 @@ import {
   resolveMention,
   translateBrandName,
 } from '@/lib/creator';
-import { ApiError } from '@/lib/errors';
+import { ApiError, errorMessage } from '@/lib/errors';
 import { GEMINI_MODEL, InlineImage } from '@/lib/gemini';
 import { bypassCache } from '@/lib/request-context';
 import { fetchPageText } from '@/lib/web-page';
@@ -20,6 +20,7 @@ import {
   PROXY_TYPES,
   QlooEntity,
   QlooTag,
+  type RawEntity,
   compact,
   expansionParams,
   findTag,
@@ -54,7 +55,7 @@ const CATEGORY_TERMS: Record<string, string[]> = {
 
 // Category only breaks ties between brands that already match the name exactly
 // (e.g. two brands called "Delta"); it never picks a brand by itself.
-function categoryMatcher(category: string): (result: any) => boolean {
+function categoryMatcher(category: string): (result: RawEntity) => boolean {
   const c = category.trim().toLocaleLowerCase();
   if (!c) return () => false;
   const terms = CATEGORY_TERMS[category.trim()] || [c];
@@ -62,7 +63,7 @@ function categoryMatcher(category: string): (result: any) => boolean {
     const p = result?.properties || {};
     const haystack = JSON.stringify([
       p.industry,
-      (result?.tags || []).filter((t: any) => String(t?.type).startsWith('urn:tag:genre')).map((t: any) => t.name),
+      (result?.tags || []).filter((t) => String(t?.type).startsWith('urn:tag:genre')).map((t) => t.name),
     ]).toLocaleLowerCase();
     return terms.some((t) => haystack.includes(t));
   };
@@ -115,9 +116,9 @@ async function descriptionText(description: string, trace?: Trace): Promise<{ te
             : undefined,
         ms: Date.now() - t0,
       });
-    } catch (e: any) {
-      trace?.add({ stage: 'brand', tool: 'Brand web page', input: description, output: `Failed: ${e.message}`, ms: Date.now() - t0, ok: false });
-      return { error: `Couldn’t read that page (${noPeriod(e.message)})`, kind: 'description-unreadable' };
+    } catch (e) {
+      trace?.add({ stage: 'brand', tool: 'Brand web page', input: description, output: `Failed: ${errorMessage(e)}`, ms: Date.now() - t0, ok: false });
+      return { error: `Couldn’t read that page (${noPeriod(errorMessage(e))})`, kind: 'description-unreadable' };
     }
   }
   if (text.trim().length < 20) return { error: 'The description is too short to name anything', kind: 'description-unreadable' };
@@ -161,7 +162,7 @@ async function describedTags(description: string, trace?: Trace, max = 3): Promi
       cached: r.cached,
       ms: Date.now() - g0,
     });
-  } catch (e: any) {
+  } catch (e) {
     const error = llmFailure(e);
     trace?.add({ stage: 'brand', tool: `Gemini (${GEMINI_MODEL})`, input, output: `Failed: ${error}`, decision: 'No tag signal', ms: Date.now() - g0, ok: false });
     return { tags: [], error: `Couldn’t extract keywords (${error})` };
@@ -174,8 +175,8 @@ const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_IMAGE_BASE64 = 4_000_000; // about 3 MB of image
 
 function parseImage(raw: unknown): InlineImage | null {
-  const img = raw as any;
-  if (!img) return null;
+  if (!raw || typeof raw !== 'object') return null;
+  const img = raw as { data?: unknown; mimeType?: unknown };
   const data = String(img.data || '');
   const mimeType = String(img.mimeType || '');
   if (!IMAGE_TYPES.includes(mimeType) || !data || !/^[A-Za-z0-9+/=]+$/.test(data)) {
@@ -203,7 +204,7 @@ async function imageTags(image: InlineImage, trace?: Trace): Promise<QlooTag[]> 
       cached: r.cached,
       ms: Date.now() - g0,
     });
-  } catch (e: any) {
+  } catch (e) {
     trace?.add({ stage: 'brand', tool: `Gemini (${GEMINI_MODEL})`, input, output: `Failed: ${llmFailure(e)}`, decision: 'No image signal', ms: Date.now() - g0, ok: false });
     return [];
   }
@@ -240,7 +241,7 @@ async function describedEntities(description: string, trace?: Trace): Promise<{ 
       cached: r.cached,
       ms: Date.now() - g0,
     });
-  } catch (e: any) {
+  } catch (e) {
     const error = llmFailure(e);
     trace?.add({ stage: 'brand', tool: `Gemini (${GEMINI_MODEL})`, input, output: `Failed: ${error}`, ms: Date.now() - g0, ok: false });
     return { error: `Couldn’t extract names from the description (${error})`, kind: 'llm-unavailable' };
@@ -328,7 +329,7 @@ async function englishSuggestions(name: string, trace?: Trace): Promise<string[]
       cached: r.cached,
       ms: Date.now() - g0,
     });
-  } catch (e: any) {
+  } catch (e) {
     trace?.add({ stage: 'brand', tool: `Gemini (${GEMINI_MODEL})`, input, output: `Failed: ${llmFailure(e)}`, decision: 'No suggestion', ms: Date.now() - g0, ok: false });
     return [];
   }
@@ -394,11 +395,11 @@ export async function lookupBrand(
   if (description.length > MAX_DESCRIPTION) throw new ApiError(`Keep the description under ${MAX_DESCRIPTION} characters.`, 400);
   const image = parseImage(fallback.image);
 
-  const resolveBrand = async (q: string, prefer?: (r: any) => boolean) => {
+  const resolveBrand = async (q: string, prefer?: (r: RawEntity) => boolean) => {
     try {
       return await resolveEntity(q, ['urn:entity:brand'], prefer, trace && { trace, stage: 'brand' });
-    } catch (e: any) {
-      throw new ApiError(`Qloo lookup failed: ${e.message}`, 502);
+    } catch (e) {
+      throw new ApiError(`Qloo lookup failed: ${errorMessage(e)}`, 502);
     }
   };
   const notFound = (
@@ -570,8 +571,8 @@ export async function lookupBrand(
     (fallback.proxies === false ? [] : PROXY_TYPES).map(async (type) => {
       try {
         return await getInsights(signal, type, PROXIES_PER_TYPE, trace && { trace, stage: 'brand' }, tags, expansionParams(signal.map((e) => e.id)));
-      } catch (e: any) {
-        warnings.push(`Cultural proxy lookup failed for ${type.replace('urn:entity:', '')}: ${e.message}`);
+      } catch (e) {
+        warnings.push(`Cultural proxy lookup failed for ${type.replace('urn:entity:', '')}: ${errorMessage(e)}`);
         return [] as QlooEntity[];
       }
     })

@@ -3,11 +3,12 @@ import { MIN_PROFILE_ENTITIES, PROFILE_PER_TYPE, audienceProfiles, findCreatorPe
 import { RANKING_CONTROLS, RankingValidation, controlResult, validateRanking, weakestDimension } from '@/lib/ranking-controls';
 import { approximation, brandConfidence, lookupBrand } from '@/lib/brand';
 import { CREATOR_CATEGORIES, CreatorCategory, isCreatorCategory } from '@/lib/creator-categories';
-import { ApiError } from '@/lib/errors';
+import { ApiError, errorMessage } from '@/lib/errors';
 import type { Match } from '@/lib/match';
 import type { NoDataReason } from '@/lib/no-data';
 import { PROXY_TYPES, QlooEntity, getInsights, scoreEntities } from '@/lib/qloo';
 import { bypassCache } from '@/lib/request-context';
+import type { OnDiscoverProgress } from '@/lib/stages';
 import { AFFINITY_FLOOR, Compatibility, DIVERGENCE_MAX, INTERSECTION_MIN, PROXY_WEIGHT } from '@/lib/scoring';
 import { Trace, type TraceStep } from '@/lib/trace';
 import { YouTubeChannel, findChannel } from '@/lib/youtube-channel';
@@ -77,18 +78,22 @@ const NO_SCORE: Compatibility = { fitScore: null, confidence: null, verdict: 'in
 const PROFILE_DEADLINE_MS = 38_000;
 const CHANNEL_DEADLINE_MS = 50_000;
 
+// The key visual's base64 data, if the request carries one (lib/brand checks it properly).
+const imageData = (image: unknown): string | null =>
+  image && typeof image === 'object' && 'data' in image && image.data ? String(image.data) : null;
+
 function discoveryId(input: DiscoverInput, category: CreatorCategory): string {
   const key = JSON.stringify([
     String(input.brandName || '').trim().toLocaleLowerCase(),
     category,
     input.referenceBrands ?? null,
     input.brandDescription ?? null,
-    (input.image as any)?.data ? createHash('sha256').update(String((input.image as any).data)).digest('hex') : null,
+    imageData(input.image) ? createHash('sha256').update(imageData(input.image)!).digest('hex') : null,
   ]);
   return `discover_${createHash('sha256').update(key).digest('hex').slice(0, 12)}`;
 }
 
-export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
+export async function runDiscover(input: DiscoverInput, onProgress: OnDiscoverProgress = () => {}): Promise<Discovery> {
   const started = Date.now();
   const brandName = String(input.brandName || '').trim();
   if (!brandName) throw new ApiError('Provide a brand name.', 400);
@@ -114,6 +119,7 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
     image: input.image,
     proxies: false,
   });
+  onProgress({ stage: 'brand', finished: true });
   if (!brand.found) {
     return {
       ...base,
@@ -152,10 +158,11 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
     candidates = await getInsights(brand.signal, 'urn:entity:person', CANDIDATES, { trace, stage: 'candidates' }, brand.tags, {
       'filter.tags': category.tag,
     });
-  } catch (e: any) {
-    throw new ApiError(`Qloo candidate search failed: ${e.message}`, 502, { warnings });
+  } catch (e) {
+    throw new ApiError(`Qloo candidate search failed: ${errorMessage(e)}`, 502, { warnings });
   }
   candidates = candidates.filter((c) => !brandIds.has(c.id));
+  onProgress({ stage: 'candidates', finished: true, done: candidates.length });
   trace.add({
     stage: 'candidates',
     tool: 'Rule',
@@ -197,9 +204,10 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
   // 3. Each candidate's audience taste (lib/audience), with failed queries asked again; the
   //    controls' alongside, in parallel and without that second pass (see audienceProfiles).
   const [candidateProfiles, extraProfiles] = await Promise.all([
-    audienceProfiles(candidates, brandIds, trace, false, started + PROFILE_DEADLINE_MS),
+    audienceProfiles(candidates, brandIds, trace, false, started + PROFILE_DEADLINE_MS, (done, of) => onProgress({ stage: 'profiles', finished: false, done, of })),
     extra.length ? audienceProfiles(extra, brandIds, trace, true) : Promise.resolve([]),
   ]);
+  onProgress({ stage: 'profiles', finished: true, done: candidates.length, of: candidates.length });
   const allProfiles = [...candidateProfiles, ...extraProfiles];
   const profiles = candidateProfiles.map((p) => ({ ...p, candidate: p.person }));
   const controlProfiles = new Map(allProfiles.map((p) => [p.person.id, p]));
@@ -212,8 +220,8 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
   let affinities: Map<string, number>;
   try {
     affinities = await scoreEntities(brand.signal, all, { trace, stage: 'score' }, brand.tags);
-  } catch (e: any) {
-    throw new ApiError(`Qloo scoring request failed: ${e.message}`, 502, { warnings });
+  } catch (e) {
+    throw new ApiError(`Qloo scoring request failed: ${errorMessage(e)}`, 502, { warnings });
   }
 
   const failedScoring = trace.steps.filter((x) => x.stage === 'score' && !x.ok).length;
@@ -295,6 +303,8 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
       decision: validation.weakest.top3.join() === validation.weakest.top3Without.join() ? 'Same top 3: that dimension doesn’t decide the ranking' : 'The top 3 change without it: reported beside the ranking',
     });
 
+  onProgress({ stage: 'score', finished: true });
+
   // 7. YouTube channels for the deep dive; a creator without one keeps the Qloo score.
   // A creator whose channel isn't found in time keeps the Qloo score, without a deep dive.
   const channels = await Promise.race([
@@ -302,6 +312,7 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
     new Promise<null[]>((res) => setTimeout(() => res(candidates.map(() => null)), Math.max(0, started + CHANNEL_DEADLINE_MS - Date.now()))),
   ]);
   const channelOf = new Map(candidates.map((c, i) => [c.id, channels[i]]));
+  onProgress({ stage: 'channels', finished: true });
 
   return {
     ...base,

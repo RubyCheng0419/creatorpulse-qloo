@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
 import { withDemoFallback } from '@/lib/demo-snapshot';
-import { ApiError } from '@/lib/errors';
+import { ApiError, errorMessage } from '@/lib/errors';
 import { MatchInput, runMatch } from '@/lib/match';
 import { withRequestContext } from '@/lib/request-context';
 import type { OnStage } from '@/lib/stages';
@@ -9,9 +9,9 @@ import type { OnStage } from '@/lib/stages';
 // ~60 throttled Qloo calls on a cold cache (≈8s); leave room above the 20s target.
 export const maxDuration = 60;
 
-function errorBody(e: any): { status: number; body: Record<string, unknown> } {
+function errorBody(e: unknown): { status: number; body: Record<string, unknown> } {
   if (e instanceof ApiError) return { status: e.status, body: { error: e.message, ...e.extra } };
-  return { status: 500, body: { error: e?.message || 'Matching failed.' } };
+  return { status: 500, body: { error: errorMessage(e) || 'Matching failed.' } };
 }
 
 // { live: true } (the "Run live" button) skips every Qloo and YouTube cache read.
@@ -22,13 +22,12 @@ export async function POST(request: NextRequest) {
   const limited = rateLimit(request, 'match', 5);
   if (limited) return limited;
 
-  let body: any;
+  let input: MatchInput;
   try {
-    body = await request.json();
+    input = (await request.json()) || {};
   } catch {
     return NextResponse.json({ error: 'Invalid request: expected JSON.' }, { status: 400 });
   }
-  const input: MatchInput = body || {};
 
   // With Accept: application/x-ndjson the response streams one JSON object per line:
   // {"type":"stage","stage":...} as each step finishes, then {"type":"result"|"error",...}.

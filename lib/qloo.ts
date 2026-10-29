@@ -18,6 +18,7 @@
 
 import { bypassCache } from '@/lib/request-context';
 import type { Trace, TraceStage } from '@/lib/trace';
+import { errorMessage, caught } from '@/lib/errors';
 
 const QLOO_BASE = process.env.QLOO_BASE_URL || 'https://hackathon.api.qloo.com';
 const CACHE_MS = 60 * 60 * 1000;
@@ -37,20 +38,57 @@ export interface QlooEntity {
   description?: string; // Qloo's short description, when insights returns one (people do)
 }
 
+// Qloo's JSON as far as this app reads it. Any field can be missing, and endpoints differ:
+// /search tags carry "tag_id" and /v2/insights tags "id"; /search and /entities answer
+// results as a list, /v2/insights as { entities }, /v2/tags as { tags }, compare as { tags, a, b }.
+export interface RawTag {
+  id?: string;
+  tag_id?: string;
+  name?: string;
+  type?: string;
+  parents?: { type?: string }[];
+  query?: { score?: number; count?: string | number };
+}
+export interface RawEntity {
+  entity_id?: string;
+  name?: string;
+  popularity?: number;
+  disambiguation?: string;
+  types?: string[] | string;
+  tags?: RawTag[];
+  properties?: {
+    akas?: { value?: string }[];
+    short_description?: string;
+    short_descriptions?: { value?: string; language?: string }[];
+    external?: Record<string, { id?: string } | undefined>;
+    industry?: unknown;
+  };
+  query?: { affinity?: number; explainability?: Record<string, { entity_id?: string; score?: number }[]> };
+}
+export interface QlooJson {
+  results?: RawEntity[] | { entities?: RawEntity[]; tags?: RawTag[]; a?: RawTag[]; b?: RawTag[] };
+  errors?: { message?: string }[];
+  message?: string;
+}
+// A result with the two fields every use needs.
+export type Named = RawEntity & { entity_id: string; name: string };
+const resultList = (d: QlooJson): RawEntity[] => (Array.isArray(d.results) ? d.results : []);
+const resultFields = (d: QlooJson) => (d.results && !Array.isArray(d.results) ? d.results : {});
+
 // /search has properties.short_description; /v2/insights has short_descriptions
 // [{ value, language }] in many languages, in no fixed order. English only; none otherwise.
-function shortDescription(x: any): string | undefined {
+function shortDescription(x: RawEntity): string | undefined {
   const p = x?.properties || {};
-  const d = p.short_description || p.short_descriptions?.find((s: any) => s?.language === 'en')?.value;
+  const d = p.short_description || p.short_descriptions?.find((s) => s?.language === 'en')?.value;
   return typeof d === 'string' && d ? d : undefined;
 }
 
 // /search tags carry "tag_id", /v2/insights tags carry "id".
-function genresOf(result: any): string[] {
+function genresOf(result: RawEntity): string[] {
   return (result?.tags || [])
-    .map((t: any) => String(t?.tag_id || t?.id || ''))
-    .filter((id: string) => id.startsWith('urn:tag:genre:'))
-    .map((id: string) => id.slice('urn:tag:genre:'.length));
+    .map((t) => String(t?.tag_id || t?.id || ''))
+    .filter((id) => id.startsWith('urn:tag:genre:'))
+    .map((id) => id.slice('urn:tag:genre:'.length));
 }
 
 // Local businesses dominate fuzzy matches for product names, so places are excluded.
@@ -77,7 +115,7 @@ export const PROXY_TYPES = [
   'urn:entity:place',
 ];
 
-const responseCache = new Map<string, { at: number; data: any }>();
+const responseCache = new Map<string, { at: number; data: QlooJson }>();
 let nextSlot = 0;
 
 // Spaces out request starts across all concurrent callers in this process.
@@ -93,7 +131,7 @@ const attemptsLabel = (seen: string[], end?: string) =>
   seen.join(' → ') + (end ? ` (${end})` : seen.length > 1 ? ' (retried)' : '');
 
 // Returns the data and how it was obtained; a thrown error carries `http` the same way.
-export async function qlooFetch(url: string): Promise<{ data: any; http: string }> {
+export async function qlooFetch(url: string): Promise<{ data: QlooJson; http: string }> {
   const key = process.env.QLOO_API_KEY;
   if (!key) throw Error('QLOO_API_KEY is not set. Check .env.local.');
 
@@ -107,9 +145,9 @@ export async function qlooFetch(url: string): Promise<{ data: any; http: string 
         signal: AbortSignal.timeout(15000),
       });
       seen.push(String(r.status));
-      const d: any = await r.json().catch(() => ({}));
+      const d: QlooJson = await r.json().catch(() => ({}));
       if (r.ok) return { data: d, http: attemptsLabel(seen) };
-      const detail = d?.errors?.map((x: any) => x.message).join('; ') || d?.message || `Qloo returned ${r.status}`;
+      const detail = d?.errors?.map((x) => x.message).join('; ') || d?.message || `Qloo returned ${r.status}`;
       const retryable = r.status === 429 || r.status >= 500;
       if (!retryable || attempt > 0) {
         const http = attemptsLabel(seen, retryable ? 'gave up after retry' : 'not retried');
@@ -119,10 +157,11 @@ export async function qlooFetch(url: string): Promise<{ data: any; http: string 
         const reset = Number(r.headers.get('x-second-ratelimit-reset')) || 1;
         await new Promise((res) => setTimeout(res, reset * 1000));
       }
-    } catch (e: any) {
-      if (e.final) throw e;
-      seen.push(/timeout|abort/i.test(`${e?.name} ${e?.message}`) ? 'timeout' : 'network error');
-      if (attempt > 0) throw Object.assign(e, { http: attemptsLabel(seen, 'gave up after retry') });
+    } catch (e) {
+      const err = caught(e);
+      if (err.final) throw e;
+      seen.push(/timeout|abort/i.test(`${err.name} ${err.message}`) ? 'timeout' : 'network error');
+      if (attempt > 0) throw Object.assign(e instanceof Error ? e : Error(errorMessage(e)), { http: attemptsLabel(seen, 'gave up after retry') });
       // A dropped connection retried at once mostly fails again (seen in the Agent Trace).
       await new Promise((res) => setTimeout(res, 750));
     }
@@ -142,10 +181,10 @@ export function compact(s: string): string {
 // Containment is deliberately not accepted: it matched "flying" to Flying Lotus.
 // Aliases still cover "Apple" → Apple Inc. Chinese names are unreliable: "蘋果" and
 // "耐吉" are not in the aliases and "華碩" returns unrelated brands, so use English names.
-export function namesMatch(query: string, result: any): boolean {
+export function namesMatch(query: string, result: RawEntity): boolean {
   const q = compact(query);
   if (!q) return false;
-  const names = [result?.name, ...(result?.properties?.akas || []).map((a: any) => a?.value)];
+  const names = [result?.name, ...(result?.properties?.akas || []).map((a) => a?.value)];
   return names.some((n) => typeof n === 'string' && compact(n) === q);
 }
 
@@ -165,20 +204,20 @@ async function insightsGet(
   signal: QlooEntity[],
   tags: QlooTag[],
   ctx?: TraceCtx
-): Promise<{ data: any; cached: boolean; http: string; tags: QlooTag[] }> {
+): Promise<{ data: QlooJson; cached: boolean; http: string; tags: QlooTag[] }> {
   const entities = { 'signal.interests.entities': signal.map((e) => e.id).join(',') };
   if (tags.length) {
     try {
       return { ...(await cachedGet('/v2/insights', { ...params, ...entities, 'signal.interests.tags': tags.map((t) => t.id).join(',') })), tags };
-    } catch (e: any) {
-      if (e?.status !== 400) throw e;
+    } catch (e) {
+      if (caught(e).status !== 400) throw e;
       ctx?.trace.add({
         stage: ctx.stage,
         tool: 'Rule',
         input: `Tag signal for type ${params['filter.type'].replace('urn:entity:', '')}`,
-        output: `Qloo rejected it: ${e.message}`,
+        output: `Qloo rejected it: ${errorMessage(e)}`,
         decision: 'Skip the tag signal for this type; use the entities alone',
-        http: e.http,
+        http: caught(e).http,
       });
     }
   }
@@ -200,18 +239,18 @@ export async function findTag(keyword: string, ctx?: TraceCtx, forType?: string)
   const { data, cached, http } = await failTraced(ctx, 'Qloo /v2/tags', `“${keyword}”`, () =>
     cachedGet('/v2/tags', { 'filter.query': keyword, take: '20' })
   );
-  const all = (data?.results?.tags || []).filter((t: any) => t?.id && t?.name);
-  const kind = (t: any) => String(t.id).split(':')[2];
-  const forIt = (t: any) => (forType && (t.parents || []).some((p: any) => p?.type === forType) ? 0 : 1);
+  const all = (resultFields(data).tags || []).filter((t): t is RawTag & { id: string; name: string } => Boolean(t?.id && t?.name));
+  const kind = (t: { id: string }) => String(t.id).split(':')[2];
+  const forIt = (t: RawTag) => (forType && (t.parents || []).some((p) => p?.type === forType) ? 0 : 1);
   // Genre tags belong to one domain: "cute" is also urn:tag:genre:music:cute, a kind of
   // music, not a look. With `forType`, only that type's genres count; keyword, theme, style
   // and subgenre tags are Qloo's own cross-domain vocabulary.
   const exact = all.filter(
-    (t: any) =>
+    (t) =>
       compact(t.name) === compact(keyword) && TASTE_TAG_KINDS.includes(kind(t)) && (kind(t) !== 'genre' || !forType || forIt(t) === 0)
   );
   const best = [...exact].sort(
-    (a: any, b: any) => forIt(a) - forIt(b) || TASTE_TAG_KINDS.indexOf(kind(a)) - TASTE_TAG_KINDS.indexOf(kind(b))
+    (a, b) => forIt(a) - forIt(b) || TASTE_TAG_KINDS.indexOf(kind(a)) - TASTE_TAG_KINDS.indexOf(kind(b))
   )[0];
   // "genre:music" rather than "genre", so a rejected genre shows which domain it belongs to.
   const label = (t: { id: string }) => (kind(t) === 'genre' ? String(t.id).split(':').slice(2, 4).join(':') : kind(t));
@@ -222,7 +261,7 @@ export async function findTag(keyword: string, ctx?: TraceCtx, forType?: string)
     output: best
       ? `${best.name} (${best.id}), exact name match`
       : all.length
-        ? `${all.length} tags, no taste tag named “${keyword}”: ${all.slice(0, 3).map((t: any) => `${t.name} (${label(t)})`).join(', ')}`
+        ? `${all.length} tags, no taste tag named “${keyword}”: ${all.slice(0, 3).map((t) => `${t.name} (${label(t)})`).join(', ')}`
         : 'No tags',
     decision: best ? 'Accepted as tag signal' : 'Rejected: no exact taste-tag match, not used',
     cached,
@@ -249,7 +288,7 @@ export interface TraceCtx {
 const typeLabel = (types: string[]) => types.map((t) => t.replace('urn:entity:', '')).join('/');
 const fmt = (a: number) => a.toFixed(2);
 
-async function cachedGet(path: string, params: Record<string, string>): Promise<{ data: any; cached: boolean; http: string }> {
+async function cachedGet(path: string, params: Record<string, string>): Promise<{ data: QlooJson; cached: boolean; http: string }> {
   const u = new URL(path, QLOO_BASE);
   for (const [k, v] of Object.entries(params)) if (v !== '') u.searchParams.set(k, v);
   const url = u.toString();
@@ -266,17 +305,17 @@ async function failTraced<T>(ctx: TraceCtx | undefined, tool: string, input: str
   const t0 = Date.now();
   try {
     return await run();
-  } catch (e: any) {
+  } catch (e) {
     ctx?.trace.add({
       stage: ctx.stage,
       tool,
       input,
-      output: `Failed: ${e?.message || e}`,
+      output: `Failed: ${errorMessage(e)}`,
       decision:
-        e?.status === 400
+        caught(e).status === 400
           ? 'Qloo rejected this query; not retried, since the same query gets the same answer'
           : 'Query failed; this is missing data, not an empty result',
-      http: e?.http || 'no response',
+      http: caught(e).http || 'no response',
       ms: Date.now() - t0,
       ok: false,
     });
@@ -284,14 +323,14 @@ async function failTraced<T>(ctx: TraceCtx | undefined, tool: string, input: str
   }
 }
 
-async function search(query: string, types: string[], take: number): Promise<{ results: any[]; cached: boolean; http: string }> {
+async function search(query: string, types: string[], take: number): Promise<{ results: RawEntity[]; cached: boolean; http: string }> {
   const { data, cached, http } = await cachedGet('/search', { query, take: String(take), types: types.join(',') });
-  return { results: Array.isArray(data.results) ? data.results : [], cached, http };
+  return { results: resultList(data), cached, http };
 }
 
 // Raw /search results. With a trace, the call is recorded with its HTTP attempts (a failure
 // through failTraced, then passed on for the caller to skip), like every other Qloo call.
-export async function searchEntities(query: string, types: string[] = TASTE_TYPES, take = 5, ctx?: TraceCtx, why = ''): Promise<any[]> {
+export async function searchEntities(query: string, types: string[] = TASTE_TYPES, take = 5, ctx?: TraceCtx, why = ''): Promise<RawEntity[]> {
   const t0 = Date.now();
   const input = `“${query}” among ${typeLabel(types)}${why ? ` (${why})` : ''}`;
   const { results, cached, http } = await failTraced(ctx, 'Qloo /search', input, () => search(query, types, take));
@@ -313,14 +352,14 @@ export async function searchEntities(query: string, types: string[] = TASTE_TYPE
 export async function resolveEntity(
   query: string,
   types: string[] = TASTE_TYPES,
-  prefer: (result: any) => boolean = () => false,
+  prefer: (result: RawEntity) => boolean = () => false,
   ctx?: TraceCtx
 ): Promise<QlooEntity | null> {
   const t0 = Date.now();
   const input = `“${query}” among ${typeLabel(types)}`;
   const { results, cached, http } = await failTraced(ctx, 'Qloo /search', input, () => search(query, types, 5));
   const matches = results
-    .filter((x) => x.entity_id && x.name && namesMatch(query, x))
+    .filter((x): x is Named => Boolean(x.entity_id && x.name && namesMatch(query, x)))
     .sort((a, b) => Number(prefer(b)) - Number(prefer(a)) || (b.popularity ?? 0) - (a.popularity ?? 0));
   const best = matches[0];
 
@@ -370,19 +409,6 @@ export async function resolveEntity(
 // record), and its popularity replaces the search result's. If the call fails, the /search
 // matches stand and the trace says they are unverified: missing data, not a mismatch.
 // The parts of Qloo's raw JSON that the functions below read.
-interface RawEntity {
-  entity_id?: string;
-  name?: string;
-  popularity?: number;
-  properties?: { akas?: { value?: string }[] };
-  query?: { affinity?: number; explainability?: Record<string, { entity_id?: string; score?: number }[]> };
-}
-interface RawTag {
-  tag_id?: string;
-  name?: string;
-  query?: { score?: number; count?: string | number };
-}
-
 // The term Qloo matched: "甄嬛傳 → Empresses in the Palace" (an English name) and
 // "Dell → Dell Inc" (a retry) were matched by the part after the last arrow.
 const searchedTerm = (query: string) => query.split(' → ').pop()!;
@@ -399,7 +425,7 @@ export async function verifyEntities(entities: QlooEntity[], ctx?: TraceCtx): Pr
     ctx?.trace.add({ stage: ctx.stage, tool: 'Rule', input, output: 'GET /entities failed', decision: 'Keep the /search matches, unverified' });
     return { kept: entities, dropped: [] };
   }
-  const results: RawEntity[] = Array.isArray(got.data?.results) ? got.data.results : [];
+  const results = resultList(got.data);
   const byId = new Map(results.filter((x) => x?.entity_id).map((x) => [x.entity_id!, x]));
   const kept: QlooEntity[] = [];
   const dropped: QlooEntity[] = [];
@@ -479,7 +505,7 @@ export async function compareTags(a: QlooEntity[], b: QlooEntity[], ctx?: TraceC
       'b.signal.interests.entities': b.map((e) => e.id).join(','),
     })
   );
-  const r: { tags?: RawTag[]; a?: RawTag[]; b?: RawTag[] } = data?.results || {};
+  const r = resultFields(data);
   const tagOf = (x: RawTag) => ({ id: String(x.tag_id || ''), name: String(x.name || '') });
   const shared = (r.tags || [])
     .filter((x) => x?.tag_id && typeof x.query?.score === 'number')
@@ -529,9 +555,9 @@ export async function getInsights(
       .slice(0, 3);
     return names.length ? names.join(', ') : via;
   };
-  const entities: QlooEntity[] = (data?.results?.entities || [])
-    .filter((x: any) => x.entity_id && x.name)
-    .map((x: any) => ({
+  const entities: QlooEntity[] = (resultFields(data).entities || [])
+    .filter((x): x is Named => Boolean(x.entity_id && x.name))
+    .map((x) => ({
       id: x.entity_id,
       name: x.name,
       type,
@@ -603,10 +629,10 @@ export async function scoreEntities(
         insightsGet({ 'filter.type': type, 'filter.results.entities': ids.join(','), take: String(ids.length) }, signal, tags, ctx)
       );
       const scored: { name: string; a: number }[] = [];
-      for (const x of data?.results?.entities || []) {
+      for (const x of resultFields(data).entities || []) {
         if (x.entity_id && typeof x.query?.affinity === 'number') {
           scores.set(x.entity_id, x.query.affinity);
-          scored.push({ name: x.name, a: x.query.affinity });
+          scored.push({ name: x.name ?? x.entity_id, a: x.query.affinity });
         }
       }
       scored.sort((a, b) => b.a - a.a);
@@ -620,8 +646,8 @@ export async function scoreEntities(
         http,
         ms: Date.now() - t0,
       });
-      } catch (e: any) {
-        failures.push(e); // already in the trace (failTraced), with its HTTP attempts
+      } catch (e) {
+        failures.push(e instanceof Error ? e : Error(errorMessage(e))); // already in the trace (failTraced), with its HTTP attempts
       }
     })
   );

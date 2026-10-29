@@ -8,7 +8,9 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { Tour } from '@/components/Tour';
 import { DISCOVER_TOUR } from '@/components/tours';
 import { CandidateCard } from '@/components/discover/CandidateCard';
+import { RankingHeadline } from '@/components/discover/RankingHeadline';
 import { RankingOverview } from '@/components/discover/RankingOverview';
+import { DiscoverProgressPanel } from '@/components/discover/DiscoverProgressPanel';
 import { RankingValidationNote } from '@/components/discover/RankingValidationNote';
 import { AgentTrace } from '@/components/match/AgentTrace';
 import { Button } from '@/components/ui/button';
@@ -16,12 +18,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { CREATOR_CATEGORIES, type CreatorCategory } from '@/lib/creator-categories';
 import type { Discovery } from '@/lib/discover';
+import { requestDiscover } from '@/lib/discover-client';
 import { creatorPageHref, getDiscovery, saveDiscovery } from '@/lib/discoveries';
 import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
 import { type ProjectInputs, addRun, createProject, getProject, updateInputs, useProjects } from '@/lib/projects';
 import { brandBasisNote } from '@/lib/report';
 import { discoverShareLink } from '@/lib/share-link';
+import type { DiscoverProgress } from '@/lib/stages';
 import { candidateUnverified } from '@/lib/unverified';
+import { errorMessage } from '@/lib/errors';
 
 // "Find creators": the brand goes in, Qloo's YouTubers come out ranked by how their
 // audience's taste relates to the brand's. Each one links to the video deep dive on "/".
@@ -41,8 +46,6 @@ const DEMOS: { brandName: string; note: string }[] = [
   { brandName: 'Huggies', note: 'A family brand' },
   { brandName: 'Le Labo Fragrances', note: 'A niche fragrance brand' },
 ];
-
-const STEPS = ['Resolving the brand in Qloo', 'Finding candidate YouTubers', 'Reading each creator’s audience taste', 'Scoring and ranking'];
 
 // Key visuals are scaled down in the browser (longest side 1024 px, JPEG) before upload.
 async function loadImage(file: File): Promise<Image> {
@@ -131,6 +134,8 @@ function DiscoverPage() {
   const [imageError, setImageError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [progress, setProgress] = useState<DiscoverProgress[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
   const [result, setResult] = useState<Discovery | null>(stored);
   const [error, setError] = useState<string | null>(null);
   const [last, setLast] = useState<Request | null>((stored?.request as Request | undefined) ?? null); // the request behind the result
@@ -200,23 +205,35 @@ function DiscoverPage() {
     setLast(req);
     setRunning(true);
     setElapsed(0);
+    setProgress([]);
     setError(null);
     setResult(null);
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      const r = await fetch('/api/discover', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(req) });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) setError(d.error || `Server returned ${r.status}`);
+      const outcome = await requestDiscover(req, (p) => setProgress((list) => [...list, p]), controller.signal);
+      if (!outcome.ok) setError(outcome.error);
       else {
+        const d = outcome.discovery;
         setResult(d);
         if (d.status === 'completed') saveDiscovery(d, shareable(req));
         if (d.status !== 'completed' && !d.brand?.basis) setMoreOpen(true); // the brand side needs help
         if (project) addRun(project.id, d, brandBasisNote(d.brand));
       }
-    } catch (e: any) {
-      setError(`Connection failed: ${e?.message || e}`);
+    } catch (e) {
+      if (!controller.signal.aborted) setError(`Connection failed: ${e instanceof Error ? e.message : e}`);
     } finally {
-      setRunning(false);
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setRunning(false);
+      }
     }
+  }
+
+  function cancel() {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setRunning(false);
   }
 
   function runDemo(name: string) {
@@ -409,9 +426,9 @@ function DiscoverPage() {
                       if (!f) return setImage(null);
                       try {
                         setImage(await loadImage(f));
-                      } catch (err: any) {
+                      } catch (err) {
                         setImage(null);
-                        setImageError(err.message);
+                        setImageError(errorMessage(err));
                       }
                     }}
                   />
@@ -449,17 +466,7 @@ function DiscoverPage() {
           </aside>
         </div>
 
-        {running && (
-          <section className="mt-6 rounded-xl border border-slate-200 bg-white p-4 sm:p-6" aria-live="polite">
-            <h2 className="text-lg font-semibold text-slate-900">Finding creators for {last?.brandName}</h2>
-            <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-600">
-              {STEPS.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ol>
-            <p className="mt-3 text-sm tabular-nums text-slate-500">{elapsed}s elapsed (usually about 20 seconds)</p>
-          </section>
-        )}
+        {running && <DiscoverProgressPanel brandName={last?.brandName ?? brandName} progress={progress} elapsed={elapsed} onCancel={cancel} />}
 
         {error && (
           <p role="alert" className="mt-6 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
@@ -496,6 +503,7 @@ function DiscoverPage() {
 
             {result.status === 'completed' ? (
               <>
+                <RankingHeadline result={result} />
                 {result.validation && <RankingValidationNote v={result.validation} />}
                 <RankingOverview
                   candidates={result.candidates}

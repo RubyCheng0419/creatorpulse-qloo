@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { ApiError } from '@/lib/errors';
+import { ApiError, errorMessage, caught } from '@/lib/errors';
 import { GEMINI_MODEL, InlineImage, geminiJson, hasGemini } from '@/lib/gemini';
 import { GROQ_MODEL, groqJson, hasGroq } from '@/lib/groq';
-import { QlooEntity, TraceCtx, compact, resolveEntity, searchEntities } from '@/lib/qloo';
+import { type Named, QlooEntity, type RawEntity, TraceCtx, compact, resolveEntity, searchEntities } from '@/lib/qloo';
 import { bypassCache } from '@/lib/request-context';
 import type { Trace } from '@/lib/trace';
 import type { OnStage } from '@/lib/stages';
@@ -14,9 +14,32 @@ import { CHANNEL_VIDEOS, ChannelRef, MAX_VIDEOS, channelLabel, parseChannelRef, 
 const YT_BASE = 'https://www.googleapis.com/youtube/v3';
 const VIDEO_CACHE_MS = 24 * 60 * 60 * 1000;
 
-const videoCache = new Map<string, { at: number; item: any }>();
+// YouTube Data API JSON as far as this app reads it (videos, channels and playlistItems
+// lists); any field can be missing.
+export interface YouTubeItem {
+  id?: string;
+  snippet?: {
+    title?: string;
+    description?: string;
+    tags?: string[];
+    channelId?: string;
+    channelTitle?: string;
+    customUrl?: string;
+    publishedAt?: string;
+    categoryId?: string;
+  };
+  statistics?: { viewCount?: string; subscriberCount?: string; hiddenSubscriberCount?: boolean };
+  contentDetails?: { videoId?: string; relatedPlaylists?: { uploads?: string } };
+}
+export type YouTubeItemWithId = YouTubeItem & { id: string };
+export interface YouTubeList {
+  items?: YouTubeItem[];
+  error?: { message?: string; errors?: { reason?: string }[] };
+}
 
-export async function youtube(path: string, params: Record<string, string>, key: string): Promise<any> {
+const videoCache = new Map<string, { at: number; item: YouTubeItemWithId }>();
+
+export async function youtube(path: string, params: Record<string, string>, key: string): Promise<YouTubeList> {
   const u = new URL(`${YT_BASE}/${path}`);
   for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
   u.searchParams.set('key', key);
@@ -25,7 +48,7 @@ export async function youtube(path: string, params: Record<string, string>, key:
   for (let attempt = 0; ; attempt++) {
     try {
       const r = await fetch(u, { signal: AbortSignal.timeout(10000) });
-      const d: any = await r.json().catch(() => ({}));
+      const d: YouTubeList = await r.json().catch(() => ({}));
       if (r.ok) return d;
       const reason = d?.error?.errors?.[0]?.reason;
       if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') {
@@ -90,15 +113,16 @@ Rules:
 const MENTION_PROMPT = mentionPrompt('YouTube video metadata', 'video formats and the channel itself');
 const BRAND_MENTION_PROMPT = mentionPrompt('a brand’s own description or website text', 'slogans, product categories and the brand itself');
 
-function llmError(e: any, llm: string): string {
-  const msg = String(e?.message || e);
-  if (e?.status === 429 || /quota|RESOURCE_EXHAUSTED|rate limit/i.test(msg)) return `${llm}’s request quota is used up for now`;
-  if (e?.status === 503) return `${llm} is overloaded right now`;
+function llmError(e: unknown, llm: string): string {
+  const msg = errorMessage(e);
+  const { status } = caught(e);
+  if (status === 429 || /quota|RESOURCE_EXHAUSTED|rate limit/i.test(msg)) return `${llm}’s request quota is used up for now`;
+  if (status === 503) return `${llm} is overloaded right now`;
   if (/abort|timeout/i.test(msg)) return `${llm} did not answer in time`;
   return msg.length > 160 ? `${msg.slice(0, 160)}…` : msg;
 }
 
-export const geminiError = (e: any) => llmError(e, 'Gemini');
+export const geminiError = (e: unknown) => llmError(e, 'Gemini');
 
 // LLM answers are cached for 24 hours per set of videos (or per brand description), so
 // repeating a match (or the demo) doesn't spend the Gemini or Groq quota again. Only
@@ -154,12 +178,9 @@ export class ExtractionFailed extends Error {
 // Over quota, overloaded or too slow: another model can answer these. The status is
 // checked first; the message covers errors that arrive without one ("RESOURCE_EXHAUSTED",
 // "UNAVAILABLE", an aborted request). Bad requests and other errors would fail on Groq too.
-function quotaOrOverload(e: any): boolean {
-  return (
-    e?.status === 429 ||
-    e?.status === 503 ||
-    /quota|RESOURCE_EXHAUSTED|UNAVAILABLE|overloaded|abort|timeout|timed out/i.test(`${e?.name || ''} ${e?.message || ''}`)
-  );
+function quotaOrOverload(e: unknown): boolean {
+  const { status, name, message } = caught(e);
+  return status === 429 || status === 503 || /quota|RESOURCE_EXHAUSTED|UNAVAILABLE|overloaded|abort|timeout|timed out/i.test(`${name || ''} ${message || ''}`);
 }
 
 // Gemini first. Only when it is over quota (429), overloaded (503) or doesn't answer in time
@@ -170,7 +191,7 @@ async function withFallback<T>(ask: (json: JsonCall) => Promise<T>): Promise<Llm
   if (hasGemini()) {
     try {
       return { value: await ask(geminiJson), llm: 'gemini', model: GEMINI_MODEL };
-    } catch (e: any) {
+    } catch (e) {
       geminiFailure = geminiError(e);
       if (!quotaOrOverload(e)) throw new ExtractionFailed(geminiFailure, undefined, 'only quota, overload and timeout errors fall back');
       if (!hasGroq()) throw new ExtractionFailed(geminiFailure, undefined, 'GROQ_API_KEY is not set');
@@ -181,13 +202,13 @@ async function withFallback<T>(ask: (json: JsonCall) => Promise<T>): Promise<Llm
   }
   try {
     return { value: await ask(groqJson), llm: 'groq', model: GROQ_MODEL, geminiFailure };
-  } catch (e: any) {
+  } catch (e) {
     throw new ExtractionFailed(geminiFailure, llmError(e, 'Groq'));
   }
 }
 
 // A readable reason for any LLM failure, with or without the fallback.
-export const llmFailure = (e: any) => (e instanceof ExtractionFailed ? e.message : geminiError(e));
+export const llmFailure = (e: unknown) => (e instanceof ExtractionFailed ? e.message : geminiError(e));
 
 // name: as the text writes it; english: its English name, when the LLM gave a different one.
 export type Mention = { name: string; english?: string; kind: string };
@@ -249,7 +270,7 @@ export function cleanDescription(description: string, seen: Set<string>, maxChar
 
 // Titles and tags first: they name the most per token. The descriptions share what is left
 // of the budget, a short one leaving its unused share to the longer ones.
-export function videoPrompt(videos: any[]): { text: string; tokens: number; rawTokens: number } {
+export function videoPrompt(videos: YouTubeItem[]): { text: string; tokens: number; rawTokens: number } {
   // Up to MAX_VIDEOS videos get 1,500 description characters each, as always; a channel's
   // longer list gets less per video.
   const perVideo = videos.length > MAX_VIDEOS ? 600 : 1500;
@@ -519,13 +540,13 @@ async function retryUnmatched(
   // Candidates come from the same cached /search the first attempt made: no extra Qloo calls.
   // A name with an English name is asked about under that one: Qloo's results for 甄嬛傳
   // are unrelated, its results for Empresses in the Palace are not.
-  const pending: { row: (typeof resolved)[number]; term: string; types: string[]; candidates: any[] }[] = [];
+  const pending: { row: (typeof resolved)[number]; term: string; types: string[]; candidates: Named[] }[] = [];
   for (const row of resolved) {
     if (row.entity || row.error) continue;
     const q = queries.find((x) => x.keyword === row.keyword)!;
     const term = englishTerm(q) || row.keyword;
-    const found = await searchEntities(term, q.types, 5, trace && { trace, stage: 'creator' }, 'candidates for the retry decision').catch(() => []);
-    const candidates = found.filter((x) => x.entity_id && x.name).slice(0, 5);
+    const found: RawEntity[] = await searchEntities(term, q.types, 5, trace && { trace, stage: 'creator' }, 'candidates for the retry decision').catch(() => []);
+    const candidates = found.filter((x): x is Named => Boolean(x.entity_id && x.name)).slice(0, 5);
     if (candidates.length) pending.push({ row, term, types: q.types, candidates });
   }
   if (!pending.length) return;
@@ -559,7 +580,7 @@ async function retryUnmatched(
     tool = `${r.value.llm === 'groq' ? 'Groq' : 'Gemini'} retry decision (${r.value.model})`;
     retryCached = r.cached;
     retryAt = r.at;
-  } catch (e: any) {
+  } catch (e) {
     trace?.add({ stage: 'creator', tool, input, output: `Failed: ${llmFailure(e)}`, decision: 'Keep the first-pass result', ms: Date.now() - g0, ok: false });
     return;
   }
@@ -569,7 +590,7 @@ async function retryUnmatched(
     const candidate = d && d.choice >= 0 ? p.candidates[d.choice] : undefined;
     return { ...p, candidate, reason: d?.reason || 'no answer' };
   });
-  const chosen = picks.filter((p) => p.candidate);
+  const chosen = picks.filter((p): p is (typeof picks)[number] & { candidate: Named } => Boolean(p.candidate));
   trace?.add({
     stage: 'creator',
     tool,
@@ -662,7 +683,7 @@ async function latestUploads(ref: ChannelRef, key: string, trace?: Trace): Promi
     throw new ApiError(`YouTube has no channel ${channelLabel(ref)}.`, 422);
   }
   const list = await youtube('playlistItems', { part: 'contentDetails', playlistId: uploads, maxResults: String(CHANNEL_VIDEOS) }, key);
-  const ids: string[] = (list.items || []).map((x: any) => x.contentDetails?.videoId).filter(Boolean);
+  const ids = (list.items || []).map((x) => x.contentDetails?.videoId).filter((id): id is string => Boolean(id));
   trace?.add({
     stage: 'youtube',
     tool: 'YouTube channels.list + playlistItems.list',
@@ -697,7 +718,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
 
   // 1. videos.list (1 quota unit per call; never search.list, which costs 100).
   const t0 = Date.now();
-  const items = new Map<string, any>();
+  const items = new Map<string, YouTubeItemWithId>();
   const missing = videoIds.filter((id) => {
     const hit = bypassCache() ? undefined : videoCache.get(id);
     if (hit && Date.now() - hit.at < VIDEO_CACHE_MS) {
@@ -710,8 +731,10 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
     // statistics for the view count shown in Sources; videos.list costs 1 quota unit either way.
     const d = await youtube('videos', { part: 'snippet,statistics', id: missing.join(',') }, YOUTUBE_API_KEY);
     for (const item of d.items || []) {
-      items.set(item.id, item);
-      videoCache.set(item.id, { at: Date.now(), item });
+      if (!item.id) continue;
+      const video = { ...item, id: item.id };
+      items.set(video.id, video);
+      videoCache.set(video.id, { at: Date.now(), item: video });
     }
   }
 
@@ -719,7 +742,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
   videoIds.forEach((id, i) => {
     if (!items.has(id)) warnings.push(`Video ${i + 1} (${id}) could not be read (private, deleted or region-blocked) and was skipped.`);
   });
-  const videos = videoIds.filter((id) => items.has(id)).map((id) => items.get(id));
+  const videos = videoIds.filter((id) => items.has(id)).map((id) => items.get(id)!);
   const skipped = videoIds.length - videos.length;
   trace?.add({
     stage: 'youtube',
@@ -739,12 +762,12 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
         { stage: 'youtube', tool: 'YouTube channels.list', input: `${channelIds.length} channel ID${channelIds.length === 1 ? '' : 's'}` },
         () => youtube('channels', { part: 'snippet', id: channelIds.join(',') }, YOUTUBE_API_KEY),
         (d) => ({
-          output: (d.items || []).map((c: any) => `${c.snippet?.title} (${c.snippet?.customUrl || c.id})`).join(', '),
+          output: (d.items || []).map((c) => `${c.snippet?.title} (${c.snippet?.customUrl || c.id})`).join(', '),
           cached: false, // channels.list is not cached
         })
       )
     : youtube('channels', { part: 'snippet', id: channelIds.join(',') }, YOUTUBE_API_KEY));
-  const channels = (ch.items || []).map((c: any) => ({
+  const channels = (ch.items || []).filter((c): c is YouTubeItemWithId => Boolean(c.id)).map((c) => ({
     channelId: c.id,
     title: c.snippet?.title || '',
     handle: c.snippet?.customUrl || '',
@@ -790,7 +813,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
       }
       // The prompt asks Gemini to skip these, but it doesn't always: the channel's own
       // name and YouTube itself say nothing about the audience's taste.
-      const skip = new Set(['youtube', ...channels.flatMap((c: any) => [c.title, c.handle.replace(/^@/, '')])].map((x) => x.toLocaleLowerCase()));
+      const skip = new Set(['youtube', ...channels.flatMap((c) => [c.title, c.handle.replace(/^@/, '')])].map((x) => x.toLocaleLowerCase()));
       const skipped = (m: Mention) => skip.has(m.name.toLocaleLowerCase()) || Boolean(m.english && skip.has(m.english.toLocaleLowerCase()));
       const dropped = mentions.filter(skipped).map((m) => m.name);
       skippedNames = dropped;
@@ -813,7 +836,7 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
         cached: r.cached,
         ms: Date.now() - g0,
       });
-    } catch (e: any) {
+    } catch (e) {
       const failed = e instanceof ExtractionFailed ? e : new ExtractionFailed(geminiError(e), undefined);
       extractionError = failed.message;
       const input = `Titles, tags and descriptions of ${videos.length} videos ${promptNote}`;
@@ -858,17 +881,17 @@ export async function getCreatorTaste(rawUrls: unknown, onStage?: OnStage, trace
     queries.map(async ({ keyword: k, english, kind }) => {
       try {
         return { keyword: k, entity: await resolveMention({ name: k, english, kind }, trace && { trace, stage: 'creator' }) };
-      } catch (e: any) {
+      } catch (e) {
         trace?.add({
           stage: 'creator',
           tool: 'Qloo /search',
           input: `“${k}”`,
-          output: `Failed: ${e.message}`,
+          output: `Failed: ${errorMessage(e)}`,
           decision: 'Skip this name: missing data, not a confirmed non-match',
-          http: e?.http || 'no response',
+          http: caught(e).http || 'no response',
           ok: false,
         });
-        return { keyword: k, entity: null, error: e.message as string, http: e?.http || 'no response' };
+        return { keyword: k, entity: null, error: errorMessage(e), http: caught(e).http || 'no response' };
       }
     })
   );

@@ -80,7 +80,16 @@ function pageText(html: string): string {
 const NINETYONE_API = 'https://fts-api.91app.com/pythia-cdn/graphql';
 const SHOP_PRODUCTS = 40;
 
-async function getJson(url: string): Promise<any> {
+// Only the fields read below; the shop's own JSON, so every one may be missing.
+interface ShopJson {
+  data?: {
+    shopCategoryList?: { categoryList?: { id: number; name: string }[] };
+    shopCategory?: { salePageList?: { salePageList?: { title?: unknown }[] } };
+  };
+  products?: { title?: string; product_type?: string; tags?: unknown }[];
+}
+
+async function getJson(url: string): Promise<ShopJson> {
   const r = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), headers: { accept: 'application/json' } });
   if (!r.ok) throw Error(`${new URL(url).hostname} returned ${r.status}`);
   return r.json();
@@ -94,7 +103,7 @@ async function ninetyOne(shopId: string): Promise<{ text: string; note: string }
   let titles: string[] = [];
   for (const c of cats.slice(0, 3)) {
     const d = await gql(`query{shopCategory(shopId:${shopId},categoryId:${c.id}){salePageList(startIndex:0,maxCount:${SHOP_PRODUCTS},orderBy:"Newest"){salePageList{title}}}}`);
-    titles = (d?.data?.shopCategory?.salePageList?.salePageList || []).map((x: any) => String(x?.title || '')).filter(Boolean);
+    titles = (d?.data?.shopCategory?.salePageList?.salePageList || []).map((x) => String(x?.title || '')).filter(Boolean);
     if (titles.length) break;
   }
   return {
@@ -105,7 +114,7 @@ async function ninetyOne(shopId: string): Promise<{ text: string; note: string }
 
 async function shopify(origin: string): Promise<{ text: string; note: string }> {
   const d = await getJson(`${origin}/products.json?limit=${SHOP_PRODUCTS}`);
-  const products: any[] = Array.isArray(d?.products) ? d.products : [];
+  const products = Array.isArray(d?.products) ? d.products : [];
   if (!products.length) throw Error('no products');
   const types = [...new Set(products.map((p) => p.product_type).filter(Boolean))];
   return {

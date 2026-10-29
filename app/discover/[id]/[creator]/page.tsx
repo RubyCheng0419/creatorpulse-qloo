@@ -17,6 +17,7 @@ import { NO_DATA_NEXT_STEPS } from '@/lib/no-data';
 import { VERDICT_LABELS, brandBasisNote } from '@/lib/report';
 import { discoverShareLink } from '@/lib/share-link';
 import { candidateUnverified } from '@/lib/unverified';
+import { errorMessage } from '@/lib/errors';
 
 // One ranked creator from a ranking this browser found (lib/discoveries): the profile that
 // was scored, the channel it maps to, every dimension and entity, and the confidence.
@@ -76,8 +77,8 @@ function LinkChannelForm({ d, c }: { d: StoredDiscovery; c: CreatorCandidate }) 
           const j = await r.json().catch(() => ({}));
           if (r.ok && j.channel) linkChannel(d.id, c.qlooId, j.channel);
           else setError(j.error || `HTTP ${r.status}`);
-        } catch (err: any) {
-          setError(`Connection failed: ${err?.message || err}`);
+        } catch (err) {
+          setError(`Connection failed: ${errorMessage(err)}`);
         } finally {
           setBusy(false);
         }
