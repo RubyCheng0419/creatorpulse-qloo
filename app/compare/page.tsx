@@ -17,6 +17,16 @@ import { parseChannelRef, parseVideoId } from '@/lib/youtube-url';
 // quota spent); ?brand=… shows this browser's matches for that brand and adds creators to it.
 
 type Demo = { brandName: string; savedAt: string; matches: Match[] };
+
+// When the runs were made: rows can be re-saved one at a time (the MKBHD row comes from the
+// demo snapshot), so the comparison gives each run's own date, not the file's.
+function savedOn(matches: Match[]): string {
+  const day = (m: Match) => new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const byDay = new Map<string, string[]>();
+  for (const m of [...matches].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) byDay.set(day(m), [...(byDay.get(day(m)) ?? []), m.creator.channelName]);
+  if (byDay.size === 1) return [...byDay.keys()][0];
+  return [...byDay].map(([d, names]) => `${d} (${names.join(', ')})`).join(' and ');
+}
 const MAX_CREATORS = 3;
 
 export default function Page() {
@@ -86,7 +96,7 @@ function DemoComparison() {
     <div className="space-y-3">
       <p className="rounded-md bg-sky-50 px-3 py-2 text-sm text-sky-950 ring-1 ring-sky-200">
         <span className="font-semibold">Cached</span> demo comparison: real runs of the full pipeline for {data.brandName}, saved{' '}
-        {new Date(data.savedAt).toLocaleDateString('en-US')}, so it spends no API quota. Open a row for its full result and Run live.
+        {savedOn(data.matches)}, so it spends no API quota. Open a row for its full result and Run live.
       </p>
       <ComparisonTable matches={data.matches} />
       <p className="text-xs text-slate-500">
