@@ -1,6 +1,7 @@
 // Agent Trace: every tool call and decision made while computing one match, in the
 // order they finished. Recorded by the server, shown on the result page. Pure data,
 // shared by the server and the browser.
+import { errorMessage } from '@/lib/errors';
 
 export type TraceStage = 'youtube' | 'creator' | 'brand' | 'candidates' | 'profile' | 'expand' | 'score' | 'report';
 
@@ -40,8 +41,8 @@ export class Trace {
       const r = await fn();
       this.add({ ...base, ...describe(r), ms: Date.now() - t0 });
       return r;
-    } catch (e: any) {
-      this.add({ ...base, output: `Failed: ${e?.message || e}`, ms: Date.now() - t0, ok: false });
+    } catch (e) {
+      this.add({ ...base, output: `Failed: ${errorMessage(e)}`, ms: Date.now() - t0, ok: false });
       throw e;
     }
   }

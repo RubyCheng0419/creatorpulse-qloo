@@ -21,8 +21,8 @@ export async function checkGroq(): Promise<string> {
       signal: AbortSignal.timeout(5000),
     });
     if (!r.ok) return `rejected (${r.status})`;
-    const d: any = await r.json().catch(() => ({}));
-    const ids: string[] = (d?.data || []).map((m: any) => m?.id);
+    const d: { data?: { id?: string }[] } = await r.json().catch(() => ({}));
+    const ids = (d?.data || []).map((m) => m?.id);
     return ids.includes(GROQ_MODEL) ? 'ok' : `key accepted, but model ${GROQ_MODEL} is not available`;
   } catch {
     return 'unreachable';
@@ -50,7 +50,7 @@ export async function groqJson<T>(system: string, user: string, schema: object, 
       response_format: { type: 'json_schema', json_schema: { name: 'result', schema } },
     }),
   });
-  const d: any = await r.json().catch(() => ({}));
+  const d: { error?: { message?: string }; choices?: { message?: { content?: string } }[] } = await r.json().catch(() => ({}));
   if (!r.ok) throw Object.assign(Error(d?.error?.message || `Groq returned ${r.status}`), { status: r.status });
   const text = d?.choices?.[0]?.message?.content;
   if (!text) throw Error('Groq returned no content.');

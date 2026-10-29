@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { saveMatch, useMatches } from '@/lib/history';
 import type { Match } from '@/lib/match';
 import { requestMatch } from '@/lib/match-client';
+import { errorMessage } from '@/lib/errors';
 
 const noop = () => () => {};
 
@@ -90,8 +91,8 @@ function SavedMatchResult({ match, autoPrint }: { match: Match; autoPrint: boole
         }
         else if (outcome.match.id !== match.id) router.push(`/match/${outcome.match.id}`);
       } else setError(outcome.error);
-    } catch (e: any) {
-      setError(`Connection failed: ${e?.message || e}`);
+    } catch (e) {
+      setError(`Connection failed: ${errorMessage(e)}`);
     } finally {
       setRunning(null);
     }

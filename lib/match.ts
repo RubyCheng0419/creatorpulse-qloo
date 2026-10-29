@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { audienceProfiles, findCreatorPerson, scoreProfile } from '@/lib/audience';
 import { BrandBasis, MissingReference, brandConfidence, lookupBrand } from '@/lib/brand';
 import { CreatorTaste, getCreatorTaste } from '@/lib/creator';
-import { ApiError } from '@/lib/errors';
+import { ApiError, errorMessage } from '@/lib/errors';
 import {
   EXPANSION_POPULARITY_MIN,
   PROXY_TYPES,
@@ -299,8 +299,8 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     let aff: Map<string, number>;
     try {
       aff = await scoreEntities(brandSignal, [...profile.entities, person], { trace, stage: 'score' }, brandTags);
-    } catch (e: any) {
-      throw new ApiError(`Qloo scoring request failed: ${e.message}`, 502, { warnings });
+    } catch (e) {
+      throw new ApiError(`Qloo scoring request failed: ${errorMessage(e)}`, 502, { warnings });
     }
     base.creator = { ...base.creator, audienceOverlap: aff.get(person.id) ?? null };
     const { items: profileItems, compatibility: fromAudience } = scoreProfile(profile.entities, aff);
@@ -355,7 +355,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
     const batches = await Promise.all(
       PROXY_TYPES.map((type) =>
         getInsights(signal, type, CREATOR_PROXIES_PER_TYPE, { trace, stage: 'expand' }, [], expansionParams([...brandIds])).catch((e) => {
-          warnings.push(`Cross-domain expansion failed for ${type.replace('urn:entity:', '')}: ${e.message}`);
+          warnings.push(`Cross-domain expansion failed for ${type.replace('urn:entity:', '')}: ${errorMessage(e)}`);
           return [] as QlooEntity[];
         })
       )
@@ -368,8 +368,8 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
   let affinities: Map<string, number>;
   try {
     affinities = await scoreEntities(brandSignal, [...signal, ...proxies, ...(person ? [person] : [])], { trace, stage: 'score' }, brandTags);
-  } catch (e: any) {
-    throw new ApiError(`Qloo scoring request failed: ${e.message}`, 502, { warnings });
+  } catch (e) {
+    throw new ApiError(`Qloo scoring request failed: ${errorMessage(e)}`, 502, { warnings });
   }
 
   if (person) base.creator = { ...base.creator, audienceOverlap: affinities.get(person.id) ?? null };

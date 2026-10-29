@@ -1,4 +1,5 @@
 import { GoogleGenAI, ThinkingLevel } from '@google/genai';
+import { caught } from '@/lib/errors';
 
 // Server-only. The LLM never produces scores or taste entities (PRODUCT_SPEC §5.5):
 // it only proposes search terms and writes text around Qloo evidence.
@@ -46,8 +47,9 @@ export async function geminiJson<T>(system: string, user: string, schema: object
       });
       if (!res.text) throw Error('Gemini returned no content.');
       return JSON.parse(res.text) as T;
-    } catch (e: any) {
-      const overloaded = e?.status === 503 || e?.status === 429;
+    } catch (e) {
+      const { status } = caught(e);
+      const overloaded = status === 503 || status === 429;
       if (!overloaded || attempt > 0) throw e;
       await new Promise((r) => setTimeout(r, 1000));
     }

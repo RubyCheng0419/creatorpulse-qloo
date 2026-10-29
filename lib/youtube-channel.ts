@@ -38,7 +38,7 @@ export async function findChannel(qlooId: string, name: string, key: string | un
   // The same entity through /search, which (unlike /v2/insights) carries external ids and aliases.
   const found = await searchEntities(name, ['urn:entity:person'], 5, trace && { trace, stage: 'candidates' }, 'external ids for the channel lookup').catch(() => []);
   const result = found.find((x) => x.entity_id === qlooId);
-  const names = new Set([name, ...(result?.properties?.akas || []).map((a: any) => a?.value)].filter(Boolean).map((n: string) => compact(n)));
+  const names = new Set([name, ...(result?.properties?.akas || []).map((a) => a?.value)].filter((n): n is string => Boolean(n)).map((n) => compact(n)));
   const external = result?.properties?.external || {};
   const handles = [...new Set([external.instagram?.id, external.twitter?.id, compact(name)].filter((h): h is string => typeof h === 'string' && /^[\w.-]{3,30}$/.test(h)))];
 
@@ -51,9 +51,9 @@ export async function findChannel(qlooId: string, name: string, key: string | un
     const subs = item?.statistics?.hiddenSubscriberCount ? null : Number(item?.statistics?.subscriberCount ?? 0);
     const ok = item && names.has(compact(item.snippet?.title || '')) && (subs === null || subs >= MIN_SUBSCRIBERS);
     tried.push(`@${handle}: ${item ? `“${item.snippet?.title}”${subs !== null ? `, ${subs.toLocaleString('en-US')} subscribers` : ''}${ok ? '' : ' (rejected)'}` : 'none'}`);
-    if (ok) {
+    if (ok && item.id) {
       const h = item.snippet?.customUrl || `@${handle}`;
-      channel = { id: item.id, title: item.snippet.title, handle: h, url: `https://www.youtube.com/${h.startsWith('@') ? h : `channel/${item.id}`}`, subscribers: subs };
+      channel = { id: item.id, title: item.snippet?.title || '', handle: h, url: `https://www.youtube.com/${h.startsWith('@') ? h : `channel/${item.id}`}`, subscribers: subs };
       break;
     }
   }
@@ -74,7 +74,7 @@ export async function findChannel(qlooId: string, name: string, key: string | un
 export async function readChannel(ref: { handle: string } | { id: string }, key: string): Promise<YouTubeChannel | null> {
   const res = await youtube('channels', { part: 'snippet,statistics', ...('handle' in ref ? { forHandle: ref.handle } : { id: ref.id }) }, key);
   const item = res?.items?.[0];
-  if (!item) return null;
+  if (!item?.id) return null;
   const subs = item.statistics?.hiddenSubscriberCount ? null : Number(item.statistics?.subscriberCount ?? 0);
   const h = item.snippet?.customUrl || ('handle' in ref ? `@${ref.handle}` : '');
   return { id: item.id, title: item.snippet?.title || '', handle: h || item.id, url: `https://www.youtube.com/${h.startsWith('@') ? h : `channel/${item.id}`}`, subscribers: subs };

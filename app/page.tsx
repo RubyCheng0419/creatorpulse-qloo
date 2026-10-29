@@ -20,6 +20,7 @@ import { type MatchRequest, requestMatch } from '@/lib/match-client';
 import { decisionSummary, summaryContext } from '@/lib/report';
 import type { MatchStage } from '@/lib/stages';
 import { CHANNEL_VIDEOS, MAX_VIDEOS, channelLabel, parseChannelRef, parseVideoId } from '@/lib/youtube-url';
+import { errorMessage, caught } from '@/lib/errors';
 
 // PRODUCT_SPEC v3.1 §3.1: the four steps on one page, plus the one-click demo (§3.3).
 // The brand comes first, as in Find creators; step 2 takes one creator, or two to compare.
@@ -146,9 +147,9 @@ function MatchPage() {
         // The brand isn't in Qloo: the second creator would hit the same wall, and the single
         // result offers the ways around it.
         if (brandProblem(outcome.match)) break;
-      } catch (e: any) {
-        if (e?.name === 'AbortError') return;
-        setError({ message: `Connection failed: ${e?.message || e}`, backTo: 1 });
+      } catch (e) {
+        if (caught(e).name === 'AbortError') return;
+        setError({ message: `Connection failed: ${errorMessage(e)}`, backTo: 1 });
         setStep(1);
         return;
       }
