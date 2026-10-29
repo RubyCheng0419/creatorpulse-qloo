@@ -941,7 +941,7 @@
       "tool": "Rule",
       "input": "39 scored entities (9 named in the videos at weight 1, 30 cross-domain at weight 0.5) sorted into dimensions by Qloo type and genre tags",
       "output": "Tech & Innovation 75 (n=11) · Film, TV & Entertainment 87 (n=10) · Music 77 (n=5) · Lifestyle & Fashion 63 (n=3) · Food & Travel 68 (n=10)",
-      "decision": "Affinity rescaled from [0.5, 1] to [0, 100]; shared taste ≥ 0.85, weak link 0.7–0.85, clash < 0.7",
+      "decision": "Affinity rescaled from [0.5, 1] to [0, 100]; strong shared taste ≥ 0.85, some shared taste 0.7–0.85, conflicting taste < 0.7",
       "ok": true,
       "t": 14161
     },

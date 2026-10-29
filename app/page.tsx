@@ -285,7 +285,7 @@ function MatchPage() {
                   <p className="mt-1 text-xs text-teal-900/80">
                     {pair.key === 'fit'
                       ? 'A tech reviewer and a tech brand.'
-                      : 'Same tech reviewer, a diaper brand: the score drops and clashes appear.'}
+                      : 'Same tech reviewer, a diaper brand: the score drops and conflicting taste appears.'}
                   </p>
                 </div>
               ))}

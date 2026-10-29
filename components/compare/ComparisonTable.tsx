@@ -29,7 +29,7 @@ export function ComparisonTable({ matches, linkRows = true }: { matches: Match[]
             <th scope="col" className="px-2 py-2 font-medium">Confidence</th>
             <th scope="col" className="px-2 py-2 font-medium">Strongest</th>
             <th scope="col" className="px-2 py-2 font-medium">Weakest</th>
-            <th scope="col" className="py-2 pl-2 pr-4 font-medium">Clash</th>
+            <th scope="col" className="py-2 pl-2 pr-4 font-medium">Conflicting taste</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 align-top">

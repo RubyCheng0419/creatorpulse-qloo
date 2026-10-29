@@ -71,9 +71,9 @@ export function matchToMarkdown(match: Match): string {
       if (!isCounted(d)) lines.push(`_Thin: ${d.itemCount} entit${d.itemCount === 1 ? 'y' : 'ies'}, shown but not counted in the Fit Score._`, '');
       if (isByDefault(d)) lines.push('_Classified by default: none of these entities has a Qloo genre for this dimension, so it decides nothing._', '');
       lines.push(
-        ...tier('Shared taste (affinity ≥ 0.85)', d.intersection),
-        ...tier('Lukewarm (affinity 0.70–0.85)', d.weakLink),
-        ...tier('Clash (affinity < 0.70)', d.divergence)
+        ...tier('Strong shared taste (affinity ≥ 0.85)', d.intersection),
+        ...tier('Some shared taste (affinity 0.70–0.85)', d.weakLink),
+        ...tier('Conflicting taste (affinity < 0.70)', d.divergence)
       );
     }
     const r = match.report;

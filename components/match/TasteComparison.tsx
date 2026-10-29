@@ -33,7 +33,7 @@ const PRINT_LIMIT = 3;
 export type CreatorBasis = 'content' | 'audience';
 
 // Two decimals, or more when rounding would carry an affinity across a tier boundary:
-// 0.695 is a clash, and showing it as "0.70" under "< 0.70" reads like a bug.
+// 0.695 is conflicting taste, and showing it as "0.70" under "< 0.70" reads like a bug.
 export function formatAffinity(a: number): string {
   for (let digits = 2; digits < 4; digits++) {
     const s = a.toFixed(digits);
@@ -138,29 +138,29 @@ function Evidence({ d, basis, sources, limit }: { d: DimensionScore; basis: Crea
   return (
     <div className="grid gap-4 sm:grid-cols-3 print:grid-cols-3">
       <EntityList
-        title="Loves these"
+        title="Strong shared taste"
         hint={`affinity ≥ ${INTERSECTION_MIN}`}
         tone="text-teal-700"
         items={d.intersection.slice(0, limit)}
-        empty="Nothing the audience loves here"
+        empty="No strong shared taste"
         basis={basis}
         sources={sources}
       />
       <EntityList
-        title="Lukewarm"
+        title="Some shared taste"
         hint={`affinity ${DIVERGENCE_MAX.toFixed(2)}–${INTERSECTION_MIN}`}
         tone="text-amber-700"
         items={(d.weakLink ?? []).slice(0, limit)}
-        empty="Nothing lukewarm"
+        empty="Nothing with some shared taste"
         basis={basis}
         sources={sources}
       />
       <EntityList
-        title="Not into these · clash"
+        title="Conflicting taste"
         hint={`affinity < ${DIVERGENCE_MAX.toFixed(2)}`}
         tone="text-rose-700"
         items={d.divergence.slice(0, limit)}
-        empty="No clash"
+        empty="No conflicting taste"
         basis={basis}
         sources={sources}
       />
@@ -209,9 +209,9 @@ export function TasteComparison({
                   <span className="block text-sm leading-tight font-medium text-slate-800">{d.label}</span>
                   {d.score !== null && (
                     <span className="mt-0.5 block text-xs text-slate-500">
-                      <span className="text-teal-700">{d.intersection.length} loved</span> ·{' '}
-                      <span className="text-amber-700">{(d.weakLink ?? []).length} lukewarm</span> ·{' '}
-                      <span className="text-rose-700">{d.divergence.length} clash</span>
+                      <span className="text-teal-700">{d.intersection.length} strong</span> ·{' '}
+                      <span className="text-amber-700">{(d.weakLink ?? []).length} some</span> ·{' '}
+                      <span className="text-rose-700">{d.divergence.length} conflicting</span>
                     </span>
                   )}
                   {d.score !== null && !isCounted(d) && (
@@ -232,7 +232,7 @@ export function TasteComparison({
               </button>
 
               {d.score === null ? (
-                <p className="px-3 pb-3 text-xs text-slate-500">No scorable Qloo data, so this dimension is excluded from the total. Missing data is not evidence of a clash.</p>
+                <p className="px-3 pb-3 text-xs text-slate-500">No scorable Qloo data, so this dimension is excluded from the total. Missing data is not evidence of conflicting taste.</p>
               ) : (
                 <>
                   {isOpen && (

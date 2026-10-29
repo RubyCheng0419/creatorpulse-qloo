@@ -218,9 +218,9 @@ export function CandidateCard({
               </dd>
             </>
           )}
-          <dt className="font-medium text-emerald-800">Shared taste</dt>
+          <dt className="font-medium text-emerald-800">Strong shared taste</dt>
           <dd className="mb-1 text-slate-700 sm:mb-0">{shared.length ? names(shared) : 'none at affinity 0.85 or above'}</dd>
-          <dt className="font-medium text-rose-800">Clashes</dt>
+          <dt className="font-medium text-rose-800">Conflicting taste</dt>
           <dd className="text-slate-700">{clashes.length ? names(clashes) : 'none'}</dd>
         </dl>
       ) : (

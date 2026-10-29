@@ -62,13 +62,13 @@ export default function HowItWorksPage() {
         <Section title="3. Three tiers">
           <ul className="list-disc space-y-1 pl-5">
             <li>
-              <strong>Loves these (shared taste)</strong>: affinity ≥ {INTERSECTION_MIN}.
+              <strong>Strong shared taste</strong>: affinity ≥ {INTERSECTION_MIN}.
             </li>
             <li>
-              <strong>Lukewarm (weak link)</strong>: {DIVERGENCE_MAX.toFixed(2)} to {INTERSECTION_MIN}.
+              <strong>Some shared taste</strong>: affinity {DIVERGENCE_MAX.toFixed(2)} to {INTERSECTION_MIN}.
             </li>
             <li>
-              <strong>Not into these (clash)</strong>: below {DIVERGENCE_MAX.toFixed(2)}. A clash is evidence of mismatch, not missing data.
+              <strong>Conflicting taste</strong>: affinity below {DIVERGENCE_MAX.toFixed(2)}. Conflicting taste is evidence of mismatch, not missing data.
             </li>
           </ul>
           <p className="text-sm text-slate-500">The tiers explain the score; they don’t add or subtract anything on their own.</p>

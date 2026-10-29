@@ -402,7 +402,7 @@ export async function runMatch(input: MatchInput, onStage?: OnStage): Promise<Ma
       .map((d) => `${d.label} ${d.score ?? 'no data'} (n=${d.itemCount}${d.score !== null && !isCounted(d) ? ', thin' : ''}${d.byDefault ? ', classified by default' : ''})`)
       .join(' · '),
     decision:
-      `Affinity rescaled from [${AFFINITY_FLOOR}, 1] to [0, 100]; shared taste ≥ ${INTERSECTION_MIN}, weak link ${DIVERGENCE_MAX}–${INTERSECTION_MIN}, clash < ${DIVERGENCE_MAX}` +
+      `Affinity rescaled from [${AFFINITY_FLOOR}, 1] to [0, 100]; strong shared taste ≥ ${INTERSECTION_MIN}, some shared taste ${DIVERGENCE_MAX}–${INTERSECTION_MIN}, conflicting taste < ${DIVERGENCE_MAX}` +
       (empty.length ? `; ${empty.map((d) => d.label).join(', ')} excluded (no data, not counted as zero)` : '') +
       (thin.length ? `; ${thin.map((d) => d.label).join(', ')} shown, not counted (fewer than ${MIN_DIMENSION_ENTITIES} entities)` : ''),
   });

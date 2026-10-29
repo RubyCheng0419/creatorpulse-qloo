@@ -199,17 +199,17 @@ export function decisionSummary(c: Compatibility, ctx: SummaryContext): Decision
   const dimsText = worst !== best ? `strongest on ${best.label} (${best.score}) and weakest on ${worst.label} (${worst.score})` : `scored on ${best.label} (${best.score})`;
   const sharedText = loved.length
     ? `The strongest shared tastes are ${list(topText)}${originNote}.`
-    : `No entity reaches ${INTERSECTION_MIN}; the highest is ${topText[0]}.`;
+    : `No strong shared taste (affinity ≥ ${INTERSECTION_MIN}); the highest is ${topText[0]}.`;
   const lowest = clashes[0];
   const cause = realClash
-    ? `A real clash: ${clashes.length} ${clashes.length === 1 ? 'entity is' : 'entities are'} below ${DIVERGENCE_MAX.toFixed(2)}${clashDims[0] ? `, mostly in ${clashDims[0]}` : ''} (lowest: ${lowest.e.name} ${fmt(lowest.e.brandAffinity)}).`
+    ? `Widespread conflicting taste: ${clashes.length} ${clashes.length === 1 ? 'entity is' : 'entities are'} below ${DIVERGENCE_MAX.toFixed(2)}${clashDims[0] ? `, mostly in ${clashDims[0]}` : ''} (lowest: ${lowest.e.name} ${fmt(lowest.e.brandAffinity)}).`
     : clashes.length
-      ? `${clashes.length === 1 ? 'One clash' : `${clashes.length} clashes`} (${lowest.e.name} ${fmt(lowest.e.brandAffinity)}), ${
-          loved.length * 2 >= entities.length ? (clashes.length === 1 ? 'an isolated one' : 'isolated ones') : 'but most entities are lukewarm'
-        }: ${loved.length} of ${entities.length} entities reach ${INTERSECTION_MIN}.`
+      ? `${clashes.length === 1 ? 'One entity' : `${clashes.length} entities`} with conflicting taste (${lowest.e.name} ${fmt(lowest.e.brandAffinity)}), ${
+          loved.length * 2 >= entities.length ? (clashes.length === 1 ? 'an isolated one' : 'isolated ones') : 'but most entities have only some shared taste'
+        }: ${loved.length} of ${entities.length} entities have strong shared taste (affinity ≥ ${INTERSECTION_MIN}).`
       : c.fitScore < 60
-        ? `No clash, but also no strong overlap: ${loved.length} of ${entities.length} entities reach ${INTERSECTION_MIN}.`
-        : `No clash: every entity is at ${DIVERGENCE_MAX.toFixed(2)} or above.`;
+        ? `No conflicting taste, but little strong shared taste: ${loved.length} of ${entities.length} entities reach ${INTERSECTION_MIN}.`
+        : `No conflicting taste: every entity is at ${DIVERGENCE_MAX.toFixed(2)} or above.`;
   const why = `${audience} is ${dimsText}. ${sharedText} ${cause}`;
 
   // Decision and the one next step that follows from it. An unverified result (lib/unverified)
@@ -239,12 +239,12 @@ export function decisionSummary(c: Compatibility, ctx: SummaryContext): Decision
     next = `Build the pitch on ${best.label} first${bestTop ? `, starting with ${bestTop.e.name}` : ''}.`;
   } else if (realClash && clashDims[0]) {
     verdict = 'Hold';
-    condition = `the audiences clash on ${clashDims[0]}.`;
+    condition = `conflicting taste on ${clashDims[0]}.`;
     next = `Compare creators for ${ctx.brand} whose world sits in ${best.label} rather than ${clashDims[0]}.`;
   } else {
     verdict = 'Hold';
     condition = 'run one small test before signing.';
-    next = `Compare 2–3 other creators for ${ctx.brand} first: a lukewarm score needs a reference point before a test integration.`;
+    next = `Compare 2–3 other creators for ${ctx.brand} first: a score with only some shared taste needs a reference point before a test integration.`;
   }
   // Familiarity: Prior coverage changes only the next step, never the verdict or the clash. High
   // fit = Go or Conditional; only the High tier counts as familiar (Medium is treated as Low).
@@ -266,7 +266,7 @@ export function decisionSummary(c: Compatibility, ctx: SummaryContext): Decision
         cov.mentioning.length ? `${ctx.brand} appears in only ${cov.mentioning.length} of these videos and in no title` : `${ctx.brand} doesn’t appear in these videos`
       }. ${next}`;
     else if (familiar)
-      next = `Hold any long-term deal${realClash && clashDims[0] ? `: the audiences clash on ${clashDims[0]}` : ''}. One small product test is reasonable, since ${ctx.brand} already appears in the creator’s videos and outreach friction is low, even though taste overlap is weak.`;
+      next = `Hold any long-term deal${realClash && clashDims[0] ? `: conflicting taste on ${clashDims[0]}` : ''}. One small product test is reasonable, since ${ctx.brand} already appears in the creator’s videos and outreach friction is low, even though taste overlap is weak.`;
     else next = `Deprioritise: don’t reach out first. ${next}`;
   }
   return { verdict, fitScore: c.fitScore, level: c.confidence, condition, why, ...(familiarity ? { familiarity } : {}), next, confidence, ...(low ? { lowReason } : {}) };
@@ -299,15 +299,15 @@ export function buildReport(
     .filter((d) => d.divergence.length)
     .map(
       (d) =>
-        `${d.label}: ${d.divergence
+        `${d.label}, conflicting taste (affinity < ${DIVERGENCE_MAX}): ${d.divergence
           .slice(0, 3)
           .map((e) => `${e.name} (affinity ${fmt(e.brandAffinity)})`)
-          .join(', ')} relate${d.divergence.length === 1 ? 's' : ''} weakly to ${brand}'s audience (below ${DIVERGENCE_MAX}).`
+          .join(', ')} relate${d.divergence.length === 1 ? 's' : ''} weakly to ${brand}'s audience.`
     );
   if (!clash.length) clash.push(`No evidence of conflicting taste: every scored entity has affinity of at least ${DIVERGENCE_MAX}.`);
   if (missing.length) {
     clash.push(
-      `${missing.map((d) => d.label).join(', ')}: no scorable Qloo data, excluded from the score. Missing data is not evidence of a clash.`
+      `${missing.map((d) => d.label).join(', ')}: no scorable Qloo data, excluded from the score. Missing data is not evidence of conflicting taste.`
     );
   }
   const thin = scored.filter((d) => !isCounted(d));
@@ -328,7 +328,7 @@ export function buildReport(
     for (const e of strongest.filter((e) => !shared.includes(e)).slice(0, 3 - recommendations.length))
       recommendations.push(`Build content around “${e.name}” (${labelOf(e)}, affinity ${fmt(e.brandAffinity)}); ${brand}'s audience relates to it strongly.`);
     if (!recommendations.length) {
-      recommendations.push(`No shared taste entity reaches affinity ${INTERSECTION_MIN}; taste fit should not be the basis for this collaboration.`);
+      recommendations.push(`No entity has strong shared taste (affinity ≥ ${INTERSECTION_MIN}); taste fit should not be the basis for this collaboration.`);
     }
   }
 

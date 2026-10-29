@@ -239,7 +239,7 @@ export async function runDiscover(input: DiscoverInput): Promise<Discovery> {
   trace.add({
     stage: 'score',
     tool: 'Rule',
-    input: `Per creator: up to ${PROXY_TYPES.length * PROFILE_PER_TYPE} audience-taste entities at weight ${PROXY_WEIGHT}, sorted into dimensions; affinity rescaled from [${AFFINITY_FLOOR}, 1] to [0, 100]; shared taste ≥ ${INTERSECTION_MIN}, clash < ${DIVERGENCE_MAX}`,
+    input: `Per creator: up to ${PROXY_TYPES.length * PROFILE_PER_TYPE} audience-taste entities at weight ${PROXY_WEIGHT}, sorted into dimensions; affinity rescaled from [${AFFINITY_FLOOR}, 1] to [0, 100]; strong shared taste ≥ ${INTERSECTION_MIN}, some shared taste ${DIVERGENCE_MAX}–${INTERSECTION_MIN}, conflicting taste < ${DIVERGENCE_MAX}`,
     output: ranked.map((c) => `${c.name} ${c.compatibility.fitScore ?? 'no score'}`).join(' · '),
     decision: `Ranked by Fit Score, then audience overlap. A dimension counts with 3+ entities; confidence: Medium with 20+ scored entities across 4+ counted dimensions, otherwise Low; fewer than ${MIN_PROFILE_ENTITIES} scored, or fewer than 2 counted dimensions, gets no score (${ranked.length - scoredCount} here)`,
   });

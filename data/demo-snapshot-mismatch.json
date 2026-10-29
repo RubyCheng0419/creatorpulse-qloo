@@ -798,7 +798,7 @@
       "tool": "Rule",
       "input": "36 scored entities (6 named in the videos at weight 1, 30 cross-domain at weight 0.5) sorted into dimensions by Qloo type and genre tags",
       "output": "Tech & Innovation 22 (n=8) · Film, TV & Entertainment 73 (n=10) · Music 43 (n=5) · Lifestyle & Fashion 6 (n=3) · Food & Travel 40 (n=10)",
-      "decision": "Affinity rescaled from [0.5, 1] to [0, 100]; shared taste ≥ 0.85, weak link 0.7–0.85, clash < 0.7",
+      "decision": "Affinity rescaled from [0.5, 1] to [0, 100]; strong shared taste ≥ 0.85, some shared taste 0.7–0.85, conflicting taste < 0.7",
       "ok": true,
       "t": 13336
     },
@@ -2277,7 +2277,7 @@
   },
   "report": {
     "summary": "Huggies × Marques Brownlee: Fit Score 37 (No fit), Medium confidence. Strongest dimension: Film, TV & Entertainment (73); weakest: Lifestyle & Fashion (6).",
-    "cultureClash": "Tech & Innovation: Tesla (affinity 0.53), OnePlus (affinity 0.56), Asus (affinity 0.61) relate weakly to Huggies's audience (below 0.7).\n\nMusic: Aero Chord (affinity 0.69), TheFatRat (affinity 0.70) relate weakly to Huggies's audience (below 0.7).\n\nLifestyle & Fashion: Hagerty (affinity 0.41), Dbrand (affinity 0.54), Unbox Therapy (affinity 0.55) relate weakly to Huggies's audience (below 0.7).\n\nFood & Travel: Munnar (affinity 0.52), Hyderabad (affinity 0.57), Kochi (affinity 0.60) relate weakly to Huggies's audience (below 0.7).",
+    "cultureClash": "Tech & Innovation, conflicting taste (affinity < 0.7): Tesla (affinity 0.53), OnePlus (affinity 0.56), Asus (affinity 0.61) relate weakly to Huggies's audience.\n\nMusic, conflicting taste (affinity < 0.7): Aero Chord (affinity 0.69), TheFatRat (affinity 0.70) relate weakly to Huggies's audience.\n\nLifestyle & Fashion, conflicting taste (affinity < 0.7): Hagerty (affinity 0.41), Dbrand (affinity 0.54), Unbox Therapy (affinity 0.55) relate weakly to Huggies's audience.\n\nFood & Travel, conflicting taste (affinity < 0.7): Munnar (affinity 0.52), Hyderabad (affinity 0.57), Kochi (affinity 0.60) relate weakly to Huggies's audience.",
     "recommendations": [
       "Build content around “You, Me and the Apocalypse” (Film, TV & Entertainment, affinity 0.89); Huggies's audience relates to it strongly.",
       "Build content around “Deadpool 2” (Film, TV & Entertainment, affinity 0.88); Huggies's audience relates to it strongly.",

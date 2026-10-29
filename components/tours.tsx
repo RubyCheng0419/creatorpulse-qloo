@@ -26,7 +26,7 @@ export const CHECK_TOUR: TourStep[] = [
   {
     target: 'check-demo',
     title: 'Or start with a demo',
-    body: 'Apple × MKBHD is a strong fit; the Huggies mismatch shows what clashes look like. Each opens in seconds.',
+    body: 'Apple × MKBHD is a strong fit; the Huggies mismatch shows what conflicting taste looks like. Each opens in seconds.',
   },
   {
     target: 'how-it-works',
