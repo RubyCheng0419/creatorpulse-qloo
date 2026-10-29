@@ -1,6 +1,6 @@
 {
   "id": "match_fd95e79c9adc",
-  "createdAt": "2026-10-27T14:47:36.781Z",
+  "createdAt": "2026-10-29T12:10:41.252Z",
   "creator": {
     "channelName": "Marques Brownlee",
     "youtubeHandle": "@mkbhd",
@@ -20,7 +20,7 @@
         "categoryId": "28",
         "tags": [],
         "publishedAt": "2026-10-21T14:00:33Z",
-        "viewCount": 2214415
+        "viewCount": 2244486
       },
       {
         "videoId": "ESABTN4VtrA",
@@ -33,7 +33,7 @@
           "iPhone duo review"
         ],
         "publishedAt": "2026-10-21T12:00:52Z",
-        "viewCount": 12520133
+        "viewCount": 13006780
       },
       {
         "videoId": "scwlR0QHGOk",
@@ -48,7 +48,7 @@
           "rocket"
         ],
         "publishedAt": "2026-10-17T02:09:23Z",
-        "viewCount": 12319210
+        "viewCount": 12381670
       },
       {
         "videoId": "QVv3mQzlrN0",
@@ -58,7 +58,7 @@
         "categoryId": "28",
         "tags": [],
         "publishedAt": "2026-10-13T22:42:38Z",
-        "viewCount": 10967191
+        "viewCount": 11085795
       },
       {
         "videoId": "_0G4OG39XjI",
@@ -71,42 +71,28 @@
           "MKBHD"
         ],
         "publishedAt": "2026-10-08T21:00:40Z",
-        "viewCount": 8956144
+        "viewCount": 9007980
       }
     ],
     "keywords": [
-      "iPhone",
       "iPhone Duo",
-      "Ridge",
-      "dbrand",
       "Apple",
-      "Twitter",
-      "Instagram",
-      "Facebook",
+      "Ridge",
       "Tesla Roadster",
       "Tesla",
       "Hagerty",
       "Apple Homeview",
+      "Googlebook",
       "Google",
       "Asus",
       "Dell"
     ],
-    "keywordSource": "gemini",
-    "extractionModel": "gemini-3.5-flash",
+    "keywordSource": "groq",
+    "extractionModel": "openai/gpt-oss-120b",
+    "extractionFallback": "Gemini’s request quota is used up for now",
     "geminiCached": false,
-    "geminiAt": "2026-10-27T14:47:30.601Z",
+    "geminiAt": "2026-10-29T12:10:37.566Z",
     "entities": [
-      {
-        "id": "3180A68A-2853-4675-886E-CB05CDF3F63A",
-        "name": "Dbrand",
-        "type": "urn:entity:brand",
-        "popularity": 0.9878710311742469,
-        "affinity": null,
-        "source": "qloo",
-        "via": "search",
-        "query": "dbrand",
-        "genres": []
-      },
       {
         "id": "D5B78065-6DBB-4DDB-80DF-6495B9B1006B",
         "name": "Apple Inc",
@@ -126,51 +112,15 @@
         ]
       },
       {
-        "id": "ACDD1460-C453-4082-86D8-2789B4AC54C0",
-        "name": "X (Formerly Twitter)",
+        "id": "A926389A-C444-4052-A845-D592876F9CB7",
+        "name": "The Ridge",
         "type": "urn:entity:brand",
-        "popularity": 0.9999745723923988,
+        "popularity": 0.8066908511467851,
         "affinity": null,
         "source": "qloo",
         "via": "search",
-        "query": "Twitter",
-        "genres": [
-          "brand:mobile_app",
-          "brand:mobile_app:social_networking",
-          "brand:software",
-          "brand:website"
-        ]
-      },
-      {
-        "id": "4D1EA16A-F77B-4152-BA57-56BDC8627D96",
-        "name": "Instagram",
-        "type": "urn:entity:brand",
-        "popularity": 0.9999830482615992,
-        "affinity": null,
-        "source": "qloo",
-        "via": "search",
-        "query": "Instagram",
-        "genres": [
-          "brand:mobile_app",
-          "brand:software",
-          "brand:mobile_app:social_networking"
-        ]
-      },
-      {
-        "id": "AB361982-C4BC-414F-8344-8B401C6FDD41",
-        "name": "Facebook",
-        "type": "urn:entity:brand",
-        "popularity": 0.9981268329067146,
-        "affinity": null,
-        "source": "qloo",
-        "via": "search",
-        "query": "Facebook",
-        "genres": [
-          "brand:software",
-          "brand:mobile_app:social_networking",
-          "brand:website",
-          "brand:mobile_app"
-        ]
+        "query": "Ridge → The Ridge",
+        "genres": []
       },
       {
         "id": "29B49E3F-A0EC-42C6-A453-38B1C20D8374",
@@ -180,7 +130,7 @@
         "affinity": null,
         "source": "qloo",
         "via": "search",
-        "query": "Tesla",
+        "query": "Tesla Roadster → Tesla",
         "genres": [
           "brand:automotive",
           "brand:automotive:electric",
@@ -248,19 +198,66 @@
       }
     ],
     "unmatched": [
-      "iPhone",
       "iPhone Duo",
-      "Ridge",
-      "Tesla Roadster",
-      "Apple Homeview"
+      "Googlebook"
     ],
     "qlooPerson": {
       "id": "0E6F37E3-84C4-406B-BE34-D5C7CC7966A8",
-      "name": "Marques Brownlee"
+      "name": "Marques Brownlee",
+      "namesakes": 1
     },
     "audienceOverlap": 0.8484987053458225
   },
   "mentionsBrand": true,
+  "priorCoverage": {
+    "videosRead": 5,
+    "brandTerms": [
+      "Apple"
+    ],
+    "productTerms": [
+      "Apple Homeview"
+    ],
+    "mentioning": [
+      {
+        "videoId": "ESABTN4VtrA",
+        "title": "iPhone Duo Review: First Generation Fun!",
+        "url": "https://www.youtube.com/watch?v=ESABTN4VtrA",
+        "publishedAt": "2026-10-21T12:00:52Z",
+        "viewCount": 13006780,
+        "brandPlaces": [
+          "description"
+        ],
+        "productPlaces": [],
+        "products": [],
+        "snippet": {
+          "place": "description",
+          "text": "…of MKBHD Intro music: https://goo.gl/B3AWV5 Phone provided by Apple for review. ~ http://twitter.com/MKBHD http://instagram.com/MKBHD…"
+        }
+      },
+      {
+        "videoId": "QVv3mQzlrN0",
+        "title": "Apple Homeview Impressions: Not Convinced!",
+        "url": "https://www.youtube.com/watch?v=QVv3mQzlrN0",
+        "publishedAt": "2026-10-13T22:42:38Z",
+        "viewCount": 11085795,
+        "brandPlaces": [
+          "description"
+        ],
+        "productPlaces": [
+          "title"
+        ],
+        "products": [
+          "Apple Homeview"
+        ],
+        "snippet": {
+          "place": "title",
+          "text": "Apple Homeview Impressions: Not Convinced!"
+        }
+      }
+    ],
+    "latest": "2026-10-21T12:00:52Z",
+    "tier": "High"
+  },
   "sharedEntities": [
     {
       "id": "29B49E3F-A0EC-42C6-A453-38B1C20D8374",
@@ -270,7 +267,7 @@
       "affinity": null,
       "source": "qloo",
       "via": "search",
-      "query": "Tesla",
+      "query": "Tesla Roadster → Tesla",
       "genres": [
         "brand:automotive",
         "brand:automotive:electric",
@@ -286,10 +283,10 @@
       "name": "Venom",
       "type": "urn:entity:movie",
       "popularity": 0.9956910516425841,
-      "affinity": 0.9360288768076629,
+      "affinity": 0.9177527266048058,
       "source": "qloo",
       "via": "insights",
-      "query": "Dbrand, X (Formerly Twitter), Tesla",
+      "query": "Tesla, Asus, Hagerty",
       "genres": [
         "qloo:adventure",
         "qloo:superhero",
@@ -305,36 +302,14 @@
       "dimension": "entertainment"
     },
     {
-      "id": "A79D1D11-0686-401E-8FFF-633E6A604929",
-      "name": "Captain Marvel",
-      "type": "urn:entity:movie",
-      "popularity": 0.9968249854208514,
-      "affinity": 0.9284223242356906,
-      "source": "qloo",
-      "via": "insights",
-      "query": "Tesla, Dbrand, Asus",
-      "genres": [
-        "qloo:science_fiction",
-        "media:adventure",
-        "media:sci_fi",
-        "media:action",
-        "qloo:adventure",
-        "qloo:action"
-      ],
-      "side": "proxy",
-      "weight": 0.5,
-      "brandAffinity": 0.9413675520467116,
-      "dimension": "entertainment"
-    },
-    {
       "id": "25679116-0941-4018-A5D8-885C1A026DF6",
       "name": "Halt and Catch Fire",
       "type": "urn:entity:tv_show",
       "popularity": 0.9625024931852936,
-      "affinity": 0.9541333557994816,
+      "affinity": 0.9454195553921434,
       "source": "qloo",
       "via": "insights",
-      "query": "Dbrand, Facebook, Asus",
+      "query": "Asus, Dell Inc, Google",
       "genres": [
         "qloo:drama",
         "media:drama"
@@ -349,10 +324,10 @@
       "name": "Humans",
       "type": "urn:entity:tv_show",
       "popularity": 0.9610398244797553,
-      "affinity": 0.9464458695648185,
+      "affinity": 0.9424253503085249,
       "source": "qloo",
       "via": "insights",
-      "query": "Dbrand, Facebook, Tesla",
+      "query": "Tesla, Asus, Dell Inc",
       "genres": [
         "qloo:science_fiction",
         "media:drama",
@@ -366,6 +341,18 @@
     }
   ],
   "trace": [
+    {
+      "stage": "brand",
+      "tool": "Qloo /search",
+      "input": "“Apple” among brand",
+      "output": "Apple Inc (D5B78065-6DBB-4DDB-80DF-6495B9B1006B), exact Qloo alias match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "http": "200",
+      "ms": 44,
+      "ok": true,
+      "t": 45
+    },
     {
       "stage": "youtube",
       "tool": "YouTube videos.list",
@@ -382,21 +369,9 @@
       "input": "1 channel ID",
       "output": "Marques Brownlee (@mkbhd)",
       "cached": false,
-      "ms": 35,
+      "ms": 75,
       "ok": true,
-      "t": 88
-    },
-    {
-      "stage": "brand",
-      "tool": "Qloo /search",
-      "input": "“Apple” among brand",
-      "output": "Apple Inc (D5B78065-6DBB-4DDB-80DF-6495B9B1006B), exact Qloo alias match",
-      "decision": "Accepted as evidence",
-      "cached": false,
-      "http": "200",
-      "ms": 789,
-      "ok": true,
-      "t": 790
+      "t": 128
     },
     {
       "stage": "brand",
@@ -406,9 +381,9 @@
       "decision": "All kept",
       "cached": false,
       "http": "200",
-      "ms": 209,
+      "ms": 95,
       "ok": true,
-      "t": 999
+      "t": 141
     },
     {
       "stage": "brand",
@@ -417,20 +392,9 @@
       "output": "5 entities: Mercedes-benz 0.94, Porsche 0.94, Bugatti 0.93…",
       "cached": false,
       "http": "200",
-      "ms": 361,
+      "ms": 272,
       "ok": true,
-      "t": 1360
-    },
-    {
-      "stage": "brand",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: Apple Inc · type tv_show · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
-      "output": "5 entities: Halt and Catch Fire 0.98, For All Mankind 0.95, Humans 0.94…",
-      "cached": false,
-      "http": "200",
-      "ms": 793,
-      "ok": true,
-      "t": 1792
+      "t": 413
     },
     {
       "stage": "brand",
@@ -439,9 +403,20 @@
       "output": "5 entities: Abu Dhabi 0.96, Dubai 0.95, Manama 0.94…",
       "cached": false,
       "http": "200",
-      "ms": 1128,
+      "ms": 670,
       "ok": true,
-      "t": 2127
+      "t": 811
+    },
+    {
+      "stage": "brand",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · type tv_show · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Halt and Catch Fire 0.98, For All Mankind 0.95, Humans 0.94…",
+      "cached": false,
+      "http": "200",
+      "ms": 704,
+      "ok": true,
+      "t": 845
     },
     {
       "stage": "brand",
@@ -450,9 +425,9 @@
       "output": "5 entities: Avengers: Endgame 0.95, Avengers: Infinity War 0.94, Captain Marvel 0.94…",
       "cached": false,
       "http": "200",
-      "ms": 2305,
+      "ms": 1351,
       "ok": true,
-      "t": 3304
+      "t": 1492
     },
     {
       "stage": "brand",
@@ -461,9 +436,9 @@
       "output": "5 entities: Madame Brasserie 0.96, Swarovski Kristallwelten 0.96, Mouragio Maria 0.95…",
       "cached": false,
       "http": "200",
-      "ms": 2329,
+      "ms": 1648,
       "ok": true,
-      "t": 3328
+      "t": 1789
     },
     {
       "stage": "brand",
@@ -472,32 +447,38 @@
       "output": "5 entities: Marshmello 0.96, Post Malone 0.95, DJ Snake 0.95…",
       "cached": false,
       "http": "200",
-      "ms": 2653,
+      "ms": 2182,
       "ok": true,
-      "t": 3652
+      "t": 2323
     },
     {
       "stage": "creator",
       "tool": "Gemini (gemini-3.5-flash)",
-      "input": "Titles, tags and descriptions of 5 videos: list names explicitly mentioned",
-      "output": "Proposed 15: iPhone (product), iPhone Duo (product), Ridge (brand), dbrand (brand), Apple (brand), Twitter (brand), Instagram (brand), Facebook (brand), Tesla Roadster (product), Tesla (brand), Hagerty (brand), Apple Homeview (product), Google (brand), Asus (brand), Dell (brand)",
-      "decision": "15 names go to Qloo as search terms, not as evidence",
-      "cached": false,
-      "ms": 3577,
-      "ok": true,
-      "t": 3665
+      "input": "Titles, tags and descriptions of 5 videos",
+      "output": "Failed: Gemini’s request quota is used up for now",
+      "decision": "Ask Groq once, with the same prompt and schema",
+      "ok": false,
+      "t": 3002
     },
     {
       "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“iPhone” among brand",
-      "output": "1 results, none named “iPhone”: Strava",
-      "decision": "Rejected: no exact name or alias match, not used",
+      "tool": "Groq (openai/gpt-oss-120b)",
+      "input": "Titles, tags and descriptions of 5 videos: list names explicitly mentioned (~275 tokens, from ~473 before removing links, timestamps and repeated lines; budget 4,500)",
+      "output": "Proposed 12: iPhone Duo (product), Apple (brand), MKBHD (person), Ridge (brand), Tesla Roadster (product), Tesla (brand), Hagerty (brand), Apple Homeview (product), Googlebook (product), Google (brand), Asus (brand), Dell (brand)",
+      "decision": "Dropped MKBHD (the channel itself or YouTube); 11 names go to Qloo as search terms",
       "cached": false,
-      "http": "200",
-      "ms": 206,
+      "ms": 2874,
       "ok": true,
-      "t": 3871
+      "t": 3002
+    },
+    {
+      "stage": "creator",
+      "tool": "Rule",
+      "input": "Names a description links to their own domain (“Ridge … at https://ridge.com/…”) are sponsors: brands, whatever kind the LLM gave",
+      "output": "Ridge",
+      "decision": "Already searched as brands",
+      "ok": true,
+      "t": 3003
     },
     {
       "stage": "creator",
@@ -507,33 +488,9 @@
       "decision": "Rejected: no exact name or alias match, not used",
       "cached": false,
       "http": "200",
-      "ms": 345,
+      "ms": 25,
       "ok": true,
-      "t": 4010
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Ridge” among brand",
-      "output": "4 results, none named “Ridge”: At Home, The Ridge, Juniper Ridge",
-      "decision": "Rejected: no exact name or alias match, not used",
-      "cached": false,
-      "http": "200",
-      "ms": 460,
-      "ok": true,
-      "t": 4125
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“dbrand” among brand",
-      "output": "Dbrand (3180A68A-2853-4675-886E-CB05CDF3F63A), exact name match",
-      "decision": "Accepted as evidence",
-      "cached": false,
-      "http": "200",
-      "ms": 587,
-      "ok": true,
-      "t": 4252
+      "t": 3028
     },
     {
       "stage": "creator",
@@ -543,45 +500,21 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 710,
+      "ms": 147,
       "ok": true,
-      "t": 4375
+      "t": 3150
     },
     {
       "stage": "creator",
       "tool": "Qloo /search",
-      "input": "“Twitter” among brand",
-      "output": "X (Formerly Twitter) (ACDD1460-C453-4082-86D8-2789B4AC54C0), exact Qloo alias match",
-      "decision": "Accepted: most popular of 2 exact matches",
+      "input": "“Ridge” among brand",
+      "output": "4 results, none named “Ridge”: At Home, The Ridge, Juniper Ridge",
+      "decision": "Rejected: no exact name or alias match, not used",
       "cached": false,
       "http": "200",
-      "ms": 848,
+      "ms": 328,
       "ok": true,
-      "t": 4513
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Instagram” among brand",
-      "output": "Instagram (4D1EA16A-F77B-4152-BA57-56BDC8627D96), exact name match",
-      "decision": "Accepted as evidence",
-      "cached": false,
-      "http": "200",
-      "ms": 971,
-      "ok": true,
-      "t": 4636
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Facebook” among brand",
-      "output": "Facebook (AB361982-C4BC-414F-8344-8B401C6FDD41), exact name match",
-      "decision": "Accepted as evidence",
-      "cached": false,
-      "http": "200",
-      "ms": 1103,
-      "ok": true,
-      "t": 4768
+      "t": 3331
     },
     {
       "stage": "creator",
@@ -591,9 +524,9 @@
       "decision": "Rejected: no exact name or alias match, not used",
       "cached": false,
       "http": "200",
-      "ms": 1223,
+      "ms": 402,
       "ok": true,
-      "t": 4888
+      "t": 3405
     },
     {
       "stage": "creator",
@@ -603,9 +536,9 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 1346,
+      "ms": 520,
       "ok": true,
-      "t": 5011
+      "t": 3523
     },
     {
       "stage": "creator",
@@ -615,9 +548,9 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 1474,
+      "ms": 757,
       "ok": true,
-      "t": 5139
+      "t": 3760
     },
     {
       "stage": "creator",
@@ -627,9 +560,21 @@
       "decision": "Rejected: no exact name or alias match, not used",
       "cached": false,
       "http": "200",
-      "ms": 1602,
+      "ms": 778,
       "ok": true,
-      "t": 5267
+      "t": 3781
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Googlebook” among brand",
+      "output": "No results",
+      "decision": "Rejected: no exact name or alias match, not used",
+      "cached": false,
+      "http": "200",
+      "ms": 891,
+      "ok": true,
+      "t": 3894
     },
     {
       "stage": "creator",
@@ -639,9 +584,9 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 1724,
+      "ms": 1025,
       "ok": true,
-      "t": 5389
+      "t": 4028
     },
     {
       "stage": "creator",
@@ -651,9 +596,9 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 1843,
+      "ms": 1164,
       "ok": true,
-      "t": 5508
+      "t": 4167
     },
     {
       "stage": "creator",
@@ -663,20 +608,75 @@
       "decision": "Accepted as evidence",
       "cached": false,
       "http": "200",
-      "ms": 1972,
+      "ms": 1296,
       "ok": true,
-      "t": 5637
+      "t": 4299
     },
     {
       "stage": "creator",
       "tool": "Qloo /search",
-      "input": "“iPhone” among brand (candidates for the retry decision)",
-      "output": "1 results: Strava",
+      "input": "“iPhone” among brand",
+      "output": "1 results, none named “iPhone”: Strava",
+      "decision": "Rejected: no exact name or alias match, not used",
       "cached": false,
       "http": "200",
-      "ms": 207,
+      "ms": 97,
       "ok": true,
-      "t": 5844
+      "t": 4396
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Tesla” among brand",
+      "output": "Tesla (29B49E3F-A0EC-42C6-A453-38B1C20D8374), exact name match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "http": "200",
+      "ms": 125,
+      "ok": true,
+      "t": 4521
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“Apple” among brand",
+      "output": "Apple Inc (D5B78065-6DBB-4DDB-80DF-6495B9B1006B), exact Qloo alias match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "http": "200",
+      "ms": 131,
+      "ok": true,
+      "t": 4652
+    },
+    {
+      "stage": "creator",
+      "tool": "Rule",
+      "input": "4 products with no exact Qloo match: counted as the maker when the name starts with a Qloo brand’s exact name",
+      "output": "Maker found: “Tesla Roadster” → Tesla, “Apple Homeview” → Apple Inc",
+      "decision": "Counted as the maker brand (labelled “product → maker” in the evidence)",
+      "ok": true,
+      "t": 4652
+    },
+    {
+      "stage": "creator",
+      "tool": "Qloo /search",
+      "input": "“The Ridge” among brand",
+      "output": "The Ridge (A926389A-C444-4052-A845-D592876F9CB7), exact name match",
+      "decision": "Accepted as evidence",
+      "cached": false,
+      "http": "200",
+      "ms": 219,
+      "ok": true,
+      "t": 4871
+    },
+    {
+      "stage": "creator",
+      "tool": "Rule",
+      "input": "1 sponsor with no exact Qloo brand: tried with a leading “The”",
+      "output": "“Ridge” → The Ridge",
+      "decision": "Confirmed by Qloo’s exact name; not left to the LLM retry",
+      "ok": true,
+      "t": 4871
     },
     {
       "stage": "creator",
@@ -685,53 +685,40 @@
       "output": "5 results: Strava, Duo Security, Duolingo",
       "cached": false,
       "http": "200",
-      "ms": 213,
+      "ms": 31,
       "ok": true,
-      "t": 6057
+      "t": 4902
     },
     {
       "stage": "creator",
       "tool": "Qloo /search",
-      "input": "“Ridge” among brand (candidates for the retry decision)",
-      "output": "4 results: At Home, The Ridge, Juniper Ridge",
+      "input": "“Googlebook” among brand (candidates for the retry decision)",
+      "output": "No results",
       "cached": false,
       "http": "200",
-      "ms": 208,
+      "ms": 118,
       "ok": true,
-      "t": 6265
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Tesla Roadster” among brand (candidates for the retry decision)",
-      "output": "2 results: Tesla, The Roadster Life",
-      "cached": false,
-      "http": "200",
-      "ms": 209,
-      "ok": true,
-      "t": 6474
-    },
-    {
-      "stage": "creator",
-      "tool": "Qloo /search",
-      "input": "“Apple Homeview” among brand (candidates for the retry decision)",
-      "output": "5 results: Apple Inc, Apple Music, Apple TV+",
-      "cached": false,
-      "http": "200",
-      "ms": 213,
-      "ok": true,
-      "t": 6687
+      "t": 5020
     },
     {
       "stage": "creator",
       "tool": "Groq retry decision (openai/gpt-oss-120b)",
-      "input": "5 names with no exact Qloo match, each with Qloo’s top results: is any result the same thing under another name?",
-      "output": "“iPhone” → none (iPhone is a product, not the same as the brand Strava.) · “iPhone Duo” → none (No candidate matches the iPhone Duo product; the listed brands are unrelated.) · “Ridge” → none (Ridge is not exactly the same entity as any of the listed brand names.) · “Tesla Roadster” → none (Tesla Roadster is a product model, not the same as the maker Tesla.) · “Apple Homeview” → none (Apple Homeview is not identical to any of the Apple brand divisions listed.)",
+      "input": "1 name with no exact Qloo match, each with Qloo’s top results: is any result the same thing under another name?",
+      "output": "“iPhone Duo” → none (iPhone Duo is a phone model by Apple and does not correspond to any of the listed brand candidates.)",
       "decision": "No re-query: none of the results is the same thing",
       "cached": false,
-      "ms": 3158,
+      "ms": 1660,
       "ok": true,
-      "t": 9845
+      "t": 6680
+    },
+    {
+      "stage": "creator",
+      "tool": "Rule",
+      "input": "Prior coverage: 5 videos’ titles, descriptions and tags searched for “Apple” and its product names (Apple Homeview)",
+      "output": "2 of 5 mention the brand · tier High",
+      "decision": "Shown next to the Fit Score; never scored (the brand itself is not scored, and a mention is not an endorsement)",
+      "ok": true,
+      "t": 6688
     },
     {
       "stage": "creator",
@@ -740,9 +727,9 @@
       "output": "5 results: Marques Brownlee, Lukas Marques, Bruno Gagliasso",
       "cached": false,
       "http": "200",
-      "ms": 222,
+      "ms": 236,
       "ok": true,
-      "t": 10067
+      "t": 6924
     },
     {
       "stage": "creator",
@@ -750,171 +737,171 @@
       "input": "The creator in Qloo: a person named like the channel, tagged as a creator",
       "output": "“Marques Brownlee”: Marques Brownlee (creator)",
       "decision": "Use Marques Brownlee (0E6F37E3-84C4-406B-BE34-D5C7CC7966A8) for audience overlap and audience taste",
-      "ms": 222,
+      "ms": 236,
       "ok": true,
-      "t": 10067
+      "t": 6924
     },
     {
       "stage": "creator",
       "tool": "Qloo /entities",
-      "input": "Re-check 11 /search-confirmed entities: Dbrand, Apple Inc, X (Formerly Twitter), Instagram, Facebook, Tesla, Hagerty, Google, Asus, Dell Inc, Marques Brownlee",
-      "output": "11 re-verified by exact name or alias · popularity Dbrand 0.988, Apple Inc 0.999, X (Formerly Twitter) 1.000, Instagram 1.000, Facebook 0.998, Tesla 0.999, Hagerty 0.870, Google 1.000, Asus 0.998, Dell Inc 0.990, Marques Brownlee 0.994",
+      "input": "Re-check 8 /search-confirmed entities: Apple Inc, The Ridge, Tesla, Hagerty, Google, Asus, Dell Inc, Marques Brownlee",
+      "output": "8 re-verified by exact name or alias · popularity Apple Inc 0.999, The Ridge 0.807, Tesla 0.999, Hagerty 0.870, Google 1.000, Asus 0.998, Dell Inc 0.990, Marques Brownlee 0.994",
       "decision": "All kept",
       "cached": false,
       "http": "200",
-      "ms": 218,
+      "ms": 109,
       "ok": true,
-      "t": 10285
+      "t": 7033
     },
     {
       "stage": "creator",
       "tool": "Rule",
-      "input": "Evidence threshold: at least 3 Qloo-confirmed entities from the videos",
-      "output": "10 confirmed: Dbrand, Apple Inc, X (Formerly Twitter), Instagram, Facebook, Tesla, Hagerty, Google, Asus, Dell Inc",
+      "input": "Evidence threshold: at least 3 Qloo-confirmed entities from the videos, besides the brand itself",
+      "output": "7 confirmed: Apple Inc (the brand itself), The Ridge, Tesla, Hagerty, Google, Asus, Dell Inc",
       "decision": "Continue",
       "ok": true,
-      "t": 10285
+      "t": 7033
     },
     {
       "stage": "expand",
       "tool": "Rule",
       "input": "The videos mention the brand-side signal itself (Apple Inc)",
-      "output": "9 other entities form the expansion signal",
+      "output": "6 other entities form the expansion signal",
       "decision": "Leave Apple Inc out of the signal and out of scoring, so the brand side isn’t scored against itself; reported instead",
       "ok": true,
-      "t": 10285
+      "t": 7033
     },
     {
       "stage": "expand",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: 9 entities (Dbrand, X (Formerly Twitter), Instagram…) · type brand · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
-      "output": "5 entities: Sony 0.96, Google Maps 0.96, Microsoft 0.96…",
+      "input": "Signal: 6 entities (The Ridge, Tesla, Hagerty…) · type brand · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Unbox Therapy 0.95, Sony 0.94, Mclaren Automotive 0.93…",
       "cached": false,
       "http": "200",
-      "ms": 368,
+      "ms": 197,
       "ok": true,
-      "t": 10653
+      "t": 7230
     },
     {
       "stage": "expand",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: 9 entities (Dbrand, X (Formerly Twitter), Instagram…) · type tv_show · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
-      "output": "5 entities: Halt and Catch Fire 0.95, Humans 0.95, Silicon Valley 0.95…",
+      "input": "Signal: 6 entities (The Ridge, Tesla, Hagerty…) · type destination · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Mysore 0.91, Hyderabad 0.91, Munnar 0.90…",
       "cached": false,
       "http": "200",
-      "ms": 921,
+      "ms": 587,
       "ok": true,
-      "t": 11206
+      "t": 7620
     },
     {
       "stage": "expand",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: 9 entities (Dbrand, X (Formerly Twitter), Instagram…) · type destination · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
-      "output": "5 entities: Mysore 0.92, Hyderabad 0.92, Chennai 0.91…",
+      "input": "Signal: 6 entities (The Ridge, Tesla, Hagerty…) · type tv_show · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Silicon Valley 0.96, Halt and Catch Fire 0.95, Humans 0.94…",
       "cached": false,
       "http": "200",
-      "ms": 1156,
+      "ms": 710,
       "ok": true,
-      "t": 11441
+      "t": 7743
     },
     {
       "stage": "expand",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: 9 entities (Dbrand, X (Formerly Twitter), Instagram…) · type movie · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
-      "output": "5 entities: Venom 0.94, Deadpool 2 0.94, Captain Marvel 0.93…",
+      "input": "Signal: 6 entities (The Ridge, Tesla, Hagerty…) · type movie · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Venom 0.92, Star Wars: Episode VIII - The Last Jedi 0.92, Deadpool 2 0.92…",
       "cached": false,
       "http": "200",
-      "ms": 2520,
+      "ms": 1498,
       "ok": true,
-      "t": 12805
+      "t": 8531
     },
     {
       "stage": "expand",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: 9 entities (Dbrand, X (Formerly Twitter), Instagram…) · type place · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
-      "output": "5 entities: My Spanishsteps Guest House Rome Italy 0.94, Old Bruges 0.94, Hampton by Hilton Amsterdam Centre East 0.93…",
+      "input": "Signal: 6 entities (The Ridge, Tesla, Hagerty…) · type place · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: One World Trade Center 0.94, W New York - Times Square 0.94, Madame Tussauds New York 0.93…",
       "cached": false,
       "http": "200",
-      "ms": 2546,
+      "ms": 1744,
       "ok": true,
-      "t": 12831
+      "t": 8777
     },
     {
       "stage": "expand",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: 9 entities (Dbrand, X (Formerly Twitter), Instagram…) · type artist · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
-      "output": "5 entities: Avicii 0.94, David Guetta 0.92, Swedish House Mafia 0.92…",
+      "input": "Signal: 6 entities (The Ridge, Tesla, Hagerty…) · type artist · popularity ≥ 0.5 · excluding 1 brand-side · explainability",
+      "output": "5 entities: Ozzy Osbourne 0.92, ZZ Top 0.91, Five Finger Death Punch 0.91…",
       "cached": false,
       "http": "200",
-      "ms": 2876,
+      "ms": 2084,
       "ok": true,
-      "t": 13161
+      "t": 9117
     },
     {
       "stage": "score",
       "tool": "Qloo /v2/insights",
-      "input": "Signal: Apple Inc · affinity of 14 creator brand entities (filter.results.entities)",
-      "output": "14/14 scored: Tesla 0.93, Sony 0.92, Google 0.92, Unbox Therapy 0.91…",
+      "input": "Signal: Apple Inc · affinity of 11 creator brand entities (filter.results.entities)",
+      "output": "11/11 scored: Tesla 0.93, Sony 0.92, Google 0.92, Lamborghini 0.92…",
       "cached": false,
       "http": "200",
-      "ms": 238,
+      "ms": 39,
       "ok": true,
-      "t": 13399
+      "t": 9156
     },
     {
       "stage": "score",
       "tool": "Qloo /v2/insights",
       "input": "Signal: Apple Inc · affinity of 5 creator artist entities (filter.results.entities)",
-      "output": "5/5 scored: Zedd 0.92, Avicii 0.89, Jason Derülo 0.89, David Guetta 0.88…",
+      "output": "5/5 scored: Five Finger Death Punch 0.79, Halestorm 0.78, Blue Öyster Cult 0.78, Ozzy Osbourne 0.76…",
       "cached": false,
       "http": "200",
-      "ms": 367,
+      "ms": 178,
       "ok": true,
-      "t": 13528
+      "t": 9295
     },
     {
       "stage": "score",
       "tool": "Qloo /v2/insights",
       "input": "Signal: Apple Inc · affinity of 5 creator movie entities (filter.results.entities)",
-      "output": "5/5 scored: Captain Marvel 0.94, Venom 0.93, Deadpool 2 0.93, Alita: Battle Angel 0.92…",
+      "output": "5/5 scored: Venom 0.93, Deadpool 2 0.93, Star Wars: Episode VIII - The Last Jedi 0.93, Alita: Battle Angel 0.92…",
       "cached": false,
       "http": "200",
-      "ms": 496,
+      "ms": 308,
       "ok": true,
-      "t": 13657
-    },
-    {
-      "stage": "score",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: Apple Inc · affinity of 5 creator destination entities (filter.results.entities)",
-      "output": "5/5 scored: Munnar 0.87, Kochi 0.87, Hyderabad 0.87, Chennai 0.87…",
-      "cached": false,
-      "http": "200",
-      "ms": 738,
-      "ok": true,
-      "t": 13899
-    },
-    {
-      "stage": "score",
-      "tool": "Qloo /v2/insights",
-      "input": "Signal: Apple Inc · affinity of 5 creator place entities (filter.results.entities)",
-      "output": "5/5 scored: My Spanishsteps Guest House Rome Italy 0.84, Hampton by Hilton Amsterdam Centre East 0.82, ANT Hostel Barcelona 0.82, Riad Cascades d'Ouzoud 0.81…",
-      "cached": false,
-      "http": "200",
-      "ms": 907,
-      "ok": true,
-      "t": 14068
+      "t": 9425
     },
     {
       "stage": "score",
       "tool": "Qloo /v2/insights",
       "input": "Signal: Apple Inc · affinity of 5 creator tv_show entities (filter.results.entities)",
-      "output": "5/5 scored: Halt and Catch Fire 0.98, Humans 0.94, UnREAL 0.93, You, Me and the Apocalypse 0.92…",
+      "output": "5/5 scored: Halt and Catch Fire 0.98, Humans 0.94, You, Me and the Apocalypse 0.92, BrainDead 0.92…",
       "cached": false,
       "http": "200",
-      "ms": 975,
+      "ms": 438,
       "ok": true,
-      "t": 14136
+      "t": 9555
+    },
+    {
+      "stage": "score",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · affinity of 5 creator destination entities (filter.results.entities)",
+      "output": "5/5 scored: Munnar 0.87, Kochi 0.87, Hyderabad 0.87, Mysore 0.86…",
+      "cached": false,
+      "http": "200",
+      "ms": 541,
+      "ok": true,
+      "t": 9658
+    },
+    {
+      "stage": "score",
+      "tool": "Qloo /v2/insights",
+      "input": "Signal: Apple Inc · affinity of 5 creator place entities (filter.results.entities)",
+      "output": "5/5 scored: Hotel De La Source 0.89, W New York - Times Square 0.87, Cassa Hotel Times Square 0.86, One World Trade Center 0.85…",
+      "cached": false,
+      "http": "200",
+      "ms": 702,
+      "ok": true,
+      "t": 9819
     },
     {
       "stage": "score",
@@ -923,63 +910,56 @@
       "output": "1/1 scored: Marques Brownlee 0.85",
       "cached": false,
       "http": "200",
-      "ms": 1000,
+      "ms": 798,
       "ok": true,
-      "t": 14161
+      "t": 9915
     },
     {
       "stage": "score",
       "tool": "Rule",
       "input": "Evidence threshold after scoring: at least 3 named entities with a Qloo affinity",
-      "output": "9 of 9 named entities scored",
+      "output": "6 of 6 named entities scored",
       "decision": "Continue",
       "ok": true,
-      "t": 14161
+      "t": 9916
     },
     {
       "stage": "score",
       "tool": "Rule",
-      "input": "39 scored entities (9 named in the videos at weight 1, 30 cross-domain at weight 0.5) sorted into dimensions by Qloo type and genre tags",
-      "output": "Tech & Innovation 75 (n=11) · Film, TV & Entertainment 87 (n=10) · Music 77 (n=5) · Lifestyle & Fashion 63 (n=3) · Food & Travel 68 (n=10)",
+      "input": "36 scored entities (6 named in the videos at weight 1, 30 cross-domain at weight 0.5) sorted into dimensions by Qloo type and genre tags",
+      "output": "Tech & Innovation 81 (n=8) · Film, TV & Entertainment 86 (n=10) · Music 54 (n=5) · Lifestyle & Fashion 46 (n=3, classified by default) · Food & Travel 72 (n=10)",
       "decision": "Affinity rescaled from [0.5, 1] to [0, 100]; strong shared taste ≥ 0.85, some shared taste 0.7–0.85, conflicting taste < 0.7",
       "ok": true,
-      "t": 14161
+      "t": 9916
     },
     {
       "stage": "score",
       "tool": "Rule",
-      "input": "Equal-weight mean of 5 dimensions with data",
-      "output": "Fit Score 74, confidence Medium (based on 9 confirmed entities across 5 dimensions; High = 10+ entities and all 5 dimensions, Medium = 5+, Low = fewer)",
+      "input": "Equal-weight mean of 5 counted dimensions (3+ entities each)",
+      "output": "Fit Score 68, confidence Medium (based on 6 named entities across 5 counted dimensions; High = 10+ entities and all 5 dimensions, Medium = 5+ entities and 3+ dimensions, Low = less)",
       "decision": "Verdict: Moderate fit (80+ strong, 60–79 moderate, 40–59 weak, below 40 no fit)",
       "ok": true,
-      "t": 14161
+      "t": 9916
     },
     {
       "stage": "report",
       "tool": "Rule",
       "input": "Report template filled from the scored entities (no LLM)",
-      "output": "3 recommendations, 1 risks, 5 entities shared with the brand’s Qloo proxies",
+      "output": "3 recommendations, 1 risks, 4 entities shared with the brand’s Qloo proxies",
       "ok": true,
-      "t": 14161
+      "t": 9916
     },
     {
       "stage": "report",
       "tool": "Qloo /v2/analysis/compare",
-      "input": "A (brand side): Apple Inc · B (creator): 9 confirmed entities",
+      "input": "A (brand side): Apple Inc · B (creator): 6 confirmed entities",
       "output": "5 shared tags: Software 0.73, Electronics 0.73, Computer Accessories 0.72, Phones & Tablets 0.72, Computers & Laptops 0.72",
       "decision": "Reported as an independent cross-check; not part of the Fit Score",
       "cached": false,
       "http": "200",
-      "ms": 221,
+      "ms": 173,
       "ok": true,
-      "t": 14382
-    },
-    {
-      "stage": "creator",
-      "tool": "Rule",
-      "input": "Prior coverage, added to this saved result on 2026-10-28: the same 5 videos’ titles, descriptions and tags searched for “Apple”",
-      "output": "2 of 5 mention the brand · tier High",
-      "decision": "Shown next to the Fit Score; never scored. The saved scores are unchanged"
+      "t": 10089
     }
   ],
   "liveRun": true,
@@ -1544,10 +1524,10 @@
     "imageTags": []
   },
   "compatibility": {
-    "fitScore": 74,
+    "fitScore": 68,
     "confidence": "Medium",
     "confidenceBasis": {
-      "entities": 9,
+      "entities": 6,
       "dimensions": 5
     },
     "verdict": "medium",
@@ -1555,9 +1535,11 @@
       {
         "dimension": "tech",
         "label": "Tech & Innovation",
-        "score": 75,
+        "score": 81,
         "weight": 0.2,
-        "itemCount": 11,
+        "itemCount": 8,
+        "counted": true,
+        "byDefault": false,
         "intersection": [
           {
             "id": "29B49E3F-A0EC-42C6-A453-38B1C20D8374",
@@ -1567,7 +1549,7 @@
             "affinity": null,
             "source": "qloo",
             "via": "search",
-            "query": "Tesla",
+            "query": "Tesla Roadster → Tesla",
             "genres": [
               "brand:automotive",
               "brand:automotive:electric",
@@ -1583,7 +1565,7 @@
             "name": "Sony",
             "type": "urn:entity:brand",
             "popularity": 0.9993134545947687,
-            "affinity": 0.9592518886233122,
+            "affinity": 0.9397848505807375,
             "source": "qloo",
             "via": "insights",
             "query": "Asus, Dell Inc, Google",
@@ -1624,6 +1606,63 @@
             "dimension": "tech"
           },
           {
+            "id": "C94B9E48-ACBB-4124-A2B5-9FA8A3A263BB",
+            "name": "Lamborghini",
+            "type": "urn:entity:brand",
+            "popularity": 0.9991778406875625,
+            "affinity": 0.92752582802299,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Tesla, Google, Asus",
+            "genres": [
+              "brand:automotive:car_and_suv",
+              "brand:automotive"
+            ],
+            "description": "Automobili Lamborghini is an Italian luxury sports car manufacturer known for high-performance supercars like the Huracán, Aventador, and Urus SUV.",
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9150964796979312,
+            "dimension": "tech"
+          },
+          {
+            "id": "98EA903D-AB35-427C-B982-859D443E2212",
+            "name": "Mclaren Automotive",
+            "type": "urn:entity:brand",
+            "popularity": 0.9982370192063196,
+            "affinity": 0.9299241765936301,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Tesla, Hagerty, Asus",
+            "genres": [
+              "brand:automotive:car_and_suv",
+              "brand:automotive"
+            ],
+            "description": "British luxury automotive manufacturer specializing in high-performance supercars and racing technology.",
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.901443311120827,
+            "dimension": "tech"
+          },
+          {
+            "id": "08E19925-6F70-403D-8AE7-1DAC3FA053E2",
+            "name": "Dodge",
+            "type": "urn:entity:brand",
+            "popularity": 0.9975843772778898,
+            "affinity": 0.9278888461641265,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Tesla, Hagerty, Asus",
+            "genres": [
+              "brand:automotive:car_and_suv",
+              "brand:automotive"
+            ],
+            "description": "Dodge is an American automotive brand known for muscle cars and sports cars, including the Charger, Hornet, and Durango models.",
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8925984519298691,
+            "dimension": "tech"
+          },
+          {
             "id": "81C0AAC3-4484-4089-81C0-3A69EE301C15",
             "name": "Asus",
             "type": "urn:entity:brand",
@@ -1640,27 +1679,6 @@
             "side": "direct",
             "weight": 1,
             "brandAffinity": 0.8895028480911477,
-            "dimension": "tech"
-          },
-          {
-            "id": "08495BF3-D779-453D-8239-F71ADA609107",
-            "name": "Nokia",
-            "type": "urn:entity:brand",
-            "popularity": 0.9931345459476869,
-            "affinity": 0.9502666527602794,
-            "source": "qloo",
-            "via": "insights",
-            "query": "Google, Dell Inc, Facebook",
-            "genres": [
-              "brand:electronics",
-              "brand:electronics:computer_components",
-              "brand:electronics:phones_and_tablets",
-              "brand:telecom"
-            ],
-            "description": "Nokia is a global telecommunications company known for manufacturing mobile phones and smartphones, including popular models like Nokia G42.",
-            "side": "proxy",
-            "weight": 0.5,
-            "brandAffinity": 0.8829881432389353,
             "dimension": "tech"
           },
           {
@@ -1682,133 +1700,29 @@
             "weight": 1,
             "brandAffinity": 0.8768536534339989,
             "dimension": "tech"
-          },
-          {
-            "id": "DD4D5E9E-108F-4E2D-9E4D-781F58097413",
-            "name": "Google Maps",
-            "type": "urn:entity:brand",
-            "popularity": 0.9962367140750283,
-            "affinity": 0.9578200620692208,
-            "source": "qloo",
-            "via": "insights",
-            "query": "Facebook, Google, Dell Inc",
-            "genres": [
-              "brand:mobile_app",
-              "brand:mobile_app:home_and_utilities",
-              "brand:website",
-              "brand:travel",
-              "brand:software"
-            ],
-            "description": "Google Maps is a web and mobile mapping service offering local business info, maps, driving directions, live traffic, and real-time GPS navigation.",
-            "side": "proxy",
-            "weight": 0.5,
-            "brandAffinity": 0.8699564791473403,
-            "dimension": "tech"
-          },
-          {
-            "id": "FE5277EC-3921-4422-8503-A281351A4FC0",
-            "name": "Microsoft",
-            "type": "urn:entity:brand",
-            "popularity": 0.9988981370039498,
-            "affinity": 0.9566951085589216,
-            "source": "qloo",
-            "via": "insights",
-            "query": "Facebook, Google, Dell Inc",
-            "genres": [
-              "brand:electronics:phones_and_tablets",
-              "brand:electronics:computers_and_laptops",
-              "brand:electronics:computer_accessories",
-              "brand:electronics:headphones",
-              "brand:electronics",
-              "brand:electronics:gaming",
-              "brand:software"
-            ],
-            "description": "Microsoft is a global technology company known for software products like Windows, Microsoft 365, Azure cloud services, and gaming with Xbox.",
-            "side": "proxy",
-            "weight": 0.5,
-            "brandAffinity": 0.8663318547567432,
-            "dimension": "tech"
-          },
-          {
-            "id": "4D1EA16A-F77B-4152-BA57-56BDC8627D96",
-            "name": "Instagram",
-            "type": "urn:entity:brand",
-            "popularity": 0.9999830482615992,
-            "affinity": null,
-            "source": "qloo",
-            "via": "search",
-            "query": "Instagram",
-            "genres": [
-              "brand:mobile_app",
-              "brand:software",
-              "brand:mobile_app:social_networking"
-            ],
-            "side": "direct",
-            "weight": 1,
-            "brandAffinity": 0.8591849517457831,
-            "dimension": "tech"
-          },
-          {
-            "id": "AB361982-C4BC-414F-8344-8B401C6FDD41",
-            "name": "Facebook",
-            "type": "urn:entity:brand",
-            "popularity": 0.9981268329067146,
-            "affinity": null,
-            "source": "qloo",
-            "via": "search",
-            "query": "Facebook",
-            "genres": [
-              "brand:software",
-              "brand:mobile_app:social_networking",
-              "brand:website",
-              "brand:mobile_app"
-            ],
-            "side": "direct",
-            "weight": 1,
-            "brandAffinity": 0.856872849016952,
-            "dimension": "tech"
           }
         ],
-        "weakLink": [
-          {
-            "id": "ACDD1460-C453-4082-86D8-2789B4AC54C0",
-            "name": "X (Formerly Twitter)",
-            "type": "urn:entity:brand",
-            "popularity": 0.9999745723923988,
-            "affinity": null,
-            "source": "qloo",
-            "via": "search",
-            "query": "Twitter",
-            "genres": [
-              "brand:mobile_app",
-              "brand:mobile_app:social_networking",
-              "brand:software",
-              "brand:website"
-            ],
-            "side": "direct",
-            "weight": 1,
-            "brandAffinity": 0.7608462052879885,
-            "dimension": "tech"
-          }
-        ],
+        "weakLink": [],
         "divergence": []
       },
       {
         "dimension": "entertainment",
         "label": "Film, TV & Entertainment",
-        "score": 87,
+        "score": 86,
         "weight": 0.2,
         "itemCount": 10,
+        "counted": true,
+        "byDefault": false,
         "intersection": [
           {
             "id": "25679116-0941-4018-A5D8-885C1A026DF6",
             "name": "Halt and Catch Fire",
             "type": "urn:entity:tv_show",
             "popularity": 0.9625024931852936,
-            "affinity": 0.9541333557994816,
+            "affinity": 0.9454195553921434,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Facebook, Asus",
+            "query": "Asus, Dell Inc, Google",
             "genres": [
               "qloo:drama",
               "media:drama"
@@ -1819,36 +1733,14 @@
             "dimension": "entertainment"
           },
           {
-            "id": "A79D1D11-0686-401E-8FFF-633E6A604929",
-            "name": "Captain Marvel",
-            "type": "urn:entity:movie",
-            "popularity": 0.9968249854208514,
-            "affinity": 0.9284223242356906,
-            "source": "qloo",
-            "via": "insights",
-            "query": "Tesla, Dbrand, Asus",
-            "genres": [
-              "qloo:science_fiction",
-              "media:adventure",
-              "media:sci_fi",
-              "media:action",
-              "qloo:adventure",
-              "qloo:action"
-            ],
-            "side": "proxy",
-            "weight": 0.5,
-            "brandAffinity": 0.9413675520467116,
-            "dimension": "entertainment"
-          },
-          {
             "id": "5B305BA6-94B6-4988-BDB6-6FF5E92CC4C7",
             "name": "Humans",
             "type": "urn:entity:tv_show",
             "popularity": 0.9610398244797553,
-            "affinity": 0.9464458695648185,
+            "affinity": 0.9424253503085249,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Facebook, Tesla",
+            "query": "Tesla, Asus, Dell Inc",
             "genres": [
               "qloo:science_fiction",
               "media:drama",
@@ -1865,10 +1757,10 @@
             "name": "Venom",
             "type": "urn:entity:movie",
             "popularity": 0.9956910516425841,
-            "affinity": 0.9360288768076629,
+            "affinity": 0.9177527266048058,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, X (Formerly Twitter), Tesla",
+            "query": "Tesla, Asus, Hagerty",
             "genres": [
               "qloo:adventure",
               "qloo:superhero",
@@ -1888,10 +1780,10 @@
             "name": "Deadpool 2",
             "type": "urn:entity:movie",
             "popularity": 0.9971273677617227,
-            "affinity": 0.9350224355042211,
+            "affinity": 0.9150653499848606,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, X (Formerly Twitter), Asus",
+            "query": "Asus, Tesla, Dell Inc",
             "genres": [
               "media:sci_fi",
               "media:comedy",
@@ -1909,22 +1801,27 @@
             "dimension": "entertainment"
           },
           {
-            "id": "9A27891E-DE13-4E95-8318-F4EB6E6E661E",
-            "name": "UnREAL",
-            "type": "urn:entity:tv_show",
-            "popularity": 0.8792633468519381,
-            "affinity": 0.9367542302202124,
+            "id": "D8F970E7-664D-4A16-A35D-02F847567C8B",
+            "name": "Star Wars: Episode VIII - The Last Jedi",
+            "type": "urn:entity:movie",
+            "popularity": 0.997494546318495,
+            "affinity": 0.9170364777374543,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Facebook, Asus",
+            "query": "Asus, Tesla, Dell Inc",
             "genres": [
-              "qloo:drama",
-              "qloo:satire",
-              "media:drama"
+              "qloo:action",
+              "media:adventure",
+              "media:fantasy",
+              "media:sci_fi",
+              "qloo:fantasy",
+              "qloo:science_fiction",
+              "media:action",
+              "qloo:adventure"
             ],
             "side": "proxy",
             "weight": 0.5,
-            "brandAffinity": 0.9298541979092034,
+            "brandAffinity": 0.9273309814668779,
             "dimension": "entertainment"
           },
           {
@@ -1932,10 +1829,10 @@
             "name": "Alita: Battle Angel",
             "type": "urn:entity:movie",
             "popularity": 0.9920840622907622,
-            "affinity": 0.928096435889501,
+            "affinity": 0.9139326932384547,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Tesla, Asus",
+            "query": "Tesla, Asus, Hagerty",
             "genres": [
               "qloo:action",
               "media:thriller",
@@ -1953,36 +1850,14 @@
             "dimension": "entertainment"
           },
           {
-            "id": "BC6FC94F-845E-41D1-B8B3-4219E80AF339",
-            "name": "Ready Player One",
-            "type": "urn:entity:movie",
-            "popularity": 0.9961338257845742,
-            "affinity": 0.9267354074719222,
-            "source": "qloo",
-            "via": "insights",
-            "query": "Dbrand, X (Formerly Twitter), Instagram",
-            "genres": [
-              "media:sci_fi",
-              "media:adventure",
-              "qloo:adventure",
-              "media:action",
-              "qloo:action",
-              "qloo:science_fiction"
-            ],
-            "side": "proxy",
-            "weight": 0.5,
-            "brandAffinity": 0.9239340371072271,
-            "dimension": "entertainment"
-          },
-          {
             "id": "6E19CAD8-27B8-4506-9B0A-8C4DB9B84492",
             "name": "You, Me and the Apocalypse",
             "type": "urn:entity:tv_show",
             "popularity": 0.8010770560468053,
-            "affinity": 0.9389358004183476,
+            "affinity": 0.936344536686998,
             "source": "qloo",
             "via": "insights",
-            "query": "Facebook, Dbrand, Asus",
+            "query": "Asus, Google, Dell Inc",
             "genres": [
               "qloo:comedy",
               "media:sci_fi",
@@ -1999,14 +1874,62 @@
             "dimension": "entertainment"
           },
           {
+            "id": "6E6E7DC3-55E4-41A0-A975-9E562DFAE9C9",
+            "name": "BrainDead",
+            "type": "urn:entity:tv_show",
+            "popularity": 0.8561265873279702,
+            "affinity": 0.9313910603114647,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Asus, Google, Dell Inc",
+            "genres": [
+              "qloo:science_fiction",
+              "media:thriller",
+              "qloo:drama",
+              "media:sci_fi",
+              "media:comedy",
+              "qloo:horror",
+              "qloo:comedy",
+              "media:horror",
+              "qloo:thriller",
+              "media:drama"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9155420522265092,
+            "dimension": "entertainment"
+          },
+          {
+            "id": "A7C3208D-E9AB-4D36-B0FE-24664503DF09",
+            "name": "Mission: Impossible - Fallout",
+            "type": "urn:entity:movie",
+            "popularity": 0.9956478541653168,
+            "affinity": 0.9138293563405487,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Tesla, Hagerty, Asus",
+            "genres": [
+              "qloo:adventure",
+              "media:adventure",
+              "qloo:action",
+              "qloo:thriller",
+              "media:thriller",
+              "media:action"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.9066599442559494,
+            "dimension": "entertainment"
+          },
+          {
             "id": "2954894E-B40D-457B-841D-8052467613AF",
             "name": "Silicon Valley",
             "type": "urn:entity:tv_show",
             "popularity": 0.9921547769430225,
-            "affinity": 0.9461914757620867,
+            "affinity": 0.955411784120976,
             "source": "qloo",
             "via": "insights",
-            "query": "Google, Dell Inc, X (Formerly Twitter)",
+            "query": "Google, Dell Inc, The Ridge",
             "genres": [
               "qloo:satire",
               "media:comedy",
@@ -2024,157 +1947,153 @@
       {
         "dimension": "music",
         "label": "Music",
-        "score": 77,
+        "score": 54,
         "weight": 0.2,
         "itemCount": 5,
-        "intersection": [
+        "counted": true,
+        "byDefault": false,
+        "intersection": [],
+        "weakLink": [
           {
-            "id": "F9A3C7C9-B531-42F7-8982-55775060A2C2",
-            "name": "Zedd",
+            "id": "02D93EF1-B4A4-4E50-9261-53CE2EEBEC11",
+            "name": "Five Finger Death Punch",
             "type": "urn:entity:artist",
-            "popularity": 0.9978602651567282,
-            "affinity": 0.9196211895673163,
+            "popularity": 0.9980470413987902,
+            "affinity": 0.9111293440308551,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, X (Formerly Twitter), Instagram",
+            "query": "Dell Inc, Asus, The Ridge",
             "genres": [
-              "music:electronic",
-              "qloo:pop",
-              "music:electro",
-              "music:house",
-              "qloo:electronic_dance_music",
-              "qloo:electro_house",
-              "qloo:progressive_house",
-              "qloo:electronic",
-              "qloo:house",
-              "qloo:edm",
-              "qloo:dance_pop"
+              "music:groove_metal",
+              "music:metal",
+              "music:metalcore",
+              "qloo:heavy_metal",
+              "qloo:hard_rock",
+              "qloo:alternative_metal",
+              "qloo:groove_metal",
+              "qloo:thrash_metal",
+              "qloo:metalcore"
             ],
             "side": "proxy",
             "weight": 0.5,
-            "brandAffinity": 0.9198281160439232,
+            "brandAffinity": 0.791924665876914,
             "dimension": "music"
           },
           {
-            "id": "2FED3EA5-8652-47B2-BD81-500D81790498",
-            "name": "Avicii",
+            "id": "DA240F5C-3111-40B6-A79D-521EB7B8BA62",
+            "name": "Halestorm",
             "type": "urn:entity:artist",
-            "popularity": 0.9993413679885181,
-            "affinity": 0.9366736585336058,
+            "popularity": 0.9950979428399164,
+            "affinity": 0.9083892400993705,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, X (Formerly Twitter), Instagram",
+            "query": "Dell Inc, Hagerty, The Ridge",
             "genres": [
-              "music:dance",
-              "qloo:electronic_dance_music",
-              "music:progressive_house",
-              "music:house",
-              "qloo:progressive_house",
-              "music:electronic",
-              "qloo:electro_house",
-              "qloo:dance_pop",
-              "qloo:house",
-              "qloo:electronic",
-              "qloo:dance"
+              "qloo:alternative_metal",
+              "music:alternative_rock",
+              "qloo:hard_rock",
+              "music:alternative_metal",
+              "qloo:post_grunge",
+              "music:rock",
+              "qloo:alternative_rock",
+              "qloo:rock"
             ],
             "side": "proxy",
             "weight": 0.5,
-            "brandAffinity": 0.8906052318553518,
+            "brandAffinity": 0.7841189413102677,
             "dimension": "music"
           },
           {
-            "id": "33A00C9F-6842-49F8-B26A-34D5346FF75A",
-            "name": "Jason Derülo",
+            "id": "23E9AECC-E18C-411E-848A-55AE6B4ED368",
+            "name": "Blue Öyster Cult",
             "type": "urn:entity:artist",
-            "popularity": 0.9986860127532129,
-            "affinity": 0.9199739344870774,
+            "popularity": 0.9974211771490736,
+            "affinity": 0.9098351987064831,
             "source": "qloo",
             "via": "insights",
-            "query": "Instagram, X (Formerly Twitter), Facebook",
+            "query": "Hagerty, Tesla, The Ridge",
             "genres": [
-              "qloo:r_b",
-              "qloo:pop",
-              "qloo:dance_pop",
-              "qloo:r_b",
-              "qloo:dance_pop"
+              "qloo:hard_rock",
+              "qloo:heavy_metal",
+              "qloo:classic_rock"
             ],
             "side": "proxy",
             "weight": 0.5,
-            "brandAffinity": 0.8892100245513268,
+            "brandAffinity": 0.7807573359065103,
             "dimension": "music"
           },
           {
-            "id": "EB042810-1AAC-4170-B781-38FCB7F012A2",
-            "name": "David Guetta",
+            "id": "1C60A69B-C57B-44D7-A26A-7E42985F9D5E",
+            "name": "Ozzy Osbourne",
             "type": "urn:entity:artist",
-            "popularity": 0.9997935631008789,
-            "affinity": 0.922551048594071,
+            "popularity": 0.999252895031752,
+            "affinity": 0.9179525166944666,
             "source": "qloo",
             "via": "insights",
-            "query": "Instagram, X (Formerly Twitter), Facebook",
+            "query": "Hagerty, Dell Inc, The Ridge",
             "genres": [
-              "qloo:dance_pop",
-              "music:house",
-              "qloo:house",
-              "music:electronic",
-              "music:dance",
-              "qloo:electronic_dance_music",
-              "qloo:electro_house",
-              "qloo:club_music",
-              "qloo:electronic",
-              "qloo:dance",
-              "qloo:techno"
+              "qloo:hard_rock",
+              "qloo:heavy_metal",
+              "music:heavy_metal",
+              "music:metal",
+              "music:classic_rock",
+              "music:rock",
+              "qloo:classic_rock",
+              "qloo:rock",
+              "qloo:metal"
             ],
             "side": "proxy",
             "weight": 0.5,
-            "brandAffinity": 0.8763881945770602,
+            "brandAffinity": 0.7558081677906788,
             "dimension": "music"
           },
           {
-            "id": "77207D74-4C38-4139-9F51-B25586F12D60",
-            "name": "Swedish House Mafia",
+            "id": "CD7E025E-636A-423E-BE2A-D805A7C2C87C",
+            "name": "ZZ Top",
             "type": "urn:entity:artist",
-            "popularity": 0.998214156983793,
-            "affinity": 0.9224035533767498,
+            "popularity": 0.9984205938829143,
+            "affinity": 0.9141026816311074,
             "source": "qloo",
             "via": "insights",
-            "query": "X (Formerly Twitter), Instagram, Facebook",
+            "query": "Hagerty, The Ridge, Google",
             "genres": [
-              "qloo:electro_house",
-              "music:electro",
-              "qloo:house",
-              "music:dance",
-              "music:electronic",
-              "music:house",
-              "qloo:progressive_house",
-              "qloo:electronic_dance_music_edm_",
-              "qloo:dance"
+              "music:southern_rock",
+              "music:rock",
+              "music:classic_rock",
+              "qloo:southern_rock",
+              "qloo:blues_rock",
+              "qloo:hard_rock",
+              "qloo:classic_rock",
+              "qloo:rock",
+              "qloo:texas_blues",
+              "qloo:boogie_rock"
             ],
             "side": "proxy",
             "weight": 0.5,
-            "brandAffinity": 0.86068790945952,
+            "brandAffinity": 0.739044992040547,
             "dimension": "music"
           }
         ],
-        "weakLink": [],
         "divergence": []
       },
       {
         "dimension": "lifestyle",
         "label": "Lifestyle & Fashion",
-        "score": 63,
+        "score": 46,
         "weight": 0.2,
         "itemCount": 3,
+        "counted": true,
+        "byDefault": true,
         "intersection": [
           {
             "id": "8C1C3E04-9272-4F77-960E-40A6E7E74D25",
             "name": "Unbox Therapy",
             "type": "urn:entity:brand",
             "popularity": 0.9955671204081978,
-            "affinity": 0.9496542600757223,
+            "affinity": 0.9540343443384623,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Asus, Tesla",
+            "query": "Asus, Tesla, Google",
             "genres": [
               "brand:website"
             ],
@@ -2182,21 +2101,6 @@
             "side": "proxy",
             "weight": 0.5,
             "brandAffinity": 0.9136787945638468,
-            "dimension": "lifestyle"
-          },
-          {
-            "id": "3180A68A-2853-4675-886E-CB05CDF3F63A",
-            "name": "Dbrand",
-            "type": "urn:entity:brand",
-            "popularity": 0.9878710311742469,
-            "affinity": null,
-            "source": "qloo",
-            "via": "search",
-            "query": "dbrand",
-            "genres": [],
-            "side": "direct",
-            "weight": 1,
-            "brandAffinity": 0.8519237319996689,
             "dimension": "lifestyle"
           }
         ],
@@ -2217,24 +2121,62 @@
             "dimension": "lifestyle"
           }
         ],
-        "divergence": []
+        "divergence": [
+          {
+            "id": "A926389A-C444-4052-A845-D592876F9CB7",
+            "name": "The Ridge",
+            "type": "urn:entity:brand",
+            "popularity": 0.8066908511467851,
+            "affinity": null,
+            "source": "qloo",
+            "via": "search",
+            "query": "Ridge → The Ridge",
+            "genres": [],
+            "side": "direct",
+            "weight": 1,
+            "brandAffinity": 0.63599487186839,
+            "dimension": "lifestyle"
+          }
+        ]
       },
       {
         "dimension": "food_travel",
         "label": "Food & Travel",
-        "score": 68,
+        "score": 72,
         "weight": 0.2,
         "itemCount": 10,
+        "counted": true,
+        "byDefault": false,
         "intersection": [
+          {
+            "id": "24D1D678-2618-4489-A728-2E46CDA7246C",
+            "name": "Hotel De La Source",
+            "type": "urn:entity:place",
+            "popularity": 0.8516914855720494,
+            "affinity": 0.9330691153800296,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Asus, Hagerty, Tesla",
+            "genres": [
+              "place",
+              "place:hotel",
+              "place:restaurant"
+            ],
+            "description": "Four-star superior hotel overlooking the Spa-Francorchamps racetrack, offering 90 modern rooms, a restaurant, tapas bar and wellness facilities.",
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8935610996258642,
+            "dimension": "food_travel"
+          },
           {
             "id": "45FE4072-A5D6-4A1E-9363-FCC6B944C0A1",
             "name": "Munnar",
             "type": "urn:entity:destination",
             "popularity": 0.6523118766999093,
-            "affinity": 0.9046566730269109,
+            "affinity": 0.8980187242317126,
             "source": "qloo",
             "via": "insights",
-            "query": "Asus, Dbrand, Google",
+            "query": "Asus, Google, Tesla",
             "genres": [
               "destination:scenic_picturesque",
               "destination:off_beaten_path",
@@ -2252,10 +2194,10 @@
             "name": "Kochi",
             "type": "urn:entity:destination",
             "popularity": 0.7901178603807797,
-            "affinity": 0.9100136592662861,
+            "affinity": 0.8949410664427242,
             "source": "qloo",
             "via": "insights",
-            "query": "Asus, Dbrand, Google",
+            "query": "Asus, Google, Tesla",
             "genres": [
               "destination:outdoor_activities"
             ],
@@ -2269,10 +2211,10 @@
             "name": "Hyderabad",
             "type": "urn:entity:destination",
             "popularity": 0.727561196736174,
-            "affinity": 0.9208816361185651,
+            "affinity": 0.9073940187420084,
             "source": "qloo",
             "via": "insights",
-            "query": "Tesla, Google, Dbrand",
+            "query": "Tesla, Google, Asus",
             "genres": [
               "destination:art_culture"
             ],
@@ -2282,21 +2224,24 @@
             "dimension": "food_travel"
           },
           {
-            "id": "82E83615-FD01-40B1-8386-69D5AC971561",
-            "name": "Chennai",
-            "type": "urn:entity:destination",
-            "popularity": 0.6033544877606528,
-            "affinity": 0.9103697292490024,
+            "id": "AA44CFA0-3DAF-4628-AFDB-19F45AAF4666",
+            "name": "W New York - Times Square",
+            "type": "urn:entity:place",
+            "popularity": 0.9999812414170196,
+            "affinity": 0.9357587577914056,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Google, Asus",
+            "query": "Tesla, Google, Asus",
             "genres": [
-              "destination:outdoor_activities",
-              "destination:beaches"
+              "place:tourist_attraction",
+              "place:wedding_venue",
+              "place:hotel",
+              "place"
             ],
+            "description": "Sleek modern hotel in the lively Theater District with polished rooms, vibrant dining, and a prime Times Square location.",
             "side": "proxy",
             "weight": 0.5,
-            "brandAffinity": 0.8664846978253283,
+            "brandAffinity": 0.8661277055665909,
             "dimension": "food_travel"
           },
           {
@@ -2304,10 +2249,10 @@
             "name": "Mysore",
             "type": "urn:entity:destination",
             "popularity": 0.6600181323662738,
-            "affinity": 0.9221926224399266,
+            "affinity": 0.9112067306081995,
             "source": "qloo",
             "via": "insights",
-            "query": "Dbrand, Asus, Google",
+            "query": "Asus, Google, Tesla",
             "genres": [
               "destination:art_culture",
               "destination:history"
@@ -2316,106 +2261,85 @@
             "weight": 0.5,
             "brandAffinity": 0.8619191619730308,
             "dimension": "food_travel"
+          },
+          {
+            "id": "E92009A1-1965-49A7-BD96-168E5F19421C",
+            "name": "Cassa Hotel Times Square",
+            "type": "urn:entity:place",
+            "popularity": 0.9427512192150295,
+            "affinity": 0.9313311925171462,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Tesla, Google, Asus",
+            "genres": [
+              "place:hotel",
+              "place"
+            ],
+            "description": "High-end Hell's Kitchen hotel near Times Square with a rooftop terrace, garden, hot tub, and modern airy rooms with free Wi‑Fi.",
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8616523123320236,
+            "dimension": "food_travel"
           }
         ],
         "weakLink": [
           {
-            "id": "EDE6B7AB-A838-4A65-A962-8BD0128593E5",
-            "name": "My Spanishsteps Guest House Rome Italy",
+            "id": "FF8A43D9-BCD9-4B86-B5B6-6692EAFCEE1D",
+            "name": "One World Trade Center",
             "type": "urn:entity:place",
-            "popularity": 0.6714517768835567,
-            "affinity": 0.9377905915878986,
+            "popularity": 0.99999275658677,
+            "affinity": 0.9440274202015609,
             "source": "qloo",
             "via": "insights",
-            "query": "Instagram, Google, Dbrand",
-            "genres": [
-              "place:hotel",
-              "place"
-            ],
-            "description": "Upmarket guesthouse steps from Spanish Steps with elegant rooms featuring modern amenities and city views.",
-            "side": "proxy",
-            "weight": 0.5,
-            "brandAffinity": 0.8384998986223382,
-            "dimension": "food_travel"
-          },
-          {
-            "id": "73896A1E-EA35-40D2-B252-AA02013CDEA5",
-            "name": "Hampton by Hilton Amsterdam Centre East",
-            "type": "urn:entity:place",
-            "popularity": 0.9137957676922226,
-            "affinity": 0.9339794338535075,
-            "source": "qloo",
-            "via": "insights",
-            "query": "Instagram, Google, X (Formerly Twitter)",
-            "genres": [
-              "place:hotel",
-              "place"
-            ],
-            "description": "Casual hotel near tram stops offering relaxed rooms, complimentary hot breakfast, fitness center, and convenient access to Amsterdam attractions.",
-            "side": "proxy",
-            "weight": 0.5,
-            "brandAffinity": 0.821990272977113,
-            "dimension": "food_travel"
-          },
-          {
-            "id": "BEE0AB5C-C75A-458E-A012-E28D283668A1",
-            "name": "ANT Hostel Barcelona",
-            "type": "urn:entity:place",
-            "popularity": 0.7831413085913196,
-            "affinity": 0.9335830087093022,
-            "source": "qloo",
-            "via": "insights",
-            "query": "X (Formerly Twitter), Instagram, Google",
-            "genres": [
-              "place:hotel",
-              "place",
-              "place:hotel:serviced_accommodation",
-              "place:hotel:youth_hostel",
-              "place:hotel:hostel"
-            ],
-            "description": "Budget-friendly hostel near Parc de la Ciutadella with simple dorms, shared bathrooms, breakfast, and bike rentals in a central location.",
-            "side": "proxy",
-            "weight": 0.5,
-            "brandAffinity": 0.816550935091246,
-            "dimension": "food_travel"
-          },
-          {
-            "id": "570E3CB6-CA3A-436F-A0B4-AF73DA24DB19",
-            "name": "Riad Cascades d'Ouzoud",
-            "type": "urn:entity:place",
-            "popularity": 0.9982391076709232,
-            "affinity": 0.9325402106275531,
-            "source": "qloo",
-            "via": "insights",
-            "query": "Google, Instagram, Asus",
+            "query": "Tesla, Google, Asus",
             "genres": [
               "place",
-              "place:hotel",
-              "place:hotel:bed_breakfast"
+              "place:historical_landmark",
+              "place:tourist_attraction"
             ],
-            "description": "Traditional Berber riad perched above Ouzoud Falls, offering air-conditioned rooms, terraces with gorge and olive‑grove views, and authentic local architecture.",
+            "description": "Tallest skyscraper in the Western Hemisphere with a 360-degree observation deck overlooking NYC, adjacent to the 9/11 Memorial and a major transit hub.",
             "side": "proxy",
             "weight": 0.5,
-            "brandAffinity": 0.8133947506628149,
+            "brandAffinity": 0.847540621300282,
             "dimension": "food_travel"
           },
           {
-            "id": "86BCBF45-D456-4F72-8E7F-2F2E36B5EE92",
-            "name": "Old Bruges",
+            "id": "7F1A2F4F-627F-419D-B80B-DD1E80E38023",
+            "name": "Madame Tussauds New York",
             "type": "urn:entity:place",
-            "popularity": 0.9939383774977238,
-            "affinity": 0.9368203426248473,
+            "popularity": 0.999869432833315,
+            "affinity": 0.9332752188583843,
             "source": "qloo",
             "via": "insights",
-            "query": "Google, Instagram, Tesla",
+            "query": "Tesla, Google, Asus",
             "genres": [
-              "place:restaurant",
+              "place:tourist_attraction",
+              "place:wax_museum",
               "place"
             ],
-            "description": "Casual bar-restaurant on Bruges' Vismarkt offering a broad drinks menu, dine-in and outdoor seating with delivery available.",
+            "description": "Nine-floor Times Square wax museum featuring life-size celebrity and historic-figure replicas, interactive exhibits, and a MARVEL 4D cinematic experience.",
             "side": "proxy",
             "weight": 0.5,
-            "brandAffinity": 0.7916973118725302,
+            "brandAffinity": 0.8464090368601025,
+            "dimension": "food_travel"
+          },
+          {
+            "id": "CA0AE5AD-1FF6-41A0-8B95-4750E7542E7C",
+            "name": "Manali",
+            "type": "urn:entity:destination",
+            "popularity": 0.8517679057116954,
+            "affinity": 0.8962863612919467,
+            "source": "qloo",
+            "via": "insights",
+            "query": "Tesla, Google, Asus",
+            "genres": [
+              "destination:outdoor_activities",
+              "destination:scenic_picturesque",
+              "destination:nature"
+            ],
+            "side": "proxy",
+            "weight": 0.5,
+            "brandAffinity": 0.8037184604788684,
             "dimension": "food_travel"
           }
         ],
@@ -2424,15 +2348,15 @@
     ]
   },
   "report": {
-    "summary": "Apple Inc × Marques Brownlee: Fit Score 74 (Moderate fit), Medium confidence. Strongest dimension: Film, TV & Entertainment (87); weakest: Lifestyle & Fashion (63). The creator's videos already mention Apple Inc directly (not scored, to avoid rating the brand against itself).",
-    "cultureClash": "No evidence of conflicting taste: every scored entity has affinity of at least 0.7.",
+    "summary": "Decision — Conditional (Fit 68, Medium confidence): go ahead if the brief leaves Music out. Why: Apple Inc’s audience is strongest on Film, TV & Entertainment (86) and weakest on Music (54). The strongest shared tastes are Halt and Catch Fire 0.98, Humans 0.94 and Venom 0.93, all related by Qloo rather than named in the videos. One entity with conflicting taste (The Ridge 0.64), an isolated one: 26 of 36 entities have strong shared taste (affinity ≥ 0.85). Familiarity: 2 / 5 videos mention Apple Inc (Prior coverage High; latest “iPhone Duo Review: First Generation Fun!”, 2026-10-21). From YouTube, not part of the Fit Score. Next step: Reach out directly and reference “Apple Homeview Impressions: Not Convinced!”, where Apple Inc already appears in the title. Build the pitch on Film, TV & Entertainment first, starting with Halt and Catch Fire. Confidence — Medium: based on 6 named entities across all 5 dimensions; a re-run can move the score a few points.",
+    "cultureClash": "Lifestyle & Fashion, conflicting taste (affinity < 0.7): The Ridge (affinity 0.64) relates weakly to Apple Inc's audience.",
     "recommendations": [
-      "“Tesla”, “Venom”, “Captain Marvel”, “Halt and Catch Fire”, “Humans” appear both in the creator's taste graph and among Apple Inc's Qloo cultural proxies: the most direct angle for a collaboration.",
+      "“Tesla”, “Venom”, “Halt and Catch Fire”, “Humans” appear both in the creator's taste graph and among Apple Inc's Qloo cultural proxies: the most direct angle for a collaboration.",
       "Build content around “Deadpool 2” (Film, TV & Entertainment, affinity 0.93); Apple Inc's audience relates to it strongly.",
-      "Build content around “UnREAL” (Film, TV & Entertainment, affinity 0.93); Apple Inc's audience relates to it strongly."
+      "Build content around “Star Wars: Episode VIII - The Last Jedi” (Film, TV & Entertainment, affinity 0.93); Apple Inc's audience relates to it strongly."
     ],
     "risks": [
-      "No evidence-backed risks found."
+      "Avoid “The Ridge” as a collaboration theme (Lifestyle & Fashion, affinity 0.64)."
     ]
   },
   "warnings": [],
@@ -2441,10 +2365,7 @@
       "Apple Inc"
     ],
     "creatorEntities": [
-      "Dbrand",
-      "X (Formerly Twitter)",
-      "Instagram",
-      "Facebook",
+      "The Ridge",
       "Tesla",
       "Hagerty",
       "Google",
@@ -2512,14 +2433,14 @@
     ],
     "creatorTags": [
       {
-        "id": "urn:tag:genre:brand:software",
-        "name": "Software",
-        "count": 4
-      },
-      {
         "id": "urn:tag:genre:brand:electronics",
         "name": "Electronics",
         "count": 3
+      },
+      {
+        "id": "urn:tag:genre:brand:software",
+        "name": "Software",
+        "count": 2
       },
       {
         "id": "urn:tag:genre:brand:electronics:phones_and_tablets",
@@ -2527,14 +2448,14 @@
         "count": 2
       },
       {
-        "id": "urn:tag:genre:brand:mobile_app",
-        "name": "Mobile App",
-        "count": 2
+        "id": "urn:tag:genre:brand:electronics:home_theater",
+        "name": "Home Theater",
+        "count": 1
       },
       {
-        "id": "urn:tag:genre:brand:website",
-        "name": "Website",
-        "count": 2
+        "id": "urn:tag:genre:brand:electronics:computers_and_laptops",
+        "name": "Computers & Laptops",
+        "count": 1
       },
       {
         "id": "urn:tag:genre:brand:electronics:computer_accessories",
@@ -2546,54 +2467,5 @@
   "expansion": {
     "popularityMin": 0.5,
     "excludesBrand": true
-  },
-  "priorCoverage": {
-    "videosRead": 5,
-    "brandTerms": [
-      "Apple"
-    ],
-    "productTerms": [
-      "Apple Homeview"
-    ],
-    "mentioning": [
-      {
-        "videoId": "ESABTN4VtrA",
-        "title": "iPhone Duo Review: First Generation Fun!",
-        "url": "https://www.youtube.com/watch?v=ESABTN4VtrA",
-        "publishedAt": "2026-10-21T12:00:52Z",
-        "viewCount": 12922578,
-        "brandPlaces": [
-          "description"
-        ],
-        "productPlaces": [],
-        "products": [],
-        "snippet": {
-          "place": "description",
-          "text": "…of MKBHD Intro music: https://goo.gl/B3AWV5 Phone provided by Apple for review. ~ http://twitter.com/MKBHD http://instagram.com/MKBHD…"
-        }
-      },
-      {
-        "videoId": "QVv3mQzlrN0",
-        "title": "Apple Homeview Impressions: Not Convinced!",
-        "url": "https://www.youtube.com/watch?v=QVv3mQzlrN0",
-        "publishedAt": "2026-10-13T22:42:38Z",
-        "viewCount": 11062438,
-        "brandPlaces": [
-          "description"
-        ],
-        "productPlaces": [
-          "title"
-        ],
-        "products": [
-          "Apple Homeview"
-        ],
-        "snippet": {
-          "place": "title",
-          "text": "Apple Homeview Impressions: Not Convinced!"
-        }
-      }
-    ],
-    "latest": "2026-10-21T12:00:52Z",
-    "tier": "High"
   }
 }
